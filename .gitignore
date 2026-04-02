@@ -1,0 +1,19 @@
+# Data and Checkpoints
+fastMRI_data/
+models_output/
+logs/
+.repos_research/
+*.pt
+*.pth
+*.h5
+*.mat
+
+# Python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Temporary / Legacy Scripts
+inspect_h5.py
+download_models.py
+download_repos.py
