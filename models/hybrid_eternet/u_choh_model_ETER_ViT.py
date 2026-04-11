@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+import torch.utils.checkpoint as checkpoint
 
 import math
 from einops import rearrange, repeat
@@ -114,8 +115,20 @@ class choh_Decoder3_ETER_skip_up_tail(nn.Module):
 		# print(' x.shape {}'.format( x.shape ))
 
 		##### eter for in_ksp
-		h_h0 = torch.zeros(self.eter_birnn_num_layers*2, x.size(0), self.num_out1).cuda()
-		h_v0 = torch.zeros(self.eter_birnn_num_layers*2, x.size(0), self.num_out2).cuda()
+		h_h0 = torch.zeros(
+			self.eter_birnn_num_layers * 2,
+			x.size(0),
+			self.num_out1,
+			device=x.device,
+			dtype=x.dtype
+		)
+		h_v0 = torch.zeros(
+			self.eter_birnn_num_layers * 2,
+			x.size(0),
+			self.num_out2,
+			device=x.device,
+			dtype=x.dtype
+		)
 
 		# print('in_ksp shape {}'.format(in_ksp.shape))
 		in_h = rearrange(in_ksp, 'bb cc nw nh -> bb nw (nh cc)', nh=self.encoder.image_size[1], nw=self.encoder.image_size[0])
@@ -185,8 +198,20 @@ class ETER_hybrid_GRU_DFU(nn.Module):
 
 
 	def forward(self, x, x_img):
-		h_h0 = torch.zeros(self.num_layers*2, x.size(0), self.num_out1).cuda()
-		h_v0 = torch.zeros(self.num_layers*2, x.size(0), self.num_out2).cuda()
+		h_h0 = torch.zeros(
+			self.num_layers * 2,
+			x.size(0),
+			self.num_out1,
+			device=x.device,
+			dtype=x.dtype
+		)
+		h_v0 = torch.zeros(
+			self.num_layers * 2,
+			x.size(0),
+			self.num_out2,
+			device=x.device,
+			dtype=x.dtype
+		)
 
 		# print(x.shape)
 		in_h = x.reshape([x.size(0), self.num_in_x, -1])
@@ -750,7 +775,7 @@ class Transformer(nn.Module):
 
 	def forward(self, x):
 		for attn, ff in self.layers:
-			x = attn(x) + x
-			x = ff(x) + x
+			x = checkpoint.checkpoint(attn, x, use_reentrant=False) + x
+			x = checkpoint.checkpoint(ff, x, use_reentrant=False) + x
 
 		return self.norm(x)
