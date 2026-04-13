@@ -8,6 +8,9 @@ logs/
 *.h5
 *.mat
 
+# Weights & Biases
+wandb/
+
 # Python cache
 __pycache__/
 *.pyc
