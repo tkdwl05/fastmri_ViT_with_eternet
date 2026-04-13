@@ -127,6 +127,8 @@ def main():
                         help='평가할 모델 종류: ss2d 또는 eter')
     parser.add_argument('--ckpt',  type=str, required=True,
                         help='체크포인트 경로 (.pt 파일)')
+    parser.add_argument('--legacy-scale', action='store_true',
+                        help='이전 스케일 팩터(img=1e6, ksp=1e4, gt=1e6)로 학습된 체크포인트 평가 시 사용')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -141,7 +143,12 @@ def main():
     print(f"파라미터 수: {n_params/1e6:.1f}M")
 
     # Val 데이터 (파일 수 제한 없음, reconstruction_rss 있음 → 정량 평가 가능)
-    val_dataset = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=None)
+    val_dataset = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=None, random_mask=False)
+    if args.legacy_scale:
+        val_dataset.val_amp_X_img = 1e6
+        val_dataset.val_amp_X_ksp = 1e4
+        val_dataset.val_amp_Y     = 1e6
+        print('[Legacy Scale] img=1e6, ksp=1e4, gt=1e6')
     val_loader  = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
     print(f"Val 샘플 수: {len(val_dataset)}\n")
 

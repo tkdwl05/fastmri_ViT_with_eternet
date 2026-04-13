@@ -33,6 +33,7 @@ from torch.utils.data import DataLoader
 from check_recon_env import check_env_for_model
 
 NUM_VAL_FILES = None  # val 전체 사용
+VAL_EVERY_N_EPOCHS = 10  # train best가 아니더라도 N 에폭마다 val 실행
 
 
 def run_val(model, val_loader, criterion_l1, criterion_ssim, device):
@@ -53,7 +54,7 @@ def run_val(model, val_loader, criterion_l1, criterion_ssim, device):
             ref_f = data_ref.float()
 
             mse = torch.mean((out_f - ref_f) ** 2)
-            psnr = (20 * torch.log10(ref_f.max() / torch.sqrt(mse))).item()
+            psnr = (20 * torch.log10(ref_f.max() / torch.sqrt(mse.clamp(min=1e-10)))).item()
             nmse = (torch.norm(out_f - ref_f) ** 2 / torch.norm(ref_f) ** 2).item()
             ssim = criterion_ssim(out_f, ref_f).item()
             l1   = criterion_l1(out_f, ref_f).item()
@@ -141,7 +142,7 @@ def main():
                                 num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
         print(f"Train Dataloader 준비 완료! ({len(choh_data_train)} 샘플)")
 
-        choh_data_val = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=NUM_VAL_FILES)
+        choh_data_val = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=NUM_VAL_FILES, random_mask=False)
         val_loader = DataLoader(choh_data_val, batch_size=4, shuffle=False,
                                num_workers=2, pin_memory=True)
         print(f"Val   Dataloader 준비 완료! ({len(choh_data_val)} 샘플)")
@@ -219,21 +220,24 @@ def main():
             loss_ssim = 1 - criterion_ssim(out_fp, data_ref)
             loss = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
 
+            optimizer.zero_grad()
             if scaler is not None:
                 scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(ss2d_decoder.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update()
             else:
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(ss2d_decoder.parameters(), max_norm=1.0)
                 optimizer.step()
-            optimizer.zero_grad()
             scheduler.step()
 
             with torch.no_grad():
                 out_f = out_fp.detach()
                 ref_f = data_ref.float()
                 mse_val  = torch.mean((out_f - ref_f) ** 2)
-                psnr_val = (20 * torch.log10(ref_f.max() / torch.sqrt(mse_val))).item()
+                psnr_val = (20 * torch.log10(ref_f.max() / torch.sqrt(mse_val.clamp(min=1e-10)))).item()
                 nmse_val = (torch.norm(out_f - ref_f) ** 2 / torch.norm(ref_f) ** 2).item()
                 ssim_val = 1 - loss_ssim.item()
 
@@ -270,10 +274,26 @@ def main():
 
         log_path = os.path.join(PATH_FOLDER, 'log.txt')
 
-        # train이 새로운 best를 달성했을 때만 val 실행
-        if avg_train_ssim > best_train_ssim:
+        # epoch 단위 요약 로깅
+        wandb.log({
+            'epoch': epoch + 1,
+            'epoch/train_loss': avg_loss,
+            'epoch/train_ssim': avg_train_ssim,
+            'epoch/train_psnr': avg_train_psnr,
+            'epoch/train_nmse': avg_train_nmse,
+            'epoch/train_l1': avg_train_l1,
+        }, step=global_step)
+
+        # val 실행 조건: train best 갱신 또는 N 에폭마다 주기적 실행
+        is_train_best = avg_train_ssim > best_train_ssim
+        is_periodic_val = (epoch + 1) % VAL_EVERY_N_EPOCHS == 0
+
+        if is_train_best:
             best_train_ssim = avg_train_ssim
-            tqdm.write(f'  [Train Best] Epoch {epoch+1}  Train SSIM {avg_train_ssim:.4f} → val 실행 중...')
+
+        if is_train_best or is_periodic_val:
+            reason = '[Train Best]' if is_train_best else f'[Periodic {VAL_EVERY_N_EPOCHS}ep]'
+            tqdm.write(f'  {reason} Epoch {epoch+1}  Train SSIM {avg_train_ssim:.4f} → val 실행 중...')
 
             val_metrics = run_val(ss2d_decoder, val_loader, criterion_l1, criterion_ssim, device)
             tqdm.write(
@@ -300,7 +320,7 @@ def main():
                 f.write(
                     f'Epoch {epoch+1}/{NUM_EPOCHS}'
                     f'  train_loss={avg_loss:.4f}'
-                    f'  train_ssim={avg_train_ssim:.4f} [BEST]'
+                    f'  train_ssim={avg_train_ssim:.4f}{" [BEST]" if is_train_best else ""}'
                     f'  val_ssim={val_metrics["ssim"]:.4f}'
                     f'  val_psnr={val_metrics["psnr"]:.2f}'
                     f'  val_nmse={val_metrics["nmse"]:.4f}'
@@ -334,21 +354,9 @@ def main():
                 torch.save(ss2d_decoder.state_dict(), best_ckpt_path)
                 tqdm.write(f'  [Best Ckpt] Composite {best_composite:.4f} → {best_ckpt_path}')
             else:
-                tqdm.write(f'  [Overfit?] Train best지만 Composite {composite:.4f} < best {best_composite:.4f}')
+                tqdm.write(f'  [No improvement] Composite {composite:.4f} < best {best_composite:.4f}')
         else:
             epoch_bar.set_postfix(train_ssim=f'{avg_train_ssim:.4f}', train_loss=f'{avg_loss:.4f}')
-
-        # epoch 단위 요약 로깅
-        wandb.log({
-            'epoch': epoch + 1,
-            'epoch/train_loss': avg_loss,
-            'epoch/train_ssim': avg_train_ssim,
-            'epoch/train_psnr': avg_train_psnr,
-            'epoch/train_nmse': avg_train_nmse,
-            'epoch/train_l1': avg_train_l1,
-        }, step=global_step)
-
-        if avg_train_ssim <= best_train_ssim:
             with open(log_path, 'a') as f:
                 f.write(
                     f'Epoch {epoch+1}/{NUM_EPOCHS}'

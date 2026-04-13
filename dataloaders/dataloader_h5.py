@@ -55,11 +55,13 @@ def center_crop_real(x: np.ndarray, target_hw: tuple) -> np.ndarray:
 #  R=4 equispaced mask (phase-encoding = 마지막 축)
 # ──────────────────────────────────────────────
 
-def build_r4_mask(width: int, center_fraction: float = 0.08, acceleration: int = 4) -> np.ndarray:
+def build_r4_mask(width: int, center_fraction: float = 0.08, acceleration: int = 4,
+                  rng: np.random.Generator = None) -> np.ndarray:
     """
     1D equispaced mask along width (phase-encoding) axis.
     - center_fraction * width 만큼의 중앙 라인은 모두 샘플링 (ACS)
     - 나머지 영역은 `acceleration` 간격으로 샘플링
+    - rng가 주어지면 offset을 랜덤으로 선택 (data augmentation)
     """
     num_low_freqs = int(round(width * center_fraction))
     mask = np.zeros(width, dtype=np.float32)
@@ -68,8 +70,11 @@ def build_r4_mask(width: int, center_fraction: float = 0.08, acceleration: int =
     pad = (width - num_low_freqs + 1) // 2
     mask[pad:pad + num_low_freqs] = 1.0
 
-    # Equispaced outer lines: offset 고정 (데이터셋 전체에서 동일한 패턴)
-    offset = acceleration - 1  # 원본 코드와 동일하게 3부터 시작
+    # Equispaced outer lines
+    if rng is not None:
+        offset = int(rng.integers(0, acceleration))
+    else:
+        offset = acceleration - 1
     mask[offset::acceleration] = 1.0
 
     return mask  # shape (W,)
@@ -95,7 +100,8 @@ class FastMRI_H5_Dataloader(Dataset):
 
     def __init__(self, data_folder, num_files=None,
                  target_size: int = 320, num_coil_ch: int = 16,
-                 acceleration: int = 4, center_fraction: float = 0.08):
+                 acceleration: int = 4, center_fraction: float = 0.08,
+                 random_mask: bool = True):
         print('\n  @ dataloader_h5.py (fastMRI 공식 표준 전처리)')
         print('  Dataset : FastMRI brain multicoil .h5')
 
@@ -113,6 +119,7 @@ class FastMRI_H5_Dataloader(Dataset):
         # 스케일 팩터
         # - GT/aliased image: reconstruction_rss는 ~1e-4 → ×1e6 후 [1, 300]
         # - aliased k-space : ortho fft 결과 image보다 ~30배 크므로 ×1e4로 낮춰 image와 균형
+        # - 참고: LR, SSIM weight 등 모든 하이퍼파라미터가 이 스케일 기준으로 튜닝됨
         self.val_amp_X_img = 1e6
         self.val_amp_X_ksp = 1e4
         self.val_amp_Y     = 1e6
@@ -151,12 +158,9 @@ class FastMRI_H5_Dataloader(Dataset):
             for s in range(n_slices):
                 self.samples.append((fp, s, True))
 
-        # 1D 마스크 선계산 (모든 샘플 공통)
-        self.mask_1d = build_r4_mask(
-            width=self.N_OUTPUT,
-            center_fraction=self.center_fraction,
-            acceleration=self.acceleration,
-        )  # (N_OUTPUT,)
+        # 랜덤 마스크: train 시 augmentation, eval 시 고정
+        self.random_mask = random_mask
+        self.rng = np.random.default_rng() if random_mask else None
 
         print(f"    Loaded {len(self.files)} .h5 files  →  {len(self.samples)} slices total")
         print(f"    (skipped {skipped} files: rss shape != ({self.N_OUTPUT},{self.N_OUTPUT}) or kspace too small)")
@@ -195,8 +199,14 @@ class FastMRI_H5_Dataloader(Dataset):
         # 3) Cropped image → FFT → k-space at target resolution
         ksp_crop = fft2c(img_crop)  # (coils, N_OUTPUT, N_OUTPUT)
 
-        # 4) R=4 mask (phase-encoding = 마지막 축 W)
-        mask = self.mask_1d[np.newaxis, np.newaxis, :]  # (1, 1, W)
+        # 4) R=4 mask (phase-encoding = 마지막 축 W) — 매 샘플마다 랜덤 offset
+        mask_1d = build_r4_mask(
+            width=self.N_OUTPUT,
+            center_fraction=self.center_fraction,
+            acceleration=self.acceleration,
+            rng=self.rng,
+        )
+        mask = mask_1d[np.newaxis, np.newaxis, :]  # (1, 1, W)
         ksp_masked = ksp_crop * mask                     # (coils, N, N)
 
         # 5) Masked k-space → iFFT → aliased image

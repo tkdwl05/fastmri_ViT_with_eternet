@@ -237,6 +237,8 @@ def main():
     parser.add_argument('--model',  type=str, required=True, choices=['ss2d', 'eter'])
     parser.add_argument('--ckpt',   type=str, required=True, help='체크포인트 경로 (.pt)')
     parser.add_argument('--top_k',  type=int, default=5,     help='상위/하위 몇 개 저장 (기본값: 5)')
+    parser.add_argument('--legacy-scale', action='store_true',
+                        help='이전 스케일 팩터(img=1e6, ksp=1e4, gt=1e6)로 학습된 체크포인트 평가 시 사용')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -249,7 +251,12 @@ def main():
     criterion_l1 = nn.L1Loss()
     criterion_ssim = SSIM().to(device)
 
-    dataset = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=None)
+    dataset = FastMRI_H5_Dataloader('./fastMRI_data/multicoil_val', num_files=None, random_mask=False)
+    if args.legacy_scale:
+        dataset.val_amp_X_img = 1e6
+        dataset.val_amp_X_ksp = 1e4
+        dataset.val_amp_Y     = 1e6
+        print('[Legacy Scale] img=1e6, ksp=1e4, gt=1e6')
     loader  = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True)
     total   = len(dataset)
     print(f'Val 샘플 수: {total}\n')
