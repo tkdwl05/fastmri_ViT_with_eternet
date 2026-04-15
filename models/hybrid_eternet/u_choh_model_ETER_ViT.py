@@ -10,6 +10,33 @@ from einops.layers.torch import Rearrange
 
 
 
+class ResBlock(nn.Module):
+	"""잔차 합성곱 블록: Conv→LeakyReLU→Conv + skip connection."""
+	def __init__(self, ch):
+		super().__init__()
+		self.conv1 = nn.Conv2d(ch, ch, 3, padding=1)
+		self.conv2 = nn.Conv2d(ch, ch, 3, padding=1)
+		self.act = nn.LeakyReLU(0.2, inplace=True)
+
+	def forward(self, x):
+		return self.act(x + self.conv2(self.act(self.conv1(x))))
+
+
+class RefinementBlock(nn.Module):
+	"""Conv 1개를 대체하는 잔차 합성 블록 (3×ResBlock)."""
+	def __init__(self, in_ch, mid_ch=64, out_ch=1, num_blocks=3):
+		super().__init__()
+		self.head = nn.Conv2d(in_ch, mid_ch, 3, padding=1)
+		self.body = nn.Sequential(*[ResBlock(mid_ch) for _ in range(num_blocks)])
+		self.tail = nn.Conv2d(mid_ch, out_ch, 3, padding=1)
+		self.act = nn.LeakyReLU(0.2, inplace=True)
+
+	def forward(self, x):
+		x = self.act(self.head(x))
+		x = self.body(x)
+		return self.tail(x)
+
+
 ### one input one output
 class choh_Decoder3_ETER_skip_up_tail(nn.Module):
 	def __init__(
@@ -72,9 +99,8 @@ class choh_Decoder3_ETER_skip_up_tail(nn.Module):
 			self.up_tail.append(Upsample(decoder_out_ch_up_tail))
 		self.up_tail = nn.Sequential(*self.up_tail)
 
-		kernel_size = 3
 		num_ch_last = decoder_out_ch_up_tail + 32 + 2*eter_n_vert_hidden
-		self.last = nn.Conv2d( in_channels=num_ch_last, out_channels=1, kernel_size=kernel_size, padding=(kernel_size//2), bias=True)
+		self.last = RefinementBlock(in_ch=num_ch_last, mid_ch=64, out_ch=1, num_blocks=3)
 
 
 	def forward(self, in_imgs, in_ksp):

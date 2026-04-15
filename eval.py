@@ -2,9 +2,9 @@
 평가 스크립트: multicoil_val 데이터로 SSIM / PSNR / NMSE / L1 측정
 (brain AXFLAIR test 셋에는 reconstruction_rss가 없어 정량 평가 불가 → val 사용)
 
-사용법:
-  python eval.py --model ss2d --ckpt logs/SS2D_ViT_R4_brain320/ss2d_vit_best.pt
-  python eval.py --model eter  --ckpt logs/ETER_ViT_R4_brain320/eter_vit_best.pt
+사용법 (v2 — patch16, RefinementBlock):
+  python eval.py --model ss2d --ckpt logs/SS2D_ViT_R4_brain320_v2/ss2d_vit_best.pt
+  python eval.py --model eter --ckpt logs/ETER_ViT_R4_brain320_v2/eter_vit_best.pt
 
 주요 지표:
   PSNR (dB)  : 픽셀 단위 정확도. 높을수록 좋음. 30+양호, 40+우수

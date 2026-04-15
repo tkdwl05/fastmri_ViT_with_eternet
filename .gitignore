@@ -2,6 +2,7 @@
 fastMRI_data/
 models_output/
 logs/
+results/
 .repos_research/
 *.pt
 *.pth

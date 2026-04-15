@@ -95,6 +95,33 @@ class Upsample(nn.Module):
         return F.pixel_shuffle(self.conv(x), 2)
 
 
+class ResBlock(nn.Module):
+    """잔차 합성곱 블록: Conv→LeakyReLU→Conv + skip connection."""
+    def __init__(self, ch):
+        super().__init__()
+        self.conv1 = nn.Conv2d(ch, ch, 3, padding=1)
+        self.conv2 = nn.Conv2d(ch, ch, 3, padding=1)
+        self.act = nn.LeakyReLU(0.2, inplace=True)
+
+    def forward(self, x):
+        return self.act(x + self.conv2(self.act(self.conv1(x))))
+
+
+class RefinementBlock(nn.Module):
+    """Conv 1개를 대체하는 잔차 합성 블록 (3×ResBlock)."""
+    def __init__(self, in_ch, mid_ch=64, out_ch=1, num_blocks=3):
+        super().__init__()
+        self.head = nn.Conv2d(in_ch, mid_ch, 3, padding=1)
+        self.body = nn.Sequential(*[ResBlock(mid_ch) for _ in range(num_blocks)])
+        self.tail = nn.Conv2d(mid_ch, out_ch, 3, padding=1)
+        self.act = nn.LeakyReLU(0.2, inplace=True)
+
+    def forward(self, x):
+        x = self.act(self.head(x))
+        x = self.body(x)
+        return self.tail(x)
+
+
 # ──────────────────────────────────────────────
 #  SS2D-ViT 디코더
 # ──────────────────────────────────────────────
@@ -175,10 +202,10 @@ class choh_Decoder_SS2D_ViT(nn.Module):
         )
         self.ss2d_out_ch = ss2d_out_ch
 
-        # ── 최종 합성 Conv (원본과 동일 구조) ──
+        # ── 최종 합성 (Conv 1개 → RefinementBlock으로 교체) ──
         # 채널 구성: ViT 업샘플 출력 + 앨리어싱 이미지(32ch) + SS2D 출력
         num_ch_last = decoder_out_ch_up_tail + 32 + ss2d_out_ch
-        self.last = nn.Conv2d(num_ch_last, 1, kernel_size=3, padding=1, bias=True)
+        self.last = RefinementBlock(in_ch=num_ch_last, mid_ch=64, out_ch=1, num_blocks=3)
 
     def forward(self, in_imgs, in_ksp):
         """

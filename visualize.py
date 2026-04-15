@@ -4,10 +4,10 @@
 - val 전체를 순회하며 4개 지표(SSIM, PSNR, NMSE, L1) 계산
 - Composite score 기준 상위 K개 + 하위 K개를 PNG로 저장
 
-사용법:
-  python visualize.py --model eter --ckpt logs/.../eter_vit_best.pt
-  python visualize.py --model ss2d --ckpt logs/.../ss2d_vit_best.pt
-  python visualize.py --model eter --ckpt logs/.../eter_vit_best.pt --top_k 10
+사용법 (v2 — patch16, RefinementBlock):
+  python visualize.py --model ss2d --ckpt logs/SS2D_ViT_R4_brain320_v2/ss2d_vit_best.pt
+  python visualize.py --model eter --ckpt logs/ETER_ViT_R4_brain320_v2/eter_vit_best.pt
+  python visualize.py --model eter --ckpt logs/ETER_ViT_R4_brain320_v2/eter_vit_best.pt --top_k 10
 
 저장 위치:
   results/vis_{model}_{ckpt_name}/

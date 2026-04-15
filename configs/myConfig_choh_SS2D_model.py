@@ -6,14 +6,14 @@ SS2D-ViT 모델 설정 (fastMRI brain 320×320 표준)
 
 import os
 
-PATH_FOLDER = 'logs/SS2D_ViT_R4_brain320/'
+PATH_FOLDER = 'logs/SS2D_ViT_R4_brain320_v2/'
 PATH_FOLDER = './' + PATH_FOLDER
 if not os.path.exists(PATH_FOLDER):
     os.makedirs(PATH_FOLDER)
 
 # ── 데이터/입출력 크기 (fastMRI brain AXFLAIR 표준) ──
 IMAGE_SIZE = (320, 320)
-PATCH_SIZE = (32, 32)      # 320/32 = 10 → 10×10 = 100 patches
+PATCH_SIZE = (16, 16)      # 320/16 = 20 → 20×20 = 400 patches (finer spatial detail)
 INPUT_CHANNELS = 32        # 16 coils × 2 (real/imag)
 
 # ── 학습 설정 ──
@@ -21,7 +21,7 @@ BATCH_SIZE = 8           # 1 → 8: gradient noise 감소, scheduler 사이클 �
 NUM_EPOCHS = 200
 LEARNING_RATE_ADAM = 2e-4   # BS 8배 증가에 맞춘 보수적 scale-up (1e-4 → 2e-4)
 LAMBDA_REGULAR_PER_PIXEL = 1e-7
-LAMBDA_SSIM_PER_PIXEL = 0.2
+LAMBDA_SSIM_PER_PIXEL = 1.0    # 0.2→1.0: SSIM loss가 L1과 비슷한 scale로 기여하도록
 
 # ── 인코더 파라미터 (ViT-Small, 8GB GPU 기준) ──
 # 원본 ViT-Base: hidden=768, layer=12, mlp=3072, head=12
@@ -42,5 +42,5 @@ NUM_VIT_DECODER_DIM_MLP_HIDDEN    = 2048
 NUM_VIT_DECODER_DIM               = 512
 NUM_VIT_DECODER_DIM_HEAD          = 64
 NUM_VIT_DECODER_DEPTH             = 6
-NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH   = 256
-NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT = 16
+NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH   = 64   # 256→64: patch 축소로 채널 줄여 메모리 절약
+NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT = 8    # 16→8: patch_size=16에서 1회 upsample
