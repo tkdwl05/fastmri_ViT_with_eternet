@@ -223,3 +223,17 @@ NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT = 16   # 디코더 출력 해상도
 | SSIM weight | 0.2 (기여 0.7%) | **1.0** (기여 ~3.5%) | 구조 보존 학습 강화 |
 | Decoder 출력 | 256ch, feat=16 | **64ch, feat=8** | 메모리 절약, 1회 upsample 유지 |
 | (ETER) GRU hidden | 2 | **4** | GRU 표현력 2배 |
+
+---
+
+## 7. v2 해결 상태 체크리스트
+
+| # | 문제 | 상태 | 비고 |
+|---|------|------|------|
+| 1 | Patch size 32×32 → 공간 정보 파괴 | **해결** | 16×16으로 축소, 패치 수 100→400 |
+| 2 | Decoder 업샘플 bottleneck | **해결** | OUT_CH=256→64, FEAT=16→8 |
+| 3 | 최종 합성 Conv2d 1개 (2,773 params) | **해결** | RefinementBlock (3×ResBlock, ~120K params) |
+| 4 | SSIM loss 기여 0.7% | **해결** | weight 0.2→1.0 |
+| 5 | Train-Val 과적합 갭 (0.066) | **부분 해결** | 구조 개선으로 표현력 병목 완화 → 과적합 줄어들 가능성 높음. 명시적 정규화(dropout, augmentation 등)는 미추가. v2 학습 후 gap 확인 필요 |
+| 6 | Data Consistency layer 부재 | **미해결** | 현재 모델이 single-channel magnitude 출력이고 coil sensitivity map이 없어서 multi-coil k-space와 직접 비교하는 DC layer 삽입 불가. 적용하려면 모델 출력을 complex multi-coil로 변경하거나 sensitivity map estimation 모듈 추가 필요 (아키텍처 대폭 변경). v2 결과 확인 후 판단 |
+| 7 | ETER GRU hidden=2 (표현력 극소) | **해결** | hidden=4, bidirectional 출력 4→8ch |
