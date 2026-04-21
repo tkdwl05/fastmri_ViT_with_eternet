@@ -136,12 +136,12 @@ def main():
         print(f"데이터셋 오류: {e}")
         return
 
-    # CosineAnnealingWarmRestarts: 첫 cycle = 1 epoch, 그 다음 2, 4, 8, ... epoch
     steps_per_epoch = len(trainloader)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer, T_0=steps_per_epoch, T_mult=2, eta_min=1e-6
+    total_steps = steps_per_epoch * NUM_EPOCHS
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=total_steps, eta_min=1e-6
     )
-    print(f"Scheduler: CosineAnnealingWarmRestarts T_0={steps_per_epoch} (=1 epoch), T_mult=2, eta_min=1e-6")
+    print(f"Scheduler: CosineAnnealingLR T_max={total_steps} (={NUM_EPOCHS} epochs), eta_min=1e-6")
 
     # 5. wandb 초기화
     wandb.init(
@@ -166,9 +166,9 @@ def main():
             'num_params': num_params,
             'train_samples': len(choh_data_train),
             'val_samples': len(choh_data_val),
-            'scheduler': 'CosineAnnealingWarmRestarts',
-            'T_0': steps_per_epoch,
-            'T_mult': 2,
+            'scheduler': 'CosineAnnealingLR',
+            'T_max': total_steps,
+            'eta_min': 1e-6,
         },
     )
     wandb.watch(eter_decoder, log='gradients', log_freq=100)

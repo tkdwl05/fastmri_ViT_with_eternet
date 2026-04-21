@@ -6,7 +6,7 @@ ETER-ViT 비교용 설정 (fastMRI brain 320×320 표준, SS2D-ViT와 동일 조
 
 import os
 
-PATH_FOLDER = 'logs/ETER_ViT_R4_brain320_v2/'
+PATH_FOLDER = 'logs/ETER_ViT_R4_brain320_v4/'
 PATH_FOLDER = './' + PATH_FOLDER
 if not os.path.exists(PATH_FOLDER):
     os.makedirs(PATH_FOLDER)
@@ -32,8 +32,8 @@ NUM_VIT_ENCODER_HEAD     = 6
 # ── ETER-Net GRU 파라미터 ──
 # hidden 크기 = image_size × NUM_ETER_HIDDEN → 메모리 주의
 # 320 × 2 = 640 (8GB 한계 내, 기존 384×2=768보다 작음)
-NUM_ETER_HORI_HIDDEN = 4   # 2→4: GRU 표현력 확대 (bidirectional 출력 = 2×4=8ch)
-NUM_ETER_VERT_HIDDEN = 4   # 2→4: GRU 표현력 확대
+NUM_ETER_HORI_HIDDEN = 6   # 2→4→6: GRU 표현력 확대 (bidirectional 출력 = 2×6=12ch)
+NUM_ETER_VERT_HIDDEN = 6   # 2→4→6: GRU 표현력 확대
 
 # ── 디코더 파라미터 (SS2D와 동일) ──
 NUM_VIT_DECODER_HEAD               = 8

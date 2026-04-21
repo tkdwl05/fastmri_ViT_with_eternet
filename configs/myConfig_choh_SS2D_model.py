@@ -6,7 +6,7 @@ SS2D-ViT 모델 설정 (fastMRI brain 320×320 표준)
 
 import os
 
-PATH_FOLDER = 'logs/SS2D_ViT_R4_brain320_v2/'
+PATH_FOLDER = 'logs/SS2D_ViT_R4_brain320_v3/'
 PATH_FOLDER = './' + PATH_FOLDER
 if not os.path.exists(PATH_FOLDER):
     os.makedirs(PATH_FOLDER)
