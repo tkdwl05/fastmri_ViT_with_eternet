@@ -8,6 +8,7 @@ results/
 *.pth
 *.h5
 *.mat
+*.sh
 
 # Weights & Biases
 wandb/
