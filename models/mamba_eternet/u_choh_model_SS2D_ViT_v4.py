@@ -329,7 +329,12 @@ class choh_Decoder_SS2D_ViT(nn.Module):
         x = self.up_tail(x)  # (B, decoder_out_ch_up_tail, H, W)
 
         # ── SS2D: k-space 아티팩트 보정 (GRU 대체) ──
-        out_ss2d = self.ss2d(in_ksp)  # (B, ss2d_out_ch, H, W)
+        # v4 OOM 수정 (2026-04-27): merge_norm 단계 (B,H,W,4*d_inner=256) 임시버퍼가
+        # 8GB GPU에서 OOM 유발. forward를 checkpoint로 감싸 backward 시 재계산.
+        if self.training:
+            out_ss2d = checkpoint.checkpoint(self.ss2d, in_ksp, use_reentrant=False)
+        else:
+            out_ss2d = self.ss2d(in_ksp)  # (B, ss2d_out_ch, H, W)
 
         # ── 최종 합성: 2ch complex 출력 ──
         x = torch.cat([x, in_imgs, out_ss2d], dim=1)

@@ -63,6 +63,7 @@ mask (B, 1, H, W)        — 1=sampled
 | ACS-only sens map 품질 부족 | val SSIM이 v3 대비 하락하면 sens 품질이 원인일 가능성. 학습형 sens 모듈(E2E-VarNet 스타일)은 v5 후보 |
 | 복소 출력이 학습 수렴 저해 | train loss가 epoch 5까지 감소하는지 모니터. 감소 안 하면 α 초기값 0.1로 낮춰 soft start |
 | DC 추가로 속도 저하 | 약 20~30% forward 시간 증가 예상. 200 epoch 완주 가능성 있음 |
+| BS=8 + d_inner=64로 첫 batch OOM (`merge_norm` temp buffer ~800MiB) | `run_ss2d_v4.log` epoch1 batch1 trace. 해결: §8 |
 
 ## 6. 공정 비교
 
@@ -78,3 +79,11 @@ mask (B, 1, H, W)        — 1=sampled
 - **학습형 sensitivity map estimation** (E2E-VarNet 스타일 CNN)
 - **DC iteration 수 증가** (cascade 2~4회) — 현재 1-iter로 고정
 - **data augmentation** (flip/rotation) — 과적합이 여전히 심하면 v5에서 추가
+
+## 8. 사후 수정: SS2D forward gradient checkpointing (2026-04-27)
+
+[run_ss2d_v4.log](../run_ss2d_v4.log)의 첫 batch에서 `merge_norm` LayerNorm이 596MiB free 환경에 800MiB 임시버퍼를 요청해 OOM. d_inner=64와 BATCH_SIZE=8을 모두 보존하기 위해 [models/mamba_eternet/u_choh_model_SS2D_ViT_v4.py:332](../models/mamba_eternet/u_choh_model_SS2D_ViT_v4.py#L332)의 `self.ss2d(in_ksp)` 호출을 `torch.utils.checkpoint.checkpoint(..., use_reentrant=False)`로 래핑. 학습 시 SS2D 활성화 메모리 ~1.5–2GB 해제. validation 시에는 `self.training` 가드로 우회. [ss2d.py](../models/mamba_eternet/ss2d.py)는 v3과 공유라 수정하지 않음. 추가 비용은 SS2D 1회 재계산으로 step time 10~15% 증가 예상.
+
+## 9. 추가 수정: BATCH_SIZE 8→4 (2026-04-27)
+
+§8 적용 후 재실행에서 backward 도중 OOM 재발 ([wandb/run-20260427_123410-wx8n6k0v/files/output.log](../wandb/run-20260427_123410-wx8n6k0v/files/output.log)). checkpoint가 forward 메모리는 절감했지만 **backward의 SS2D forward 재계산** 시점에도 같은 800MiB LayerNorm 임시버퍼가 필요하고, 그 시점 메모리 사용량 6.55GB → free 558MiB로 부족. 근본 원인은 `(B=8, H=W=320, 4*d_inner=256)` merge tensor 자체의 크기. d_inner=64 (A축) 보존을 우선하여 [configs/myConfig_choh_SS2D_model_v4.py](../configs/myConfig_choh_SS2D_model_v4.py) `BATCH_SIZE 8→4`로 절반 축소. merge temp 800→400MiB로 fit. checkpoint은 그대로 유지 (forward 메모리 절감 효과 유지). gradient noise 차이는 200ep 학습에서 미미.

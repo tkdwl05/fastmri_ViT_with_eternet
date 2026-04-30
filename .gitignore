@@ -13,6 +13,9 @@ results/
 # Weights & Biases
 wandb/
 
+# Run logs
+*.log
+
 # Python cache
 __pycache__/
 *.pyc

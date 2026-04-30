@@ -18,7 +18,7 @@ PATCH_SIZE = (16, 16)
 INPUT_CHANNELS = 32        # 16 coils × 2 (real/imag)
 
 # ── 학습 설정 ──
-BATCH_SIZE = 8
+BATCH_SIZE = 4    # v3 8 → v4 4 (d_inner=64 유지를 위해 backward 메모리 확보, 2026-04-27)
 NUM_EPOCHS = 200
 LEARNING_RATE_ADAM = 2e-4
 LAMBDA_REGULAR_PER_PIXEL = 1e-5    # v3 1e-7 → v4 1e-5 (실질 regularization)
