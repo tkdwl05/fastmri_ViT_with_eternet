@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x /home/snorlax-dw/바탕화면/ViT_based_MRIrecon/run_chain_ss2d_v5.sh)",
+      "Bash(/home/snorlax-dw/miniforge3/envs/mri_env/bin/python3.10 -c ' *)"
+    ]
+  }
+}
