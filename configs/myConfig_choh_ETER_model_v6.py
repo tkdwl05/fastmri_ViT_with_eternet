@@ -26,7 +26,7 @@ PATCH_SIZE = (16, 16)
 INPUT_CHANNELS = 32
 
 # ── 학습 설정 ──
-BATCH_SIZE = 8
+BATCH_SIZE = 4                       # v6 첫 실행 시 BS=8 OOM (재부팅 후에도 동일) → 4 로 강하
 NUM_EPOCHS = 200
 LEARNING_RATE_ADAM = 2e-4
 LAMBDA_REGULAR_PER_PIXEL = 3e-5
