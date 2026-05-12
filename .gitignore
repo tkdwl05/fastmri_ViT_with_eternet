@@ -16,6 +16,13 @@ wandb/
 # Run logs
 *.log
 
+# Images and documents
+*.png
+*.pdf
+
+# macOS
+.DS_Store
+
 # Python cache
 __pycache__/
 *.pyc
