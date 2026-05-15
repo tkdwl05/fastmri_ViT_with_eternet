@@ -21,7 +21,7 @@
 |---|---|---|
 | [configs/myConfig_choh_ETER_model_v6.py](../configs/myConfig_choh_ETER_model_v6.py) | `..._v5.py` | `PATH_FOLDER=logs/ETER_ViT_R4_brain320_v6/`, 신규 `EARLYSTOP_PATIENCE=10`, `VAL_EVERY_N_EPOCHS=5`, `RESUME_CKPT='./logs/ETER_ViT_R4_brain320_v5/eter_vit_epoch_5.pt'`. **(2026-05-11 추가)** `BATCH_SIZE 8 → 4` — 재부팅 후에도 BS=8 OOM 재발, 첫 forward 의 conv2d 가 100 MiB 부족으로 사망. v5 와 동일 BS 였으나 v6 의 baseline 측정 단계가 cudnn workspace 를 더 점유하는 것으로 보임 |
 | [main_train_eter_v6.py](../main_train_eter_v6.py) | `main_train_eter_v5.py` | (1) `from skimage.metrics import structural_similarity as compare_ssim` (2) `skimage_ssim_batch()` 헬퍼 — `data_range = t[i].max() − t[i].min()` 슬라이스별 산출 (3) `run_val()` 에서 SSIM 만 skimage 사용, PSNR/NMSE/L1 은 기존대로 (4) `RESUME_CKPT` 존재 시 weight load + baseline 측정 후 best.pt 로 저장 (5) train_best 트리거 폐지, `(epoch+1) % VAL_EVERY_N_EPOCHS == 0` 시점에만 val (6) best/EarlyStop 기준을 `val_ssim` 단일로 (7) wandb run name `ETER_v6_resume_BS{BS}_LR{LR}_EP{EP}`, `'val_metric': 'skimage_ssim'` 기록 |
-| [run_chain_v6.sh](../run_chain_v6.sh) | (공유) | SS2D v6 → ETER v6 순차 실행 |
+| [runs/chain/run_chain_v6.sh](../runs/chain/run_chain_v6.sh) | (공유) | SS2D v6 → ETER v6 순차 실행 |
 
 **Dataloader / 모델 파일은 신규 생성하지 않는다.** v6 는 v5 의 [dataloader_h5_v5.py](../dataloaders/dataloader_h5_v5.py) 와 [u_choh_model_ETER_ViT_v5.py](../models/hybrid_eternet/u_choh_model_ETER_ViT_v5.py) (dropout=0.2 thin wrapper) 를 그대로 import.
 
@@ -93,15 +93,15 @@ GPU 0 has a total capacity of 7.52 GiB of which 102.88 MiB is free.
 
 ```bash
 # SS2D v6 종료 후 자동 시작 (chain)
-./run_chain_v6.sh &
+./runs/chain/run_chain_v6.sh &
 
 # 또는 SS2D v6 가 이미 종료된 상태에서 ETER v6 만 단독 실행
-nohup python main_train_eter_v6.py > run_eter_v6.log 2>&1 &
+nohup python main_train_eter_v6.py > runs/eter/run_eter_v6.log 2>&1 &
 ```
 
 로그:
-- chain start/end: `run_chain_v6.log`
-- 학습 stdout/stderr: `run_eter_v6.log`
+- chain start/end: `runs/chain/run_chain_v6.log`
+- 학습 stdout/stderr: `runs/eter/run_eter_v6.log`
 - 체크포인트 / 에폭 로그: `logs/ETER_ViT_R4_brain320_v6/`
 
 ## 10. 진행 상황

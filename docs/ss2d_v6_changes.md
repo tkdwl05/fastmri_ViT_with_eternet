@@ -21,7 +21,7 @@
 |---|---|---|
 | [configs/myConfig_choh_SS2D_model_v6.py](../configs/myConfig_choh_SS2D_model_v6.py) | `..._v5.py` | `PATH_FOLDER=logs/SS2D_ViT_R4_brain320_v6/`, 신규 `EARLYSTOP_PATIENCE=10`, `VAL_EVERY_N_EPOCHS=5`, `RESUME_CKPT='./logs/SS2D_ViT_R4_brain320_v5/ss2d_vit_epoch_10.pt'` |
 | [main_train_ss2d_v6.py](../main_train_ss2d_v6.py) | `main_train_ss2d_v5.py` | (1) `from skimage.metrics import structural_similarity as compare_ssim` (2) `skimage_ssim_batch()` 헬퍼 — `data_range = t[i].max() − t[i].min()` 슬라이스별 산출 (3) `run_val()` 에서 SSIM 만 skimage 사용, PSNR/NMSE/L1 은 기존대로 (4) `RESUME_CKPT` 존재 시 weight load (5) train_best 갱신 시 val 트리거 폐지, `(epoch+1) % VAL_EVERY_N_EPOCHS == 0` 시점에만 val (6) best/EarlyStop 기준을 `val_ssim` 단일로 (7) wandb run name `SS2D_v6_resume_...`, `'val_metric': 'skimage_ssim'` 기록 |
-| [run_chain_v6.sh](../run_chain_v6.sh) | `run_chain_ss2d_v5.sh` | SS2D v6 → ETER v6 순차 실행, 각 단계 exit code 합산 |
+| [runs/chain/run_chain_v6.sh](../runs/chain/run_chain_v6.sh) | `runs/chain/run_chain_ss2d_v5.sh` | SS2D v6 → ETER v6 순차 실행, 각 단계 exit code 합산 |
 
 **Dataloader / 모델 파일은 신규 생성하지 않는다.** v6 는 v5 의 [dataloader_h5_v5.py](../dataloaders/dataloader_h5_v5.py) 와 [u_choh_model_SS2D_ViT_v4.py](../models/mamba_eternet/u_choh_model_SS2D_ViT_v4.py) 를 그대로 import. 변수를 데이터/모델이 아닌 평가 metric 과 학습 제어 로직에 한정.
 
@@ -75,13 +75,13 @@ v4 의 SS2D forward 에 gradient checkpointing 이 들어가있어 BS=4 가 8 GB
 
 ```bash
 # 즉시 시작
-./run_chain_v6.sh &
+./runs/chain/run_chain_v6.sh &
 ```
 
 로그:
-- chain start/end: `run_chain_v6.log`
-- SS2D v6 stdout/stderr: `run_ss2d_v6.log`
-- ETER v6 stdout/stderr: `run_eter_v6.log` (SS2D v6 종료 후 자동 시작)
+- chain start/end: `runs/chain/run_chain_v6.log`
+- SS2D v6 stdout/stderr: `runs/ss2d/run_ss2d_v6.log`
+- ETER v6 stdout/stderr: `runs/eter/run_eter_v6.log` (SS2D v6 종료 후 자동 시작)
 - 체크포인트 / 에폭 로그: `logs/SS2D_ViT_R4_brain320_v6/`
 
 ## 10. 결과 (2026-05-08 SS2D v6 종료)

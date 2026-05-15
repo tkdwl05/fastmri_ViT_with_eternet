@@ -1,7 +1,0 @@
-[2026-04-20 14:50:37] chain script started; waiting for PID 5792 to finish...
-[2026-04-21 09:49:39] PID 5792 has exited.
-[2026-04-21 09:49:39] starting SS2D (v3) training → /home/snorlax-dw/바탕화면/ViT_based_MRIrecon/run_ss2d_v3.log
-[2026-04-22 21:14:44] SS2D finished with exit code 0
-[2026-04-22 21:14:44] starting ETER (v4) training → /home/snorlax-dw/바탕화면/ViT_based_MRIrecon/run_eter_v4.log
-[2026-04-24 16:29:43] ETER finished with exit code 0
-[2026-04-24 16:29:43] chain script done.
