@@ -18,6 +18,7 @@ import datetime
 import pytz
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 from skimage.metrics import structural_similarity as compare_ssim
 
@@ -149,12 +150,13 @@ def main():
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--results-dir', default='results')
     p.add_argument('--out-tag', default='full_v5')
+    p.add_argument('--label', default='v5', help='모델 라벨 (예: v5, v6)')
     p.add_argument('--max-samples', type=int, default=-1, help='-1 = all')
     args = p.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('====================================================')
-    print(' Full Eval: SS2D-ViT v5 / ETER-ViT v5 / UNet (skimage SSIM)')
+    print(f' Full Eval: SS2D-ViT {args.label} / ETER-ViT {args.label} / UNet (skimage SSIM)')
     print('====================================================')
     print(f"Device: {device}")
     print(datetime.datetime.now(pytz.timezone('Asia/Seoul')))
@@ -182,11 +184,21 @@ def main():
         total = min(total, args.max_samples)
     print(f"평가 대상: {total} 슬라이스\n")
 
+    # (A) h5_ds prefetching: I/O 와 GPU forward 를 겹쳐서 처리.
+    #     batch_size=1 유지하므로 forward 결과는 기존과 동일.
+    h5_loader = DataLoader(
+        h5_ds, batch_size=1, shuffle=False,
+        num_workers=2, persistent_workers=True, pin_memory=False,
+    )
+    h5_iter = iter(h5_loader)
+
     os.makedirs(args.results_dir, exist_ok=True)
     csv_path = os.path.join(args.results_dir, f'eval_{args.out_tag}.csv')
     summary_path = os.path.join(args.results_dir, f'eval_{args.out_tag}_summary.txt')
 
     rows = {'ss2d': [], 'eter': [], 'unet': []}
+    csv_buffer = []          # (B) CSV row buffer
+    FLUSH_EVERY = 100
 
     with open(csv_path, 'w', newline='') as csvf:
         w = csv.writer(csvf)
@@ -206,21 +218,23 @@ def main():
                 u_recon = crop_or_pad(u_recon, (320, 320))
                 u_gt = crop_or_pad(u_gt, (320, 320))
 
-                # ── SS2D / ETER 입력 ──
-                s = h5_ds[idx]
-                d_in = torch.tensor(s['data']).unsqueeze(0).float().to(device)
-                d_in_img = torch.tensor(s['data_img']).unsqueeze(0).float().to(device)
-                d_ref = torch.tensor(s['label']).unsqueeze(0).float().to(device)
-                m_in = torch.tensor(s['mask']).unsqueeze(0).float().to(device)
-                sens_in = torch.tensor(s['sens']).unsqueeze(0).float().to(device)
+                # ── SS2D / ETER 입력 (prefetched) ──
+                s = next(h5_iter)
+                # collate_fn 으로 이미 batch dim 1 추가됨 → unsqueeze 불필요
+                d_in     = s['data'].float().to(device, non_blocking=True)
+                d_in_img = s['data_img'].float().to(device, non_blocking=True)
+                d_ref    = s['label'].float().to(device, non_blocking=True)
+                m_in     = s['mask'].float().to(device, non_blocking=True)
+                sens_in  = s['sens'].float().to(device, non_blocking=True)
 
                 with torch.amp.autocast('cuda'):
                     ss_out = ss2d(d_in_img, d_in, m_in, sens_in)
                     et_out = eter(d_in_img, d_in)
 
+                # (C) cpu().numpy() 1회 호출로 정리
                 ss_recon = ss_out.squeeze().float().cpu().numpy()
                 et_recon = et_out.squeeze().float().cpu().numpy()
-                h5_gt = d_ref.squeeze().float().cpu().numpy()
+                h5_gt    = d_ref.squeeze().float().cpu().numpy()
 
                 # ── 지표 ──
                 u_psnr = calc_psnr(u_recon, u_gt)
@@ -242,15 +256,23 @@ def main():
                 rows['eter'].append((et_psnr, et_nmse, et_ssim, et_l1))
                 rows['unet'].append((u_psnr, u_nmse, u_ssim, u_l1))
 
-                w.writerow([idx,
+                csv_buffer.append([idx,
                             f'{ss_psnr:.2f}', f'{ss_nmse:.6f}', f'{ss_ssim:.4f}', f'{ss_l1:.6f}',
                             f'{et_psnr:.2f}', f'{et_nmse:.6f}', f'{et_ssim:.4f}', f'{et_l1:.6f}',
                             f'{u_psnr:.2f}', f'{u_nmse:.6f}', f'{u_ssim:.4f}', f'{u_l1:.6f}'])
+
+                if len(csv_buffer) >= FLUSH_EVERY:
+                    w.writerows(csv_buffer)
+                    csv_buffer.clear()
 
                 if idx % 100 == 0:
                     bar.set_postfix(
                         SS2D=f'{ss_ssim:.3f}', ETER=f'{et_ssim:.3f}', UNet=f'{u_ssim:.3f}'
                     )
+
+        if csv_buffer:
+            w.writerows(csv_buffer)
+            csv_buffer.clear()
 
     def stats(vals):
         a = np.asarray(vals)
@@ -267,8 +289,8 @@ def main():
         '',
         f'{"모델":>15s} | {"PSNR(dB)":>14s} | {"NMSE":>14s} | {"SSIM":>14s} | {"L1":>14s}',
         f'{"-"*15} | {"-"*14} | {"-"*14} | {"-"*14} | {"-"*14}',
-        f'{"SS2D-ViT v5":>15s} | {ss_mean[0]:>6.2f}±{ss_std[0]:<6.2f} | {ss_mean[1]:>7.5f}±{ss_std[1]:<6.5f} | {ss_mean[2]:>6.4f}±{ss_std[2]:<6.4f} | {ss_mean[3]:>7.5f}±{ss_std[3]:<6.5f}',
-        f'{"ETER-ViT v5":>15s} | {et_mean[0]:>6.2f}±{et_std[0]:<6.2f} | {et_mean[1]:>7.5f}±{et_std[1]:<6.5f} | {et_mean[2]:>6.4f}±{et_std[2]:<6.4f} | {et_mean[3]:>7.5f}±{et_std[3]:<6.5f}',
+        f'{f"SS2D-ViT {args.label}":>15s} | {ss_mean[0]:>6.2f}±{ss_std[0]:<6.2f} | {ss_mean[1]:>7.5f}±{ss_std[1]:<6.5f} | {ss_mean[2]:>6.4f}±{ss_std[2]:<6.4f} | {ss_mean[3]:>7.5f}±{ss_std[3]:<6.5f}',
+        f'{f"ETER-ViT {args.label}":>15s} | {et_mean[0]:>6.2f}±{et_std[0]:<6.2f} | {et_mean[1]:>7.5f}±{et_std[1]:<6.5f} | {et_mean[2]:>6.4f}±{et_std[2]:<6.4f} | {et_mean[3]:>7.5f}±{et_std[3]:<6.5f}',
         f'{"UNet (PT)":>15s} | {un_mean[0]:>6.2f}±{un_std[0]:<6.2f} | {un_mean[1]:>7.5f}±{un_std[1]:<6.5f} | {un_mean[2]:>6.4f}±{un_std[2]:<6.4f} | {un_mean[3]:>7.5f}±{un_std[3]:<6.5f}',
     ]
     print('\n' + '\n'.join(lines))

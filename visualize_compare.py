@@ -103,7 +103,7 @@ def load_ss2d_model(ckpt_path, device):
     return model
 
 def load_eter_model(ckpt_path, device):
-    from myConfig_choh_ETER_model import (
+    from myConfig_choh_ETER_model_v5 import (
         IMAGE_SIZE, PATCH_SIZE, INPUT_CHANNELS,
         NUM_VIT_ENCODER_HIDDEN, NUM_VIT_ENCODER_LAYER,
         NUM_VIT_ENCODER_MLP_SIZE, NUM_VIT_ENCODER_HEAD,
@@ -113,8 +113,10 @@ def load_eter_model(ckpt_path, device):
         NUM_VIT_DECODER_DIM_MLP_HIDDEN,
         NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH,
         NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT,
+        DROPOUT,
     )
-    from u_choh_model_ETER_ViT import choh_ViT, choh_Decoder3_ETER_skip_up_tail
+    from u_choh_model_ETER_ViT import choh_ViT
+    from u_choh_model_ETER_ViT_v5 import choh_Decoder3_ETER_v5
 
     encoder = choh_ViT(
         image_size=IMAGE_SIZE, patch_size=PATCH_SIZE, num_classes=1000,
@@ -122,7 +124,7 @@ def load_eter_model(ckpt_path, device):
         heads=NUM_VIT_ENCODER_HEAD, mlp_dim=NUM_VIT_ENCODER_MLP_SIZE,
         channels=INPUT_CHANNELS, dropout=0.1, emb_dropout=0.1
     )
-    model = choh_Decoder3_ETER_skip_up_tail(
+    model = choh_Decoder3_ETER_v5(
         encoder=encoder,
         eter_n_hori_hidden=NUM_ETER_HORI_HIDDEN,
         eter_n_vert_hidden=NUM_ETER_VERT_HIDDEN,
@@ -130,7 +132,8 @@ def load_eter_model(ckpt_path, device):
         decoder_heads=NUM_VIT_DECODER_HEAD, decoder_dim_head=NUM_VIT_DECODER_DIM_HEAD,
         decoder_dim_mlp_hidden=NUM_VIT_DECODER_DIM_MLP_HIDDEN,
         decoder_out_ch_up_tail=NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH,
-        decoder_out_feat_size_final_linear=NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT
+        decoder_out_feat_size_final_linear=NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT,
+        dropout=DROPOUT,
     )
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model = model.to(device)
@@ -147,14 +150,11 @@ def load_unet_model(state_dict_path, device):
     return model
 
 def make_comparison_figure(gt, ss2d_recon, eter_recon, unet_recon,
+                           ss2d_error, eter_error, unet_error, error_max,
                            ss2d_psnr, ss2d_ssim,
                            eter_psnr, eter_ssim,
                            unet_psnr, unet_ssim,
-                           sample_idx, save_path):
-    ss2d_error = np.abs(gt - ss2d_recon)
-    eter_error = np.abs(gt - eter_recon)
-    unet_error = np.abs(gt - unet_recon)
-    error_max = max(ss2d_error.max(), eter_error.max(), unet_error.max(), 1e-8) * 0.5
+                           sample_idx, save_path, label='v6'):
 
     fig, axes = plt.subplots(2, 4, figsize=(22, 11))
 
@@ -165,12 +165,12 @@ def make_comparison_figure(gt, ss2d_recon, eter_recon, unet_recon,
     axes[0, 0].axis('off')
 
     axes[0, 1].imshow(ss2d_recon, cmap='gray', vmin=vmin, vmax=vmax)
-    axes[0, 1].set_title(f'SS2D-ViT v4\nPSNR: {ss2d_psnr:.2f}dB | SSIM: {ss2d_ssim:.4f}',
+    axes[0, 1].set_title(f'SS2D-ViT {label}\nPSNR: {ss2d_psnr:.2f}dB | SSIM: {ss2d_ssim:.4f}',
                          fontsize=12, color='tab:blue')
     axes[0, 1].axis('off')
 
     axes[0, 2].imshow(eter_recon, cmap='gray', vmin=vmin, vmax=vmax)
-    axes[0, 2].set_title(f'ETER-ViT v4\nPSNR: {eter_psnr:.2f}dB | SSIM: {eter_ssim:.4f}',
+    axes[0, 2].set_title(f'ETER-ViT {label}\nPSNR: {eter_psnr:.2f}dB | SSIM: {eter_ssim:.4f}',
                          fontsize=12, color='tab:green')
     axes[0, 2].axis('off')
 
@@ -196,7 +196,8 @@ def make_comparison_figure(gt, ss2d_recon, eter_recon, unet_recon,
     axes[1, 3].axis('off')
     plt.colorbar(im3, ax=axes[1, 3], fraction=0.046)
 
-    fig.suptitle(f'Sample #{sample_idx}', fontsize=16, fontweight='bold', y=0.98)
+    fig.suptitle(f'Sample #{sample_idx}  (err_vmax={error_max:.2e})',
+                 fontsize=16, fontweight='bold', y=0.98)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
@@ -211,14 +212,20 @@ def main():
                         default='logs/ETER_ViT_R4_brain320_v4/eter_vit_best.pt')
     parser.add_argument('--data-path', type=str,
                         default='./fastMRI_data/multicoil_val')
-    parser.add_argument('--output-dir', type=str, default='results/vis_compare')
+    parser.add_argument('--output-dir', type=str, default='results/vis/aligned/vis_compare')
     parser.add_argument('--num-samples', type=int, default=10,
                         help='시각화할 샘플 수')
+    parser.add_argument('--middle-frac', type=float, default=0.5,
+                        help='중간 영역 비율 (0.5 = 가운데 50% 범위에서 균등 추출). 1.0 이면 전체 범위')
+    parser.add_argument('--err-vmax-frac', type=float, default=0.1,
+                        help='에러맵 colormap vmax = gt.max() * err_vmax_frac (절대 기준, 모델 set 무관)')
+    parser.add_argument('--label', type=str, default='v6',
+                        help='모델 라벨 (예: v4, v6)')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('====================================================')
-    print(' 시각화 비교: SS2D-ViT v4 vs ETER-ViT v4 vs U-Net (Pre-trained)')
+    print(f' 시각화 비교: SS2D-ViT {args.label} vs ETER-ViT {args.label} vs U-Net (Pre-trained)')
     print('====================================================')
 
     print('\n모델 로드 중...')
@@ -234,9 +241,12 @@ def main():
     ss2d_dataset = FastMRI_H5_Dataloader(args.data_path, num_files=None, random_mask=False, augment=False)
 
     total = min(len(unet_dataset), len(ss2d_dataset))
-    indices = np.linspace(0, total - 1, args.num_samples, dtype=int).tolist()
+    margin = int(total * (1 - args.middle_frac) / 2)
+    lo, hi = margin, total - margin - 1
+    indices = np.linspace(lo, hi, args.num_samples, dtype=int).tolist()
 
-    print(f"총 슬라이스: {total}, 시각화 대상: {len(indices)}개\n")
+    print(f"총 슬라이스: {total}, 중간 영역 [{lo}, {hi}] 에서 {len(indices)}개 선택")
+    print(f"선택 인덱스: {indices}\n")
     os.makedirs(args.output_dir, exist_ok=True)
 
     all_ss2d_psnr, all_ss2d_ssim = [], []
@@ -294,11 +304,21 @@ def main():
         all_eter_psnr.append(eter_psnr)
         all_eter_ssim.append(eter_ssim)
 
+        ss2d_err = np.abs(ss2d_recon_raw - ss2d_gt_raw)
+        eter_err = np.abs(eter_recon_raw - ss2d_gt_raw)
+        unet_scale = (ss2d_gt_raw.max() / unet_gt.max()) if unet_gt.max() > 0 else 1.0
+        unet_err = np.abs(unet_recon - unet_gt) * unet_scale
+        err_vmax = float(ss2d_gt_raw.max()) * args.err_vmax_frac
+
         make_comparison_figure(
             gt=unet_gt,
             ss2d_recon=ss2d_recon_norm,
             eter_recon=eter_recon_norm,
             unet_recon=unet_recon,
+            ss2d_error=ss2d_err,
+            eter_error=eter_err,
+            unet_error=unet_err,
+            error_max=err_vmax,
             ss2d_psnr=ss2d_psnr,
             ss2d_ssim=ss2d_ssim,
             eter_psnr=eter_psnr,
@@ -307,6 +327,7 @@ def main():
             unet_ssim=unet_ssim,
             sample_idx=idx,
             save_path=os.path.join(args.output_dir, f'compare_{idx:04d}.png'),
+            label=args.label,
         )
 
     summary = [
@@ -315,8 +336,8 @@ def main():
         '',
         f'{"모델":>15s} | {"PSNR(dB)":>12s} | {"SSIM":>12s}',
         f'{"-"*15} | {"-"*12} | {"-"*12}',
-        f'{"SS2D-ViT v4":>15s} | {np.mean(all_ss2d_psnr):>6.2f}±{np.std(all_ss2d_psnr):<5.2f} | {np.mean(all_ss2d_ssim):>6.4f}±{np.std(all_ss2d_ssim):<6.4f}',
-        f'{"ETER-ViT v4":>15s} | {np.mean(all_eter_psnr):>6.2f}±{np.std(all_eter_psnr):<5.2f} | {np.mean(all_eter_ssim):>6.4f}±{np.std(all_eter_ssim):<6.4f}',
+        f'{f"SS2D-ViT {args.label}":>15s} | {np.mean(all_ss2d_psnr):>6.2f}±{np.std(all_ss2d_psnr):<5.2f} | {np.mean(all_ss2d_ssim):>6.4f}±{np.std(all_ss2d_ssim):<6.4f}',
+        f'{f"ETER-ViT {args.label}":>15s} | {np.mean(all_eter_psnr):>6.2f}±{np.std(all_eter_psnr):<5.2f} | {np.mean(all_eter_ssim):>6.4f}±{np.std(all_eter_ssim):<6.4f}',
         f'{"U-Net (PT)":>15s} | {np.mean(all_unet_psnr):>6.2f}±{np.std(all_unet_psnr):<5.2f} | {np.mean(all_unet_ssim):>6.4f}±{np.std(all_unet_ssim):<6.4f}',
     ]
     print('\n' + '\n'.join(summary))

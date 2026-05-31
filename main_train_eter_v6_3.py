@@ -1,17 +1,14 @@
 """
-ETER-ViT 학습 스크립트 v6 (resume from epoch 90)
-
-배경:
-  - 원본 main_train_eter_v6.py 가 epoch 95 의 ckpt 저장 도중 디스크 풀로 실패 (2026-05-13).
-  - 마지막 정상 저장 ckpt: logs/ETER_ViT_R4_brain320_v6/eter_vit_epoch_90.pt
-  - 이 스크립트는 epoch 90 시점 weight 로부터 학습을 재개하여 epoch 91~200 을 마저 진행한다.
-
-변경점 (main_train_eter_v6.py 대비):
-  - RESUME_CKPT 를 ./logs/ETER_ViT_R4_brain320_v6/eter_vit_epoch_90.pt 로 override
-  - START_EPOCH = 90 : 학습 루프 range(START_EPOCH, NUM_EPOCHS) 로 진행
-  - scheduler 를 START_EPOCH * steps_per_epoch 만큼 fast-forward
-  - best_val_ssim 초기화 = 0.8835 (epoch 85 의 기존 best); baseline 측정값으로 best.pt 갱신하지 않음
-  - log.txt 는 append 모드, "RESUME from ep90" 한 줄 기록
+ETER-ViT 학습 스크립트 v6_3
+  - Config:     myConfig_choh_ETER_model_v6_3
+  - Dataloader: dataloader_h5_v5 (v6 와 동일)
+  - Model:      u_choh_model_ETER_ViT_v5.choh_Decoder3_ETER_v5 (v6 와 동일)
+  - 변경점 (v6 대비):
+      * Loss 에 gradient(edge) loss term 추가
+        loss = L1 + λ_ssim·(1-SSIM) + λ_grad·grad_l1
+      * v6 best ckpt 부터 resume (state_dict 만)
+      * NUM_EPOCHS 50, LR 5e-5 → 5e-7 cosine, EARLYSTOP_PATIENCE 5
+      * 나머지는 v6 와 동일
 """
 
 import os
@@ -20,6 +17,7 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 import sys
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import time
 import datetime
@@ -34,7 +32,7 @@ sys.path.append(os.path.join(current_dir, 'dataloaders'))
 sys.path.append(os.path.join(current_dir, 'models', 'hybrid_eternet'))
 sys.path.append(os.path.join(current_dir, 'tools'))
 
-from myConfig_choh_ETER_model_v6 import *
+from myConfig_choh_ETER_model_v6_3 import *
 from u_choh_model_ETER_ViT import choh_ViT
 from u_choh_model_ETER_ViT_v5 import choh_Decoder3_ETER_v5
 from u_choh_SSIM import SSIM
@@ -44,9 +42,14 @@ from check_recon_env import check_env_for_model
 
 NUM_VAL_FILES = None
 
-RESUME_CKPT = './logs/ETER_ViT_R4_brain320_v6/eter_vit_epoch_90.pt'
-START_EPOCH = 90
-PREV_BEST_VAL_SSIM = 0.8835
+
+def gradient_l1_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Finite-difference gradient L1 loss on H/W axes."""
+    dx_pred = pred[..., :, 1:] - pred[..., :, :-1]
+    dx_gt   = target[..., :, 1:] - target[..., :, :-1]
+    dy_pred = pred[..., 1:, :] - pred[..., :-1, :]
+    dy_gt   = target[..., 1:, :] - target[..., :-1, :]
+    return F.l1_loss(dx_pred, dx_gt) + F.l1_loss(dy_pred, dy_gt)
 
 
 def skimage_ssim_batch(pred: torch.Tensor, target: torch.Tensor) -> float:
@@ -103,7 +106,7 @@ def run_val(model, val_loader, criterion_l1, device):
 
 def main():
     print('====================================================')
-    print(f' [ETER-ViT v6 RESUME] from epoch {START_EPOCH} → {NUM_EPOCHS}')
+    print(' [ETER-ViT v6_3] v6 best resume + gradient(edge) loss fine-tune')
     print('====================================================')
 
     if not torch.cuda.is_available():
@@ -111,9 +114,10 @@ def main():
     device = torch.device("cuda")
     print(f"Device: {device}")
     print(datetime.datetime.now(pytz.timezone('Asia/Seoul')))
-    if not check_env_for_model('eter', 'myConfig_choh_ETER_model_v6', strict=True):
+    if not check_env_for_model('eter', 'myConfig_choh_ETER_model_v6_3', strict=True):
         return
 
+    # 1. 인코더
     vit_choh = choh_ViT(
         image_size=IMAGE_SIZE, patch_size=PATCH_SIZE, num_classes=1000,
         dim=NUM_VIT_ENCODER_HIDDEN, depth=NUM_VIT_ENCODER_LAYER,
@@ -121,6 +125,7 @@ def main():
         channels=INPUT_CHANNELS, dropout=0.1, emb_dropout=0.1
     ).to(device)
 
+    # 2. 디코더 (v6 동일)
     eter_decoder = choh_Decoder3_ETER_v5(
         encoder=vit_choh,
         eter_n_hori_hidden=NUM_ETER_HORI_HIDDEN,
@@ -133,15 +138,18 @@ def main():
         dropout=DROPOUT,
     ).to(device)
 
-    if not os.path.exists(RESUME_CKPT):
-        raise FileNotFoundError(f"RESUME_CKPT not found: {RESUME_CKPT}")
-    state = torch.load(RESUME_CKPT, map_location=device)
-    eter_decoder.load_state_dict(state)
-    print(f"\nResumed weights from: {RESUME_CKPT}")
+    # 3. resume (v6 best → v6_2 시작점)
+    if RESUME_CKPT and os.path.exists(RESUME_CKPT):
+        state = torch.load(RESUME_CKPT, map_location=device)
+        eter_decoder.load_state_dict(state)
+        print(f"\nResumed weights from: {RESUME_CKPT}")
+    else:
+        print(f"\nWARNING: RESUME_CKPT not found ({RESUME_CKPT}) — 처음부터 학습")
 
     num_params = sum(p.numel() for p in eter_decoder.parameters() if p.requires_grad)
     print(f"모델 파라미터 수: {num_params / 1e6:.1f}M")
 
+    # 4. 옵티마이저, 손실 (v6 + gradient loss)
     criterion_l1   = nn.L1Loss()
     criterion_ssim_loss = SSIM().to(device)
     optimizer = torch.optim.Adam(
@@ -149,6 +157,7 @@ def main():
         weight_decay=LAMBDA_REGULAR_PER_PIXEL,
     )
 
+    # 5. 데이터셋
     print("\nFastMRI 데이터 파이프라인 연결 중...")
     choh_data_train = FastMRI_H5_Dataloader(
         './fastMRI_data/multicoil_train', num_files=None,
@@ -172,26 +181,20 @@ def main():
     steps_per_epoch = len(trainloader)
     total_steps = steps_per_epoch * NUM_EPOCHS
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=total_steps, eta_min=1e-6
+        optimizer, T_max=total_steps, eta_min=5e-7
     )
-    # fast-forward scheduler to the resume point
-    skipped_steps = START_EPOCH * steps_per_epoch
-    for _ in range(skipped_steps):
-        scheduler.step()
-    print(f"Scheduler: CosineAnnealingLR T_max={total_steps}, eta_min=1e-6, "
-          f"fast-forwarded {skipped_steps} steps (epoch {START_EPOCH})")
-    print(f"  current LR after fast-forward = {scheduler.get_last_lr()[0]:.2e}")
+    print(f"Scheduler: CosineAnnealingLR T_max={total_steps} (={NUM_EPOCHS} epochs), eta_min=5e-7")
     print(f"EarlyStopping: patience={EARLYSTOP_PATIENCE} val checks (val_ssim 기준)")
     print(f"VAL_EVERY_N_EPOCHS = {VAL_EVERY_N_EPOCHS}")
+    print(f"Loss: L1 + {LAMBDA_SSIM_PER_PIXEL}·(1-SSIM) + {LAMBDA_GRAD_PER_PIXEL}·grad_L1")
 
+    # 6. wandb
     wandb.init(
         project='ViT-MRI-Recon',
-        name=f'ETER_v6_resume_from_ep{START_EPOCH}_BS{BATCH_SIZE}_LR{LEARNING_RATE_ADAM}_EP{NUM_EPOCHS}',
+        name=f'ETER_v6_3_sharp_ablation_BS{BATCH_SIZE}_LR{LEARNING_RATE_ADAM}_EP{NUM_EPOCHS}',
         config={
-            'model': 'ETER-ViT-v6-resume',
+            'model': 'ETER-ViT-v6_2',
             'resume_from': RESUME_CKPT,
-            'start_epoch': START_EPOCH,
-            'prev_best_val_ssim': PREV_BEST_VAL_SSIM,
             'val_metric': 'skimage_ssim',
             'earlystop_metric': 'val_ssim',
             'earlystop_patience': EARLYSTOP_PATIENCE,
@@ -204,6 +207,7 @@ def main():
             'num_epochs': NUM_EPOCHS,
             'learning_rate': LEARNING_RATE_ADAM,
             'ssim_weight': LAMBDA_SSIM_PER_PIXEL,
+            'grad_weight': LAMBDA_GRAD_PER_PIXEL,
             'image_size': IMAGE_SIZE,
             'patch_size': PATCH_SIZE,
             'encoder_hidden': NUM_VIT_ENCODER_HIDDEN,
@@ -218,52 +222,44 @@ def main():
             'val_samples': len(choh_data_val),
             'scheduler': 'CosineAnnealingLR',
             'T_max': total_steps,
-            'eta_min': 1e-6,
+            'eta_min': 5e-7,
         },
     )
     wandb.watch(eter_decoder, log='gradients', log_freq=100)
 
-    print(f"\n학습 재개 (epoch {START_EPOCH+1}/{NUM_EPOCHS} 부터)")
+    # 7. 학습 루프
+    print(f"\n학습 시작 (총 {NUM_EPOCHS} 에폭, EarlyStop 가능)")
     scaler = torch.amp.GradScaler('cuda')
     eter_decoder.train()
-    best_val_ssim = PREV_BEST_VAL_SSIM
-    best_val = {'ssim': PREV_BEST_VAL_SSIM, 'psnr': None, 'nmse': None, 'l1': None}
+    best_val_ssim = -1.0
+    best_val = {'ssim': None, 'psnr': None, 'nmse': None, 'l1': None}
     no_improve_val_count = 0
     early_stopped = False
     tic = time.time()
-    global_step = skipped_steps
+    global_step = 0
     log_path = os.path.join(PATH_FOLDER, 'log.txt')
 
-    # resume marker — append to existing log.txt
-    with open(log_path, 'a') as f:
-        f.write(
-            f'RESUME (resume from {RESUME_CKPT} at epoch {START_EPOCH}):'
-            f' prev_best_val_ssim={PREV_BEST_VAL_SSIM:.4f}\n'
-        )
-
-    tqdm.write('Resume baseline val 측정 중 (best.pt 갱신 안 함)...')
+    # baseline val
+    tqdm.write('Resume baseline val 측정 중...')
     baseline = run_val(eter_decoder, val_loader, criterion_l1, device)
+    best_val_ssim = baseline['ssim']
+    best_val = dict(baseline)
     tqdm.write(
-        f'  [Baseline at ep{START_EPOCH}]  SSIM: {baseline["ssim"]:.4f}'
+        f'  [Baseline]  SSIM: {baseline["ssim"]:.4f}'
         f'  PSNR: {baseline["psnr"]:.2f}dB  NMSE: {baseline["nmse"]:.4f}'
         f'  L1: {baseline["l1"]:.4f}'
     )
     with open(log_path, 'a') as f:
         f.write(
-            f'BASELINE (resume from epoch_90.pt): '
+            f'BASELINE (resume from {RESUME_CKPT}): '
             f'val_ssim={baseline["ssim"]:.4f}  val_psnr={baseline["psnr"]:.2f}'
             f'  val_nmse={baseline["nmse"]:.4f}  val_l1={baseline["l1"]:.4f}\n'
         )
-    wandb.log({
-        'baseline/ssim': baseline['ssim'],
-        'baseline/psnr': baseline['psnr'],
-        'baseline/nmse': baseline['nmse'],
-        'baseline/l1':   baseline['l1'],
-    }, step=global_step)
+    torch.save(eter_decoder.state_dict(), os.path.join(PATH_FOLDER, 'eter_vit_best.pt'))
 
-    epoch_bar = tqdm(range(START_EPOCH, NUM_EPOCHS), desc='전체 진행', unit='epoch')
+    epoch_bar = tqdm(range(NUM_EPOCHS), desc='전체 진행', unit='epoch')
     for epoch in epoch_bar:
-        epoch_loss = epoch_ssim = epoch_psnr = epoch_nmse = epoch_l1 = 0.0
+        epoch_loss = epoch_ssim = epoch_psnr = epoch_nmse = epoch_l1 = epoch_grad = 0.0
         batch_bar = tqdm(trainloader, desc=f'Epoch {epoch+1:3d}/{NUM_EPOCHS}', leave=False, unit='batch')
 
         for sample in batch_bar:
@@ -277,7 +273,12 @@ def main():
             out_fp    = out.float()
             loss_l1   = criterion_l1(out_fp, data_ref)
             loss_ssim = 1 - criterion_ssim_loss(out_fp, data_ref)
-            loss = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
+            loss_grad = gradient_l1_loss(out_fp, data_ref)
+            loss = (
+                loss_l1
+                + LAMBDA_SSIM_PER_PIXEL * loss_ssim
+                + LAMBDA_GRAD_PER_PIXEL * loss_grad
+            )
 
             optimizer.zero_grad()
             scaler.scale(loss).backward()
@@ -300,6 +301,7 @@ def main():
                 'train/loss': loss.item(),
                 'train/loss_l1': loss_l1.item(),
                 'train/loss_ssim': loss_ssim.item(),
+                'train/loss_grad': loss_grad.item(),
                 'train/ssim_custom': ssim_val_train,
                 'train/psnr': psnr_val,
                 'train/nmse': nmse_val,
@@ -311,9 +313,11 @@ def main():
             epoch_psnr += psnr_val
             epoch_nmse += nmse_val
             epoch_l1   += loss_l1.item()
+            epoch_grad += loss_grad.item()
             batch_bar.set_postfix(
                 Loss=f'{loss.item():.4f}', PSNR=f'{psnr_val:.2f}dB',
                 NMSE=f'{nmse_val:.4f}', SSIM_c=f'{ssim_val_train:.4f}',
+                Grad=f'{loss_grad.item():.2e}',
                 LR=f'{scheduler.get_last_lr()[0]:.2e}',
             )
 
@@ -323,6 +327,7 @@ def main():
         avg_train_psnr = epoch_psnr / n_batches
         avg_train_nmse = epoch_nmse / n_batches
         avg_train_l1   = epoch_l1   / n_batches
+        avg_train_grad = epoch_grad / n_batches
 
         wandb.log({
             'epoch': epoch + 1,
@@ -331,6 +336,7 @@ def main():
             'epoch/train_psnr': avg_train_psnr,
             'epoch/train_nmse': avg_train_nmse,
             'epoch/train_l1': avg_train_l1,
+            'epoch/train_grad': avg_train_grad,
         }, step=global_step)
 
         do_val = (epoch + 1) % VAL_EVERY_N_EPOCHS == 0
@@ -362,6 +368,7 @@ def main():
                 f.write(
                     f'Epoch {epoch+1}/{NUM_EPOCHS}'
                     f'  train_loss={avg_loss:.4f}'
+                    f'  train_grad={avg_train_grad:.2e}'
                     f'  train_ssim_custom={avg_train_ssim:.4f}'
                     f'  val_ssim={val_metrics["ssim"]:.4f}'
                     f'  val_psnr={val_metrics["psnr"]:.2f}'
@@ -401,6 +408,7 @@ def main():
                 f.write(
                     f'Epoch {epoch+1}/{NUM_EPOCHS}'
                     f'  train_loss={avg_loss:.4f}'
+                    f'  train_grad={avg_train_grad:.2e}'
                     f'  train_ssim_custom={avg_train_ssim:.4f}\n'
                 )
 
@@ -413,10 +421,8 @@ def main():
     print(f'\n학습 완료 (early_stopped={early_stopped})  소요 시간: {toc - tic:.0f}초')
     print(f'Best Val SSIM: {best_val_ssim:.4f}')
     if best_val['ssim'] is not None:
-        print(f'  Best Val → SSIM: {best_val["ssim"]:.4f}')
-        if best_val.get('psnr') is not None:
-            print(f'                PSNR: {best_val["psnr"]:.2f}dB'
-                  f'  NMSE: {best_val["nmse"]:.4f}  L1: {best_val["l1"]:.4f}')
+        print(f'  Best Val → SSIM: {best_val["ssim"]:.4f}  PSNR: {best_val["psnr"]:.2f}dB'
+              f'  NMSE: {best_val["nmse"]:.4f}  L1: {best_val["l1"]:.4f}')
     print(f'Best Checkpoint: {os.path.join(PATH_FOLDER, "eter_vit_best.pt")}')
     wandb.finish()
 
