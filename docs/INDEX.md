@@ -17,6 +17,8 @@
 | 2026-05-22 | [eval_metric_redesign.md](eval_metric_redesign.md) | brain mask + weighted composite metric 재설계 (D1-D4) + LR 의미 부록 + 학계 metric 표준 |
 | **2026-05-31** | **[ss2d_v7_titan_changes.md](ss2d_v7_titan_changes.md)** | **SS2D v7_titan 재학습 정상화: scratch + true-resume(full-state last.pt, LR연속) + auto-restart supervisor + BS6 풀-step smoke. VAL_EVERY 5→2, patience 10→50, NUM_EPOCHS=50 유지(ETER 비교). 비교 baseline ETER 0.9127/0.9084** |
 | **2026-06-02** | **[summary_2026-06-02.md](summary_2026-06-02.md)** | **전체 md 통합 마스터 정리 — v6(320) + v7_titan(384) 트랙 + 라이브 상태(SS2D ep7/50, ep6에서 ETER ep10 추월) 한 곳에. §6 에 문제점 12종 정리** |
+| **2026-06-11** | **[summary_2026-06-11.md](summary_2026-06-11.md)** | **마스터 요약(최신, 갱신 2026-06-16) — SS2D v7_titan ep50 완주 0.9127/0.9083, ETER 0.9127/0.9084 와 near-tie 확정(SSIM 동률, L1 SS2D 우위). 동일-epoch ep10~30 SS2D 우위 → ep40 ETER 재추월(교차점, 06-02 "조기 우위" 서사 정정). §4.5 head-to-head** |
+| **2026-06-16** | **[version_evolution.md](version_evolution.md)** | **V4→V6→V7 버전 변천 통합본 — SS2D/ETER 하이퍼파라미터 비교표(config 검증) + 전환별 무엇/왜/결과 + 두 핵심발견(SSIM 버그·visual-metric gap) + v7 vs v7_titan 구분. SS2D v7_titan ep50 완주 0.9127/0.9083 = ETER dead-heat 반영** |
 
 > **v5 결과는 비정상 조기종료 학습** (EarlyStop 잘못된 composite 기준, ep4 에서 종료) 이라 baseline / 비교 대상에서 제외 합니다. 자세히는 [ss2d_v6_changes.md §1](ss2d_v6_changes.md) 참고.
 
