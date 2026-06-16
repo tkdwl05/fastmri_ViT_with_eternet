@@ -21,7 +21,7 @@ def create_window(window_size, channel=1):
     return window
 
 
-def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False, val_range=None):
+def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False, val_range=None, mask=None):
     # Value range can be different from 255. Other common ranges are 1 (sigmoid) and 2 (tanh).
     if val_range is None:
         if torch.max(img1) > 128:
@@ -56,7 +56,14 @@ def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False,
     v2 = sigma1_sq + sigma2_sq + C2
     cs = torch.mean(v1 / v2)  # contrast sensitivity
     ssim_map = ((2 * mu1_mu2 + C1) * v1) / ((mu1_sq + mu2_sq + C1) * v2)
-    if size_average:
+    if mask is not None:
+        # mask 도 동일 conv window 로 평활화 → 가장자리 부드럽게
+        # mask shape (B, 1, H, W) → ssim_map shape (B, channel, H', W'), channel=1
+        mask_smooth = F.conv2d(mask, window, padding=padd, groups=channel)
+        m = (mask_smooth > 0.5).float()
+        denom = m.sum().clamp(min=1.0)
+        ret = (ssim_map * m).sum() / denom
+    elif size_average:
         ret = ssim_map.mean()
     else:
         ret = ssim_map.mean(1).mean(1).mean(1)
@@ -100,7 +107,7 @@ class SSIM(torch.nn.Module):
         # Assume 1 channel for SSIM
         self.channel = 1
         self.window = create_window(window_size)
-    def forward(self, img1, img2):
+    def forward(self, img1, img2, mask=None):
         (_, channel, _, _) = img1.size()
         if channel == self.channel and self.window.dtype == img1.dtype:
             window = self.window
@@ -108,7 +115,8 @@ class SSIM(torch.nn.Module):
             window = create_window(self.window_size, channel).to(img1.device).type(img1.dtype)
             self.window = window
             self.channel = channel
-        return ssim(img1, img2, window=window, window_size=self.window_size, size_average=self.size_average).cuda()
+        return ssim(img1, img2, window=window, window_size=self.window_size,
+                    size_average=self.size_average, mask=mask).cuda()
 
 class MSSSIM(torch.nn.Module):
     def __init__(self, window_size=11, size_average=True, channel=3):

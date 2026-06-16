@@ -18,6 +18,8 @@ v4 대비 변경점:
 import os
 import h5py
 import numpy as np
+from scipy.ndimage import binary_erosion, label as ndi_label
+from skimage.filters import threshold_otsu
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -238,6 +240,30 @@ class FastMRI_H5_Dataloader(Dataset):
             gt_rss = np.sqrt(np.sum(np.abs(img_full_take) ** 2, axis=0)).astype(np.float32)
         label = gt_rss[np.newaxis] * self.val_amp_Y
 
+        # 8-b) Brain mask: Otsu × 0.4 threshold + largest CC (F 옵션, 73k 검증 81.46% 통과)
+        rss_max = float(gt_rss.max())
+        if rss_max > 0:
+            non_zero = gt_rss[gt_rss > 0]
+            if non_zero.size > 100:
+                try:
+                    thr = float(threshold_otsu(non_zero)) * 0.4
+                except Exception:
+                    thr = 0.05 * rss_max
+            else:
+                thr = 0.05 * rss_max
+            mask_raw = gt_rss > thr
+            lbl, n_cc = ndi_label(mask_raw)
+            if n_cc > 0:
+                sizes = np.bincount(lbl.ravel())
+                sizes[0] = 0
+                largest = int(sizes.argmax())
+                mask_final = (lbl == largest)
+            else:
+                mask_final = mask_raw
+            brain_mask = mask_final.astype(np.float32)
+        else:
+            brain_mask = np.zeros_like(gt_rss, dtype=np.float32)
+
         # 9) DC block용 mask / sens
         mask_out = np.broadcast_to(
             mask_1d[np.newaxis, :], (self.N_OUTPUT, self.N_OUTPUT)
@@ -254,11 +280,12 @@ class FastMRI_H5_Dataloader(Dataset):
         sens_packed = self._pack_complex_to_real(sens_c)
 
         return {
-            'data':     data.astype(np.float32),
-            'data_img': data_img.astype(np.float32),
-            'label':    label.astype(np.float32),
-            'mask':     mask_out,
-            'sens':     sens_packed.astype(np.float32),
+            'data':       data.astype(np.float32),
+            'data_img':   data_img.astype(np.float32),
+            'label':      label.astype(np.float32),
+            'mask':       mask_out,
+            'sens':       sens_packed.astype(np.float32),
+            'brain_mask': brain_mask[np.newaxis].astype(np.float32),
         }
 
 
