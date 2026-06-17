@@ -193,7 +193,26 @@ SSIM 0.89 인데 시각적으로 흐릿한 괴리. 원인 4가지: (a) **raw-amp
 
 ---
 
-## 7. 원본 문서 인덱스 (교차링크)
+## 7. 평가/비교 정책 — 비교 기준 해상도 = 384 (v7_titan 트랙)  [2026-06-17 결정]
+
+**320(v4~v6, v7) ↔ 384(v7_titan) 는 직접 비교 불가.** 320 은 8GB GPU 제약으로 줄인 타협이며,
+다음 때문에 트랙 간 "통일 평가"가 본질적으로 안 된다:
+- **해상도 고정**: ViT patch/positional-embedding 이 해상도에 묶여 320 모델로 384 입력 불가 (각자 native 해상도로만 추론).
+- **GT 자체가 다름**: image-domain crop 이 320 vs 384 → **FOV(시야)가 다른 영상**이라 "같은 정답"이 아님.
+- **검증셋 변경**: v4 4,492 → v5+ 7,270 슬라이스(size-filter 완화) → 옛 절대값끼리도 모집단이 다름.
+
+**방침**:
+- **canonical 비교 = 384 (`v7_titan` 이후)** — 교수님 원본 ETER-Net 해상도와 일치. 신규 모델은 384 로 만들어
+  `v7_titan` 과 **동일 dataloader·GT·brain-mask·지표**로 한 표 비교.
+- **320 (`v4`~`v7`) = "복원(restoration) 단계" 히스토리 참고용** — 절대 SSIM/PSNR 을 384 와 직접 비교하지 않음.
+- 현재 통일 baseline = `visualize_v7_titan_compare.py` (SS2D/ETER/U-Net 4-way, 동일 384 파이프라인).
+  평가영역(배경 포함/제외) 민감도 = `visualize_eval_modes_compare.py` (full/narrow/wide).
+- ⚠ **"단일 U-Net SSIM" 은 없다** — 평가 프로토콜(지표·해상도·검증셋·입력경로)마다 다름:
+  v4 **0.8865**(val 4,492) vs v6 **0.8858**(val 7,270) 은 검증셋 차이, v7_titan **masked ~0.92** 는 metric·해상도·입력경로가 모두 달라 별개.
+
+---
+
+## 8. 원본 문서 인덱스 (교차링크)
 
 - 아키텍처: [[architecture_ETER_vs_SS2D]]
 - v4: [[ss2d_v4_changes]] · [[eter_v4_analysis]]
