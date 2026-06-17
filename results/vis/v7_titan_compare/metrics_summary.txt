@@ -1,0 +1,16 @@
+========== v7_titan 5-way 비교 요약 ==========
+슬라이스 12개: [0, 660, 1321, 1982, 2643, 3304, 3964, 4625, 5286, 5947, 6608, 7269]
+scale_match=True, brain-masked metric, 384×384, R4
+
+              모델 |    masked PSNR(dB) |      masked SSIM
+---------------- | ------------------ | ----------------
+           U-Net |  32.00±1.70  (med 32.08) | 0.9195±0.0140 (med 0.9172)  [n=12]
+   ETER v7_titan |  34.46±1.77  (med 34.74) | 0.9303±0.0093 (med 0.9274)  [n=12]
+   SS2D v7_titan |  34.86±1.76  (med 35.70) | 0.9345±0.0093 (med 0.9314)  [n=12]
+
+[해석 / 주의]
+- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384
+  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.
+- ETER/SS2D v7_titan = 본 학습 모델. near-tie (학습 full-val 0.9084/0.9083 과 정합).
+  각 PNG 패널 제목에 슬라이스별 실제 지표 표기.
+- VarNet 은 동일-파이프라인(16-coil·384)에서 sens 추정 발산이 잦아 본 4-way 비교에서 제외.

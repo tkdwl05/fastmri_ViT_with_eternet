@@ -32,3 +32,13 @@ __pycache__/
 inspect_h5.py
 download_models.py
 download_repos.py
+
+# v7_titan 비교 시각화 결과만 GitHub 공유 (results/, *.png 는 계속 무시)
+!results/
+results/*
+!results/vis/
+results/vis/*
+!results/vis/v7_titan_compare/
+results/vis/v7_titan_compare/*
+!results/vis/v7_titan_compare/*.png
+!results/vis/v7_titan_compare/metrics_summary.txt
