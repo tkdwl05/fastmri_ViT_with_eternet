@@ -210,6 +210,17 @@ SSIM 0.89 인데 시각적으로 흐릿한 괴리. 원인 4가지: (a) **raw-amp
 - ⚠ **"단일 U-Net SSIM" 은 없다** — 평가 프로토콜(지표·해상도·검증셋·입력경로)마다 다름:
   v4 **0.8865**(val 4,492) vs v6 **0.8858**(val 7,270) 은 검증셋 차이, v7_titan **masked ~0.92** 는 metric·해상도·입력경로가 모두 달라 별개.
 
+**학습·평가 "영역"도 바뀜 (full-image → brain ROI)** — 비교 불가의 또 다른 핵심 이유:
+
+| 트랙 | 학습 loss | 검증 지표 | 배경 |
+|---|---|---|---|
+| v4~v6 (320) | **전체 이미지** L1+(1−SSIM) | raw(전체) SSIM | 벌점 받음 → 비교적 깨끗 |
+| **v7_titan (384)** | **brain ROI** masked L1+SSIM | masked composite | 자유방임 → 아티팩트 |
+
+- v4~v6 은 마스크 없이 **전체 이미지**로 학습/평가했다 (brain_mask 는 v7_titan 용으로 dataloader 에 신규 추가 — 그 전엔 반환조차 안 함).
+- v7_titan 은 의도적으로 **뇌 ROI 만 최적화·평가**한다 (배경 부풀림 차단 목적). 대가로 배경은 관리되지 않으며, `visualize_eval_modes_compare.py` 의 **raw SSIM ≪ masked SSIM** (예: SS2D 0.74 vs 0.93)이 그 직접 증거.
+- ⚠ 따라서 v7_titan 의 SSIM 상승에는 **아키텍처 개선 + 학습/평가 ROI 전환 효과가 혼재** → v6 와 절대값 직접 비교 불가.
+
 ---
 
 ## 8. 원본 문서 인덱스 (교차링크)
