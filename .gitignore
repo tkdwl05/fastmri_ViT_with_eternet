@@ -42,3 +42,7 @@ results/vis/*
 results/vis/v7_titan_compare/*
 !results/vis/v7_titan_compare/*.png
 !results/vis/v7_titan_compare/metrics_summary.txt
+!results/vis/v7_titan_eval_modes/
+results/vis/v7_titan_eval_modes/*
+!results/vis/v7_titan_eval_modes/*.png
+!results/vis/v7_titan_eval_modes/metrics_eval_modes.txt
