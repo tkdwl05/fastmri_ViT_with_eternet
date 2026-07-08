@@ -2,14 +2,27 @@
 
 ## 프로젝트 개요
 
-fastMRI brain AXFLAIR multicoil 데이터에 대한 MRI 재구성 모델 연구.
-ViT 인코더 + 시퀀스 모델 디코더(GRU 또는 SS2D) 구조를 사용한다.
+fastMRI brain multicoil 데이터에 대한 MRI 재구성 모델 연구
+(컨트라스트는 "AXFLAIR" 단일이 아니라 AXT1/AXT1POST/AXT1PRE/AXT2/AXFLAIR 등 **혼합** — "AXFLAIR" 로만 표기하면 부정확).
+
+ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 구조가 기본 축이다. `v8_eter_pure` 갈래는
+ViT 를 아예 빼고 교수님 원본 순수 ETER-Net 위에서 시퀀스 모델(GRU vs SS2D)만 비교하는 통제실험이다.
+
+### 세 갈래 (평행 진행)
+
+| 트랙 | 해상도 | GPU / conda 환경 | 상태 |
+|---|---|---|---|
+| v1~v6_x (루트) | 320×320, ViT-Small | RTX 5060Ti 8GB, `mri_env` — **옛 머신 전용, 이 저장소엔 ckpt 없음** | "복원" 단계, v6_3 채택후보(ETER v6_3 완료 여부 미문서화) |
+| v7 → v7_titan | 384×384, ViT-Base | TITAN RTX 24GB×2(단일 GPU 사용), `base` | "향상" 단계, **현재 운영** — ETER/SS2D 완주, dead-heat |
+| v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승), DC 쌍은 후순위 |
+
+트랙별 상세 비교표는 `docs/summary_2026-06-11.md` §2, 버전별 하이퍼파라미터는 `docs/version_evolution.md` §2 참고.
 
 ## 핵심 문서 (docs/)
 
 작업 히스토리와 설계 판단의 근거를 기록한 문서들:
 
-- **[docs/presentation_overview.md](docs/presentation_overview.md)** — **발표용 통합본**. v1 → v6 → v6_3 까지의 전체 흐름, 두 차례 핵심 발견 (① custom SSIM metric 버그, ② visual-metric gap), Tier 1 (TTA/앙상블) 와 Tier 2 (v6_1/v6_2/v6_3 fine-tune) 결과 정리. **최종 갱신 2026-05-28** — v6_3 SS2D best val SSIM 0.8924 / PSNR 36.05 dB (U-Net 추월) 까지 반영, ETER v6_3 진행 중. 발표 5분 요약은 §6.3, 진행 상태와 향후 과제는 §7.
+- **[docs/presentation_overview.md](docs/presentation_overview.md)** — **발표용 통합본**. v1 → v6 → v6_3 까지의 전체 흐름, 두 차례 핵심 발견 (① custom SSIM metric 버그, ② visual-metric gap), Tier 1 (TTA/앙상블) 와 Tier 2 (v6_1/v6_2/v6_3 fine-tune) 결과 정리. **본문(§1~§8)은 2026-05-28 시점 v6_3 까지로 고정**(v6_3 SS2D best val SSIM 0.8924 / PSNR 36.05 dB, ETER v6_3 진행 중 — 완료 여부 미문서화). 발표 5분 요약은 §6.3. **갱신 2026-07-08**: §9 에 v7_titan/v8_eter_pure 확장 트랙 요약 + 문서 포인터 추가.
 - **[docs/version_evolution.md](docs/version_evolution.md)** — **버전 변천 통합본 (V4→V6→V7)**. SS2D/ETER 하이퍼파라미터 비교표(config ground-truth) + 전환별 무엇/왜/결과 + 두 핵심발견(① custom SSIM 버그, ② visual-metric gap) + raw(v6)↔masked(v7_titan) 비교 주의 + v7 vs v7_titan 구분. 흩어진 `*_changes.md` 의 단일 비교 진입점. **2026-06-16 작성** (SS2D v7_titan ep50 완주 0.9127/0.9083 = ETER 와 dead-heat 반영).
 - **[docs/architecture_ETER_vs_SS2D.md](docs/architecture_ETER_vs_SS2D.md)** — ETER-ViT(GRU)와 SS2D-ViT(Mamba) 아키텍처 상세 비교. 공통 파이프라인, 인코더/디코더 구조, 설정값, 학습 조건을 정리.
 - **[docs/ss2d_v4_changes.md](docs/ss2d_v4_changes.md)** — SS2D v4에서 A(SS2D capacity 증설) + B(weight_decay/dropout) + C(1-iter soft Data Consistency block) 세 축을 동시 적용한 내역. `_v4` 접미사 신규 파일 5개(config/dataloader/model/train/chain), DC block 파이프라인, FFT AMP 처리, 체인 예약. §8: 첫 batch OOM 사후 수정(SS2D forward gradient checkpointing).
@@ -26,55 +39,107 @@ ViT 인코더 + 시퀀스 모델 디코더(GRU 또는 SS2D) 구조를 사용한�
 - **[docs/error_map_v2_masked.md](docs/error_map_v2_masked.md)** — 2026-06-01 시각화 정책 개정. `visualize_compare_versions.py` 의 에러맵을 raw amplitude → per-slice [0,1] 정규화 + brain mask (gt_n > 0.05) 로 교체, optional `--match-scale` LS 보정 flag 추가. 출력 dir `vis_compare_versions_masked/` 로 분리해 v1 결과 보존. 정량 metric 은 raw 유지, suptitle 에 명시.
 - **[docs/script_version_history.md](docs/script_version_history.md)** — 2026-05-20 정리에서 삭제한 `.py` 파일 (main_train_v3~v6, eval/visualize 옛 버전, 2024년 config, 옛 dataloader 등) 의 출처/역할/버전 진화 방향 기록. v3→v4 DC block, v4→v5 regularization, v5→v6 평가 정합성, v6→v6_1 gradient loss 4단계 정리.
 - **[docs/cleanup_log.md](docs/cleanup_log.md)** — 프로젝트에서 삭제된 파일들의 대장. 무엇이 있었고 왜 지웠는지 날짜별 기록.
+- **[docs/logs_archive.md](docs/logs_archive.md)** — 루트에 흩어져 있던 `run_*.sh`/`run_*.log` 를 `runs/` 폴더로 통합한 기록 (2026-05-15). 해당 `runs/` 자체는 이 머신에 없음(옛 8GB 머신) — 역사적 참고용.
+
+### v7 갈래 (TITAN RTX×2 24GB 마이그레이션, 320×320 유지) — v6→v7_titan 중간 단계
+- **[v7/README_v7.md](v7/README_v7.md)** (2026-05-16) — 8GB→TITAN RTX×2 24GB 마이그레이션. BATCH_SIZE 4→16, GRU hidden 6→10, DDP 옵션 추가. v6 코드/ckpt 는 그대로 두고 새 `v7/` 폴더에서 진행(capacity 복원이 목적, 해상도는 아직 320 유지) — 384 승격 + ViT-Base 전환 + ETER U-Net 후처리 복원은 v7_titan 에서.
 
 ### v7_titan 갈래 (384×384 · ViT-Base · TITAN RTX 24GB x2) — v6 (320) 와 별개 평행 트랙
 - **[docs/eval_metric_redesign.md](docs/eval_metric_redesign.md)** (2026-05-22) — **brain mask + weighted composite metric 재설계**. 배경 부풀림 진단, brain mask = Otsu×0.4 + largest CC (`dataloader_h5_v5.py:243`), composite = 0.5·SSIM + 0.3·(PSNR/40) + 0.2·(1−NMSE), masked L1+SSIM loss. v7_titan 본 학습 직전 적용.
 - **[docs/ss2d_v7_titan_changes.md](docs/ss2d_v7_titan_changes.md)** (2026-05-31) — **SS2D v7_titan 재학습 정상화**. DDP 폐기→scratch, true checkpoint resume(full-state `ss2d_vit_last.pt`, LR연속, unit-test PASS), auto-restart supervisor, BS6 풀-step smoke. VAL_EVERY 5→2, patience 10→50, NUM_EPOCHS=50(ETER 비교). 비교 baseline: ETER v7_titan masked composite 0.9127 / SSIM 0.9084.
 - **[docs/summary_2026-06-11.md](docs/summary_2026-06-11.md)** (2026-06-11, 갱신 2026-06-16) — **최신 마스터 요약**. v6(320)+v7_titan(384) 통합. SS2D v7_titan **ep50 완주**(composite 0.9127 / SSIM_m 0.9083), ETER 완주(0.9127/0.9084)와 **dead-heat(near-tie 확정)**. 동일-epoch ep10~30 SS2D 우위 → **ep40 ETER 재추월(교차점, §4.5)** — 2026-06-02 "조기 우위" 서사 정정. L1 SS2D 우위(9.298<9.518), NMSE ETER 우위. (이전 스냅샷: [summary_2026-06-02.md](docs/summary_2026-06-02.md))
 ### v8_eter_pure 갈래 (순수 ETER-Net · GRU vs SS2D 통제비교) — no-DC 쌍 완주
+- **[docs/eternet_paper_data_consistency.md](docs/eternet_paper_data_consistency.md)** (2026-05-31) — 교수님 원본 ETER-net(논문+코드) 확인 결과 명시적 Data-Consistency 블록 없음. 프로젝트의 DC block(v4~)은 SS2D-arm 전용 증강이라 v7_titan ETER-vs-SS2D 비교의 confound였음 — v8_eter_pure 의 no-DC 우선 설계 근거.
 - **[docs/v8_eter_pure_rnn_vs_ss2d.md](docs/v8_eter_pure_rnn_vs_ss2d.md)** (2026-07-05, 갱신 2026-07-07) — **교수님 순수 ETER-Net(no ViT, no DC)에서 sequence model 만 GRU↔SS2D 교체하는 통제비교**. v7_titan dead-heat 의 confound(Mamba+DC vs GRU) 제거. 결과: **SS2D 완승** — best composite **0.9200**(ep48) vs GRU 0.9182(ep50), 5지표 전부·params 21×↓(31M vs 668M), matched-epoch 전구간 wire-to-wire 우위 → "DC 목발" 가설 반박. 로그기반 분석 `v8_eter_pure/analyze_v8_nodc.py` → `results/eval/v8_nodc/`. **per-slice paired 검증**(전체 7334 슬라이스, `eval_paired_v8_nodc.py`): SS2D 가 5지표 전부 74~78% 슬라이스 승률(Wilcoxon p≈0). **4-way viz**(`visualize_v8_pure_compare.py`): GRU 는 두개골 바깥 배경에 ringing 아티팩트, SS2D 는 깨끗함(§6).
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
 
 ## 모델 구조
 
+### 루트 트랙 (v1~v6_x, 320×320) — 역사적 기록, 이 머신에 ckpt 없음
+
 ```
-입력: aliased image (B, 32, 320, 320) + k-space (B, 32, 320, 320)
+입력 1: aliased image (B, 32, 320, 320)
+입력 2: k-space        (B, 32, 320, 320)
        │                                    │
-   ViT Encoder → ViT Decoder           GRU 또는 SS2D
+   ViT Encoder → ViT Decoder           GRU(ETER) 또는 SS2D(Mamba)
        │                                    │
-       └──── cat + RefinementBlock ─────────┘
+       └── cat(ViT출력, aliased image, seq출력) ──┘   ← 3-way concat (2-way 아님)
                       │
+         최종 합성: RefinementBlock(3×ResBlock)
+                      │  (SS2D 만: 이 뒤에 1-iter soft DC block 추가. ETER 는 DC 없음)
               출력: (B, 1, 320, 320)
 ```
 
+### v7_titan (384×384, ViT-Base) — 현재 운영 트랙
+
+SS2D 는 루트와 동일 클래스(`u_choh_model_SS2D_ViT_v4.py`)를 그대로 쓰고 config 값만 키운다
+(ViT-Base, SS2D d_inner 64→128 / d_state 16→32). **ETER 는 최종 합성을 교체**한다:
+`RefinementBlock(3×ResBlock)` → `UNet_choh_skip(depth=3, wf=6)` — 교수님 원본 ETER-Net(GRU→U-Net
+후처리) 복원이 목적(`choh_Decoder3_ETER_v7_titan`, `models/hybrid_eternet/u_choh_model_ETER_ViT_v7_titan.py`).
+즉 v7_titan 에서는 **ETER 와 SS2D 의 최종 합성 구조 자체가 다르다**(ETER=U-Net, SS2D=RefinementBlock+DC) —
+이 비대칭이 `docs/eternet_paper_data_consistency.md` 가 지적하는 confound 중 하나.
+
+### v8_eter_pure (384×384, ViT 없음) — GRU vs SS2D 순수 통제비교
+
+```
+입력 1: aliased image (B, 32, 384, 384)
+입력 2: k-space        (B, 32, 384, 384)
+       │                                    │
+  (ViT 없음)                          GRU(양방향 h+v) 또는 SS2D
+       │                                    │
+       └──────── cat(seq출력, aliased image) ────┘   ← 2-way concat
+                      │
+         UNet_choh_skip (DFU, depth=5, wf=6)
+                      │  (use_dc=True 인 DC arm 만: 이 뒤에 DC block 추가 — 현재는 no-DC 쌍만 학습됨)
+              출력: (B, 1, 384, 384)
+```
+GRU/SS2D 를 제외한 모든 것이 100% 동일(`models/pure_eternet/u_pure_eternet_{gru,ss2d}.py`) — 단일 변수 통제.
+
 ## 주요 설정 파일
 
-현재 활성 (v6_2):
-- `configs/myConfig_choh_SS2D_model_v6_2.py`
-- `configs/myConfig_choh_ETER_model_v6_2.py`
+### 루트 트랙 (320×320, 이 머신엔 ckpt 없음)
+현재 채택후보 v6_3 (SS2D 전지표 개선 확인, **ETER v6_3 완료 여부는 미문서화** —
+`docs/summary_2026-06-11.md` §6-⑤):
+- `configs/myConfig_choh_SS2D_model_v6_3.py`
+- `configs/myConfig_choh_ETER_model_v6_3.py`
 
-버전 reference 로 보존: `..._v4.py`, `..._v5.py`, `..._v6.py`, `..._v6_1.py` (각 모델).
+버전 reference 로 보존: `..._v4.py` ~ `..._v6_2.py` (각 모델). `..._v6_4.py` 는 config 만 있고
+`main_train_*_v6_4.py` 는 미작성(v6_3 성공으로 보류, `docs/tier2_sharpness_plan.md`).
 
-## 실행 로그 / 체인 스크립트 위치 (2026-05-12 정리)
+### v7_titan (384×384, 현재 운영)
+- `v7_titan/configs/myConfig_choh_SS2D_model_v7_titan.py`
+- `v7_titan/configs/myConfig_choh_ETER_model_v7_titan.py`
 
-루트에 흩어져 있던 `run_*.sh` / `run_*.log` 를 `runs/` 폴더로 통합. 학습 entry script (`main_train_*.py`) 와 ckpt 디렉토리 (`logs/`) 는 원위치 유지.
+### v8_eter_pure (384×384, ViT 없음)
+- `v8_eter_pure/configs/myConfig_pure_eter_v8.py` — GRU/SS2D × no-DC/DC 4런이 공유하는 단일 config(env var 로 분기)
 
+## 실행 로그 / 체인 스크립트 위치
+
+### 루트 트랙 — `runs/` 폴더는 이 머신에 없음
+루트 트랙의 학습 ckpt/로그는 옛 8GB 머신에만 있어(§프로젝트 개요) 이 저장소에는 `runs/` 폴더
+자체가 존재하지 않는다. 2026-05-12 정리 당시의 `runs/{ss2d,eter,chain,eval,visualize}/` 구조는
+`docs/logs_archive.md` 에 역사적 기록으로만 남아있다.
+
+### v7_titan/runs/
 ```
-runs/
-├── ss2d/         # SS2D 학습 stdout/stderr (run_ss2d_v3.log ~ v6.log)
-├── eter/         # ETER 학습 stdout/stderr (run_eter_v4.log ~ v6.log)
-├── chain/        # chain 실행 스크립트 + chain 로그
-│   ├── run_chain_v6.sh                  # 현재 활성 (SS2D v6 → ETER v6)
-│   ├── run_chain_ss2d_v4.sh / v5.sh     # 과거 버전
-│   ├── run_chain_eter_v5.sh             # 과거 버전
-│   └── run_chain_*.log                  # 각 chain 의 단계별 start/end 기록
-├── eval/         # 평가 스크립트 stdout (run_eval_*.log)
-└── visualize/    # 시각화 스크립트 stdout (run_vis_*.log)
+v7_titan/runs/
+├── ss2d/ eter/ chain/ sanity_eval/     # 학습/체인 로그
+├── run_ss2d_v7_titan_autoresume.sh     # true-resume auto-restart supervisor
+└── watcher_eter_to_ss2d.sh             # ETER 종료 감지 → SS2D 자동 launch(BS=6)
 ```
+평가/시각화는 독립 `eval/`/`visualize/` 서브폴더 없이 저장소 공통 `results/eval/`,
+`results/vis/v7_titan_compare/` 를 그대로 사용한다.
 
-- chain 스크립트 내부 경로 (`CHAIN_LOG` / `SS2D_LOG` / `ETER_LOG`) 도 새 폴더 구조로 업데이트됨.
-- 현재 실행 중인 학습 프로세스는 `mv` (inode-only rename) 로 옮겨도 안전하게 새 경로에 계속 기록.
+### v8_eter_pure/runs/
+```
+v8_eter_pure/runs/
+├── chain/ gru/ ss2d/            # 모델축(GRU/SS2D) 기준 로그 — root 의 ss2d/eter 명명과 다름
+├── run_pure_v8_autoresume.sh    # SEQ_MODEL(gru|ss2d) × USE_DC(0|1) env var 로 4런 분기
+└── smoke_bs.txt
+```
+평가 결과는 `results/eval/v8_nodc/`, 시각화는 `results/vis/v8_pure_eternet_compare/` (v7_titan 과
+동일하게 저장소 공통 `results/` 사용).
 
 ## 결과 폴더 구조 (results/) — 2026-06-01 정리
 
@@ -108,25 +173,51 @@ results/
 - `vis/aligned/` 는 2026-06-01 정합 작업 결과 — slice indices `[1817, 2220, ..., 5452]` 동일, err_vmax = `gt.max() * 0.1` 절대 기준, H5 스케일 통일.
 - 스크립트 default 경로도 새 구조로 업데이트됨 (`visualize_compare.py`, `visualize_compare_versions.py`, `visualize_diagnostic_v6.py`).
 
+위 트리는 위 2026-06-01 정리 시점(루트 트랙 전용) 스냅샷이다. 이후 트랙들의 결과는 같은
+`results/` 아래 별도 서브폴더에 쌓인다 — `results/eval/v7_titan_compare` 계열,
+`results/vis/v7_titan_compare/`, `results/eval/v8_nodc/`(per-slice CSV·win-rate 포함),
+`results/vis/v8_pure_eternet_compare/`. `.gitignore` 상 `results/` 는 기본 무시되고
+`results/vis/v7_titan_compare/`·`results/vis/v7_titan_eval_modes/` 의 PNG/txt 만 예외적으로
+GitHub 에 공유되도록 화이트리스트돼 있다(v8 쪽은 아직 화이트리스트 미추가 — 로컬에만 존재).
+
 ## 실행
 
+### 루트 트랙 (참고용 — ckpt 부재로 이 머신에서 재현 불가)
 ```bash
-# 학습 (현재 활성: v6_1)
-python main_train_ss2d_v6_1.py    # SS2D-ViT v6_1 (gradient loss fine-tune)
-python main_train_eter_v6_1.py    # ETER-ViT v6_1
-
-# 평가 (모델 다중 비교 통합)
+python main_train_ss2d_v6_3.py    # SS2D-ViT v6_3 (채택후보, sharpness 완화)
+python main_train_eter_v6_3.py    # ETER-ViT v6_3
 python eval_full_compare.py
-
-# 시각화
 python visualize_compare.py            # U-Net / SS2D / ETER / GT 비교 PNG
 python visualize_diagnostic_v6.py      # raw vs masked SSIM 진단
 ```
 
-체인 실행: `runs/chain/run_chain_v6_1.sh` (SS2D v6_1 → ETER v6_1 순차).
+### v7_titan (384, 현재 운영)
+```bash
+# GPU0 단독, auto-restart supervisor (true-resume, "학습 완료" sentinel 감지 시 종료)
+bash v7_titan/runs/run_ss2d_v7_titan_autoresume.sh
+python v7_titan/main_train_eter_v7_titan.py
+
+# 4-way 비교 시각화 (GT / U-Net / ETER / SS2D)
+python visualize_v7_titan_compare.py
+```
+
+### v8_eter_pure (384, ViT 없음, GRU vs SS2D)
+```bash
+# SEQ_MODEL=gru|ss2d, USE_DC=0|1 로 4런 중 하나 선택 (현재 no-DC 2런만 완주)
+SEQ_MODEL=ss2d USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pure_v8_autoresume.sh
+
+# per-slice paired 평가 (전체 val, ~2h) + 4-way 시각화 (GT/U-Net/GRU/SS2D)
+python v8_eter_pure/eval_paired_v8_nodc.py
+python visualize_v8_pure_compare.py
+```
 
 ## 환경
 
+**이 저장소가 있는 현재 머신** (v7 / v7_titan / v8_eter_pure 가 실제로 도는 곳):
+- conda 환경: **`base`** (`/opt/conda`) — `mri_env` 라는 이름의 conda env 는 이 머신에 **존재하지 않는다**. 학습은 그냥 `python ...` (activate 불필요).
+- GPU: **TITAN RTX 24GB × 2** — v7_titan/v8_eter_pure 는 정책상 **GPU0 단독** 사용, GPU1 은 교수님 작업 회피용으로 항상 비워둠.
+- 주요 의존성: PyTorch 2.3.1, mamba_ssm 2.2.2(SS2D용 CUDA 커널), einops, wandb
+
+**역사적 환경** (v1~v6_x 가 실제로 학습된 옛 머신 — 이 저장소엔 해당 ckpt/로그 없음):
 - conda 환경: `mri_env`
-- GPU: 8GB (BATCH_SIZE, GRU hidden 등 메모리 제약 있음)
-- 주요 의존성: PyTorch, mamba_ssm (SS2D용 CUDA 커널), einops, wandb
+- GPU: RTX 5060Ti 8GB — BATCH_SIZE, GRU hidden 축소 등 v1~v6 의 모든 용량 관련 의사결정이 이 제약에서 나옴
