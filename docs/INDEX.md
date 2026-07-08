@@ -19,6 +19,7 @@
 | **2026-06-02** | **[summary_2026-06-02.md](summary_2026-06-02.md)** | **전체 md 통합 마스터 정리 — v6(320) + v7_titan(384) 트랙 + 라이브 상태(SS2D ep7/50, ep6에서 ETER ep10 추월) 한 곳에. §6 에 문제점 12종 정리** |
 | **2026-06-11** | **[summary_2026-06-11.md](summary_2026-06-11.md)** | **마스터 요약(최신, 갱신 2026-06-16) — SS2D v7_titan ep50 완주 0.9127/0.9083, ETER 0.9127/0.9084 와 near-tie 확정(SSIM 동률, L1 SS2D 우위). 동일-epoch ep10~30 SS2D 우위 → ep40 ETER 재추월(교차점, 06-02 "조기 우위" 서사 정정). §4.5 head-to-head** |
 | **2026-06-16** | **[version_evolution.md](version_evolution.md)** | **V4→V6→V7 버전 변천 통합본 — SS2D/ETER 하이퍼파라미터 비교표(config 검증) + 전환별 무엇/왜/결과 + 두 핵심발견(SSIM 버그·visual-metric gap) + v7 vs v7_titan 구분. SS2D v7_titan ep50 완주 0.9127/0.9083 = ETER dead-heat 반영** |
+| **2026-07-05** | **[v8_eter_pure_rnn_vs_ss2d.md](v8_eter_pure_rnn_vs_ss2d.md)** | **v8: 교수님 순수 ETER-Net(no ViT, no DC)에서 GRU↔SS2D 만 교체하는 통제비교 — v7_titan dead-heat 의 confound(DC) 제거. SS2D 완승(composite 0.9200 vs 0.9182, 21×↓ params), wire-to-wire, "DC 목발" 가설 반박. 갱신 2026-07-07: per-slice paired win-rate(74~78%, p≈0) + 4-way viz(GRU 배경 ringing) 로 검증 완료** |
 
 > **v5 결과는 비정상 조기종료 학습** (EarlyStop 잘못된 composite 기준, ep4 에서 종료) 이라 baseline / 비교 대상에서 제외 합니다. 자세히는 [ss2d_v6_changes.md §1](ss2d_v6_changes.md) 참고.
 
