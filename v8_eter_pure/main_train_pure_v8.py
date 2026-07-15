@@ -188,11 +188,11 @@ def main():
         DATA_TRAIN, num_files=None, target_size=IMAGE_SIZE[0],
         augment=TRAIN_AUGMENT, augment_flip_p=TRAIN_AUGMENT_FLIP_P,
     )
-    trainloader = DataLoader(
-        choh_data_train, batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=NUM_WORKERS_TRAIN, pin_memory=True,
-        persistent_workers=True, prefetch_factor=PREFETCH_FACTOR,
-    )
+    _train_loader_kwargs = dict(batch_size=BATCH_SIZE, shuffle=True,
+                                 num_workers=NUM_WORKERS_TRAIN, pin_memory=True)
+    if NUM_WORKERS_TRAIN > 0:
+        _train_loader_kwargs.update(persistent_workers=True, prefetch_factor=PREFETCH_FACTOR)
+    trainloader = DataLoader(choh_data_train, **_train_loader_kwargs)
     print(f"Train Dataloader 준비 완료! ({len(choh_data_train)} 샘플)")
     choh_data_val = FastMRI_H5_Dataloader(
         DATA_VAL, num_files=NUM_VAL_FILES, target_size=IMAGE_SIZE[0],
@@ -212,9 +212,11 @@ def main():
           f"({opt_steps_per_epoch}/epoch × {NUM_EPOCHS}), eta_min=1e-6")
     print(f"EarlyStopping: patience={EARLYSTOP_PATIENCE} val checks (val_composite)")
 
+    _wandb_tag = os.environ.get('WANDB_RUN_TAG', '')
+    _wandb_id  = _RUN_NAME + (f'_{_wandb_tag}' if _wandb_tag else '')
     wandb.init(
-        project='ViT-MRI-Recon', name=f'{_RUN_NAME}_BS{BATCH_SIZE}x{ACCUM_STEPS}',
-        id=_RUN_NAME, resume='allow',   # 안정 per-arm id: online 실시간 + supervisor 재시작해도 run 1개로 연속
+        project='ViT-MRI-Recon', name=f'{_wandb_id}_BS{BATCH_SIZE}x{ACCUM_STEPS}',
+        id=_wandb_id, resume='allow',   # per-arm id(+WANDB_RUN_TAG): online 실시간·supervisor 재시작 연속. rerun 태그로 새 run(step 충돌 회피)
         config={
             'track': 'v8_eter_pure', 'seq_model': SEQ_MODEL, 'use_dc': USE_DC,
             'image_size': IMAGE_SIZE, 'n_hidden_lrnn': N_HIDDEN_LRNN_2,
@@ -239,6 +241,8 @@ def main():
     early_stopped = False
     tic = time.time()
     global_step = 0
+    consec_skip = 0          # 연속 non-finite loss batch 수 (anti-spin)
+    total_skip = 0           # 전체 skip 누계 (진단)
     log_path = os.path.join(PATH_FOLDER, 'log.txt')
 
     start_epoch = 0
@@ -292,6 +296,29 @@ def main():
             loss_ssim = 1 - criterion_ssim_loss(out_fp, data_ref, mask=brain_mask)
             loss      = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
 
+            # ── NaN/Inf-skip 가드 (self-heal + anti-spin) ──
+            # 비정상 loss batch 는 backward/step 없이 건너뛴다(정상 batch 만 학습·통계 기여).
+            # 연속 MAX_CONSEC_SKIP 초과 시 fail-fast(exit1) → supervisor 가 clean last.pt 에서 재개.
+            if not torch.isfinite(loss):
+                optimizer.zero_grad(set_to_none=True)
+                consec_skip += 1; total_skip += 1
+                if consec_skip <= 3 or consec_skip % 50 == 0:
+                    tqdm.write(f'  [NaN-skip] ep{epoch+1} batch{i} loss={loss.item()} '
+                               f'consec={consec_skip} total={total_skip}')
+                if consec_skip >= MAX_CONSEC_SKIP:
+                    _msg = (f'FATAL: {consec_skip} consecutive non-finite loss (ep{epoch+1} batch{i}) '
+                            f'→ fail-fast exit(1). [α clamp 후에도 재발 시 조사 필요]')
+                    tqdm.write('  ' + _msg)
+                    with open(log_path, 'a') as f:
+                        f.write(_msg + '\n')
+                    try:
+                        wandb.finish(exit_code=1)
+                    except Exception:
+                        pass
+                    sys.exit(1)
+                continue
+            consec_skip = 0
+
             scaler.scale(loss / ACCUM_STEPS).backward()
             do_step = ((i + 1) % ACCUM_STEPS == 0)
             if do_step:
@@ -301,6 +328,10 @@ def main():
                 scaler.update()
                 scheduler.step()
                 optimizer.zero_grad(set_to_none=True)
+                # α clamp: overshoot(α>1) 물리 차단 = DC forward non-finite 근본원인 제거 (trainable 유지)
+                if USE_DC:
+                    with torch.no_grad():
+                        model.dc.alpha.clamp_(DC_ALPHA_MIN, DC_ALPHA_MAX)
 
             with torch.no_grad():
                 out_f = out_fp.detach(); ref_f = data_ref.float(); m_t = brain_mask
@@ -346,7 +377,7 @@ def main():
                         f'  val_l1={val_metrics["l1"]:.4f}\n')
             if val_metrics['composite'] > best_val_composite:
                 best_val_composite = val_metrics['composite']; best_val = dict(val_metrics)
-                torch.save(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_best.pt'))
+                save_checkpoint_atomic(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_best.pt'))
                 tqdm.write(f'  [Best] composite {best_val_composite:.4f} → {PREFIX}_best.pt')
                 no_improve_val_count = 0
             else:
@@ -362,7 +393,7 @@ def main():
                 f.write(f'Epoch {epoch+1}/{NUM_EPOCHS}  train_loss={avg_loss:.4f}\n')
 
         if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_epoch_{epoch+1}.pt'))
+            save_checkpoint_atomic(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_epoch_{epoch+1}.pt'))
 
         save_checkpoint_atomic({
             'epoch': epoch + 1, 'model': model.state_dict(),

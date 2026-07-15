@@ -49,8 +49,16 @@ RESUME_CKPT = None              # 중단내성은 trainer 의 full-state *_last.
 # ── DC block (DC arm 전용) ──
 DC_K_SCALE_RATIO = 100.0
 DC_INIT_ALPHA = 1.0
+# α 안정화 (2026-07-14): GRU+DC 가 α 과성장(1.0→1.35, overshoot)으로 fp16 forward non-finite loss →
+#   전 step skip → weights 동결 3일 NaN 공회전. α∈[MIN,MAX] clamp 로 외삽(α>1) 물리 차단(trainable 유지).
+DC_ALPHA_MIN = 0.0
+DC_ALPHA_MAX = 1.0
+# anti-spin: 연속 MAX_CONSEC_SKIP batch 가 non-finite loss 면 fail-fast(exit1) → supervisor 재개.
+MAX_CONSEC_SKIP = 300
 
 # ── DataLoader ──
+# worker>0 은 /dev/shm 용량 필요: shm 64MB 옛 컨테이너에선 bus error 로 0/0 강하했었음
+# → 2026-07-08 --shm-size=128g 컨테이너 재생성으로 해결, 16/4 원복
 NUM_WORKERS_TRAIN = 16
 NUM_WORKERS_VAL   = 4
 PREFETCH_FACTOR   = 4
