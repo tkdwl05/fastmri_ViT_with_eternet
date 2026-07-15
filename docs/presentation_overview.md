@@ -2,7 +2,9 @@
 
 작성일: 2026-05-06 (v6 진행 중)
 최종 갱신: **2026-05-28** (v6 완료 + Tier 1/2 실험 결과 반영)
-대상: fastMRI brain AXFLAIR multicoil R=4 재구성
+**후속 갱신: 2026-07-08** — §9 에 v7_titan/v8_eter_pure 확장 트랙(별도 TITAN RTX 머신, 384×384) 요약 추가.
+본문(§1~§8)은 2026-05-28 시점 v6_3(320×320, 8GB GPU) 스코프 그대로 유지 — 그 뒤 이야기는 §9 참고.
+대상: fastMRI brain multicoil R=4 재구성 (컨트라스트는 AXFLAIR 단일이 아니라 혼합 — §1 참고)
 
 ---
 
@@ -20,7 +22,7 @@ mean-prediction blurring** — 이 결과의 절반을 만들었다.
 
 | 항목 | 값 |
 |---|---|
-| 데이터 | fastMRI brain AXFLAIR multicoil (16 코일, 320×320) |
+| 데이터 | fastMRI brain multicoil (16 코일, 320×320). 컨트라스트는 "AXFLAIR" 단일이 아니라 AXT1/AXT1POST/AXT1PRE/AXT2/AXFLAIR **혼합** — 이 문서를 포함해 프로젝트 초기 문서들의 "AXFLAIR" 단일 표기는 부정확했음(`docs/summary_2026-06-11.md` §1) |
 | 가속률 | R = 4 equispaced (center fraction 0.08) |
 | 입력 | 언더샘플링된 k-space + aliased 이미지 |
 | 출력 | reconstruction_rss 기반 단일 채널 magnitude (320×320) |
@@ -563,3 +565,70 @@ train script 만 작성하면 launch 가능).
 | `docs/script_version_history.md` | 삭제된 .py 버전 진화 기록 |
 | `docs/cleanup_log.md` | 삭제 파일 대장 |
 | `PROJECT_SUMMARY.md` | 코드베이스 전체 기술 요약 |
+
+### §9 (확장 트랙) 참고 문서
+
+| 문서 | 다루는 내용 |
+|---|---|
+| `v7/README_v7.md` | 8GB→TITAN RTX×2 24GB 마이그레이션 |
+| `docs/eval_metric_redesign.md` | v7_titan brain-mask + weighted composite metric 재설계 |
+| `docs/ss2d_v7_titan_changes.md` | SS2D v7_titan 재학습 정상화 |
+| `docs/summary_2026-06-11.md` | v6+v7_titan 마스터 요약(§4.6 에 v8_eter_pure 도 포함) |
+| `docs/version_evolution.md` | V4→V6→V7/v7_titan 하이퍼파라미터 통합 비교 |
+| `docs/eternet_paper_data_consistency.md` | 교수님 원본 ETER-net 에 DC 블록 없음 확인 — v8 no-DC 설계 근거 |
+| `docs/v8_eter_pure_rnn_vs_ss2d.md` | v8: GRU vs SS2D 순수 통제비교, SS2D 완승 |
+
+---
+
+## 9. 이후 확장 트랙 — v7_titan / v8_eter_pure (2026-05-31 ~ 2026-07-07)
+
+> §1~§8 은 2026-05-28 시점(v6_3, 320×320, 8GB GPU) 까지의 발표본이다. 그 이후 프로젝트는
+> **완전히 다른 머신**(TITAN RTX 24GB×2, conda `base`)으로 옮겨 두 갈래로 확장됐다. 이 절은
+> 그 확장 트랙의 핵심 결과만 요약한다 — 상세는 위 표에 링크한 전용 문서 참고.
+
+### 9.1 마이그레이션(v7) → v7_titan (384×384, ViT-Base)
+
+8GB GPU 제약(§4의 모든 축소 결정의 근원)을 벗어나 TITAN RTX×2 로 이전(`v7/README_v7.md`),
+384×384 + ViT-Base + **원본 ETER-Net 의 GRU→U-Net 후처리 복원**(§4 v1 에서 8GB 때문에 Conv 1개로
+축소했던 바로 그 후처리)까지 마친 트랙이 v7_titan 이다. 평가도 재설계했다 — brain-mask 안에서만
+측정하는 weighted composite metric(`docs/eval_metric_redesign.md`) 도입, §4 발견②(visual-metric
+gap)의 원인 (1)(배경 부풀림)을 학습·평가 양쪽에서 직접 차단.
+
+**결과 (ep50 완주, masked composite)**:
+
+| 모델 | composite | SSIM_m | PSNR(dB) | L1 |
+|---|---:|---:|---:|---:|
+| ETER v7_titan | 0.9127 | 0.9084 | 34.59 | 9.518 |
+| SS2D v7_titan | 0.9127 | 0.9083 | 34.60 | 9.298 |
+
+**동일-composite dead-heat** — §6.3 의 "Mamba(SS2D) > Bi-GRU(ETER) 가 일관 관찰됨"(v6, raw SSIM)
+이라는 결론이 384(masked)에서는 **재현되지 않았다**. epoch10~30 에서는 SS2D 가 앞섰으나 ep~40 에서
+ETER 가 근소 재추월(교차점) — 최종은 사실상 동률. 상세: `docs/summary_2026-06-11.md` §4.
+
+### 9.2 v8_eter_pure — "DC 목발" 가설 검증 (GRU vs SS2D, ViT 없이)
+
+v7_titan dead-heat 에는 confound 가 있었다: ETER=GRU+no-DC, SS2D=Mamba+DC 로 **두 축이 얽혀 있어**
+"SS2D 가 DC 덕에 비겼을 뿐" 이라는 해석 가능성을 배제하지 못했다(교수님 원본 ETER-net 에는 애초에
+DC 가 없다 — `docs/eternet_paper_data_consistency.md`). v8_eter_pure 는 **ViT 자체를 빼고** 교수님
+순수 ETER-Net 위에서 **시퀀스 모델(GRU vs SS2D)만** 바꿔 이 confound 를 제거했다.
+
+**결과 (no-DC 쌍, ep48/50 best, masked composite)**:
+
+| 모델 | composite | SSIM_m | PSNR(dB) | params |
+|---|---:|---:|---:|---:|
+| **SS2D no-DC** | **0.9200** | **0.9140** | **35.16** | **31M** |
+| GRU no-DC | 0.9182 | 0.9126 | 35.03 | 668M |
+
+SS2D 가 **5개 지표 전부**, matched-epoch 전 구간(wire-to-wire) 우위 — v7_titan 과 달리 교차점이
+없다. 전체 7334 val 슬라이스 기준 per-slice win-rate 로도 SS2D 가 74~78% 우세(Wilcoxon p≈0).
+**"DC 목발" 가설(SS2D 우위가 DC 덕이라는 가설)은 반박됨** — DC 없이도, 오히려 파라미터 21× 적은
+SS2D 가 더 확실히 이긴다. 상세: `docs/v8_eter_pure_rnn_vs_ss2d.md`.
+
+### 9.3 §7(향후 과제) 와의 관계
+
+§7.2 의 "중기 과제" 중 **#3(학습형 sensitivity map)**, **#4(DC iteration↑)**, **#5(ETER+DC 통합)**
+은 여전히 미착수(v7_titan/v8 는 DC 자체 개선보다 아키텍처/공정성 축을 우선했다). §7.2 의 "단기
+과제 #1(ETER v6_3 완료 확인)" 도 여전히 미해결로 남아있다 — v6_3 ckpt/로그가 이 저장소 있는
+머신에 없어 여기서는 확인 불가(`docs/summary_2026-06-11.md` §6-⑤). 프로젝트의 실질적 초점은
+이후 v7_titan → v8_eter_pure 로 완전히 이동했다. v8 의 DC 축(GRU-DC, SS2D-DC 2런)은 **폐기**(2026-07-15) —
+문헌상 비표준·SS2D+DC 가 GRU+DC 와 수치 등가(`docs/v8_eter_pure_rnn_vs_ss2d.md` §7).

@@ -1,0 +1,16 @@
+========== v8 Pure ETER-Net 4-way 비교 요약 ==========
+슬라이스 12개: [0, 666, 1333, 1999, 2666, 3333, 3999, 4666, 5333, 5999, 6666, 7333]
+scale_match=True, brain-masked metric, 384×384, R4, no-DC
+
+              모델 |    masked PSNR(dB) |      masked SSIM
+---------------- | ------------------ | ----------------
+           U-Net |  31.55±2.32  (med 31.64) | 0.8946±0.0537 (med 0.9140)  [n=12]
+     GRU (no-DC) |  33.98±1.83  (med 34.05) | 0.9122±0.0328 (med 0.9274)  [n=12]
+    SS2D (no-DC) |  34.16±1.95  (med 34.15) | 0.9141±0.0330 (med 0.9295)  [n=12]
+
+[해석 / 주의]
+- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384
+  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.
+- GRU/SS2D = 교수님 순수 ETER-Net(ViT 없음) no-DC arm. aggregate 는 SS2D 완승
+  (composite 0.9200 vs 0.9182, docs/v8_eter_pure_rnn_vs_ss2d.md). 각 PNG 패널 제목에
+  슬라이스별 실제 지표 표기 — sulci/혈관 detail 은 육안으로 직접 비교할 것.
