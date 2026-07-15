@@ -2,7 +2,7 @@
 
 **한 줄 결론**: 교수님 순수 ETER-Net에서 **sequence model만 GRU→SS2D 로 교체**하면 (다른 모든 것 고정, DC 없음) **SS2D 가 모든 지표에서 GRU 를 완승**한다 — best masked composite **0.9200 vs 0.9182**, 게다가 **파라미터 21× 적음(31M vs 668M)**. 25개 matched-epoch 전 구간에서 SS2D 가 한 번도 지지 않는 **wire-to-wire 우위**.
 
-작성 2026-07-05 (SS2D no-DC ep50 완주 직후, 로그 기반). **갱신 2026-07-07**: per-slice paired 검증(전체 7334 슬라이스) + 4-way 시각화 완료 — §6.
+작성 2026-07-05 (SS2D no-DC ep50 완주 직후, 로그 기반). **갱신 2026-07-07**: per-slice paired 검증(전체 7334 슬라이스) + 4-way 시각화 완료 — §6. **갱신 2026-07-15**: DC 축 폐기 결정(문헌상 비표준 + SS2D+DC 이점 없음) — §7, 문헌 §10.
 
 ---
 
@@ -86,9 +86,19 @@ SS2D 가 **5개 지표 전부에서 슬라이스의 74~78%** 를 이긴다(Wilco
 
 **4-way 시각화** (`visualize_v8_pure_compare.py`[repo root] → `results/vis/v8_pure_eternet_compare/`, 12 슬라이스 `[0, 666, ..., 7333]`): sulci/혈관 디테일 자체는 두 모델이 육안으로 비슷한 수준이나(슬라이스별 PSNR 차 +0.1~+0.75dB, §5 의 "근소하지만 일관된 우위" 와 정합), **GRU 는 두개골 바깥 배경 영역에 반복적인 ringing/줄무늬 아티팩트**가 나타나는 반면 SS2D 는 그 영역이 뚜렷이 깨끗하다 — 확인한 4개 슬라이스(#1999, #3333, #4666, #5999) 전부에서 일관 관찰. brain-mask 밖이라 정량 지표엔 반영되지 않는 순수 정성적 차이 (§5-4 참조). 재현 명령은 §8.
 
-## 7. DC 축 (2×2 완성 여부 — 미결정)
+## 7. DC 축 — 폐기 (2026-07-15)
 
-no-DC 쌍이 이미 핵심 질문(Mamba > GRU)에 명확히 답했으므로, DC 축(GRU-DC, SS2D-DC) 2런은 **선택**. 돌린다면 "DC 가 두 모델에 각각 얼마 보태는가 / SS2D 우위가 DC 하에서도 유지되는가" 를 답함. 다만 ~12 GPU-day 추가 + GPU1(교수님) 회피 제약. 판단: no-DC 결과의 강건함(wire-to-wire 완승)을 볼 때 DC 축은 후순위.
+**결정**: 2×2 의 DC 쌍(GRU+DC, SS2D+DC)을 **폐기**한다. no-DC 비교(§3~6)가 교수님 ETER-Net 에 충실한 **최종 비교**다. (2026-07-08 DC 쌍 학습을 개시했으나 아래 이유로 중단.) 근거 넷:
+
+1. **문헌상 비표준.** 교수님 원본 ETER-net(Oh 2020, Med.Phys)엔 DC 가 없다(`docs/eternet_paper_data_consistency.md`). 문헌의 RNN+DC(CRNN-MRI Qin 2017; RIM Lønning 2019; RecurrentVarNet Yiasemis 2021; CIRIM Karkalousos 2021)와 Mamba+DC(MambaRoll Kabas 2024; SO-Mamba 2026)는 모두 **recurrence 가 최적화 반복을 unroll + DC 를 매 iteration interleave + 작은 unit** 인 구조다. 우리처럼 **거대 bi-GRU(도메인 변환) 뒤에 single soft-DC 를 한 번** 붙이는 건 문헌 표준이 아니다(§10).
+
+2. **GRU+DC 학습 불안정(NaN).** 개시한 GRU+DC 가 ep4 에서 발산(train_loss=NaN). GPU 진단: 원인 = **DC 가 증폭한 UNet backward gradient 의 fp16 overflow** — forward 는 fp16=fp32 로 정상이고, GradScaler 기본 scale(65536)이 과도한 게 핵심(scale≤8192 면 유한). 별개로 supervisor 가 옛 런의 잔존 `학습 완료` sentinel 을 매치해 실패(rc=1)를 완주로 오인하는 버그도 발견.
+
+3. **SS2D+DC 가 GRU+DC 보다 안정적이지 않음.** "SS2D 는 DC 를 잘 처리한다"를 통제 검증(fresh-init, 동일 배치, 150 step)한 결과 **두 arm 거의 등가** — GRU+DC overflow 2/150(scale 정착 16384) vs SS2D+DC overflow 3/150(scale 정착 8192; 오히려 미세하게 더 overflow-prone). 둘 다 GradScaler 자동 backoff 로 nan 없이 안정. SS2D+DC 통합 자체는 수학적으로 올바르나(sanity 16/16, §9.1) 특별한 이점이 없어, DC 축이 두 모델을 유의미하게 구분하지 못한다.
+
+4. **novelty.** SSM/Mamba 기반 MRI 재구성은 이미 성숙·경쟁적 분야(MambaRecon, MambaMIR, DH-Mamba, MMR-Mamba 등 2024~2026, §10). 본 트랙의 기여는 새 아키텍처가 아니라 **교수님 ETER-Net 골격에서 RNN→SSM 치환의 통제된 ablation(no-DC)** 이다.
+
+**향후 DC 재개 시**: 문헌식(interleaved DC cascade + 작은 recurrent unit)으로 재설계, fp16 학습이면 GradScaler scale 상한(≤8192) 또는 fp32. 기존 DC 코드·sanity(§9.1)·`sanity_dc_v8.py` 는 보존.
 
 ## 8. 재현
 
@@ -120,5 +130,45 @@ python visualize_v8_pure_compare.py
   → results/vis/v8_pure_eternet_compare/compare_*.png
   → results/vis/v8_pure_eternet_compare/metrics_summary.txt
 ```
+
+## 9. 코드 검증 (2026-07-08) 및 개선점
+
+### 9.1 DC 경로 사전검증 — 16/16 PASS
+
+DC 쌍 학습 개시와 동시에, 실학습 이력이 없던 DC 경로를 CPU-only(학습 중 GPU 무접촉)로 사전검증했다. 스크립트 `v8_eter_pure/sanity_dc_v8.py` — **SS2D+DC 자동 시작 전(GRU+DC 완주 무렵) 재실행 권장**.
+
+- **DCBlock 물리 항등식** (실 val 데이터, rel err ~1e-7): ① α=0 → out==x (항등) ② mask=0 → out==x (항등) ③ mask=1·α=1 → 해석해 `Σ ifft(k_meas·100)·sens*` 일치 ④ α=1, zero-filled 시작 → sampled-line k-residual 7.5%↓
+- **스케일/컨벤션 정합**: `iFFT(ksp×100) == data_img` (val_amp 1e4/1e6 비율 = `DC_K_SCALE_RATIO=100`, rel err 5e-8) · FFT centering(ifftshift→ortho→fftshift) dataloader↔DCBlock 동일 · sens 의 ACS 추출 윈도우 = mask 중앙 샘플링 밴드(cols 177:208) 정확 정렬 · Σ|sens|²=1 (brain 내)
+- **flip aug 와 DC 물리**: dataloader 가 flip 을 image 도메인에서 적용한 **뒤** FFT 로 k-space 재계산(`dataloader_h5_v5.py` step 3→4 순서)이므로 augmented 샘플에서도 DC 의 FFT 정합이 유지됨 — 이미지/k-space 를 따로 뒤집는 구현이었다면 DC arm 만 조용히 망가졌을 지점.
+- **통제 불변식 수치 확인**: DC−noDC param 차 = 118 = `UNet_choh_skip.last`(in 116ch) 출력 1ch 추가(117) + DC α(1) — DC 축이 출력 head 와 DCBlock 외 아무것도 바꾸지 않음.
+- **GRU+DC 풀 forward** (CPU, 실 데이터): 출력 (1,1,384,384) finite/양수, masked L1 계산 정상. supervisor '학습 완료' sentinel 오염 없음(GRU+DC 로그 0건, SS2D+DC 로그 미존재).
+
+잔여 리스크는 코드가 아니라 **SS2D+DC 의 VRAM** 뿐: noDC 가 23.0GB 로 빠듯했고 DC 의 fp32 FFT 버퍼가 추가됨 — `expandable_segments` 로 완화, 실확인은 SS2D+DC 기동 시.
+
+### 9.2 개선점
+
+**적용됨 (2026-07-08 — 수치 무영향, I/O 견고성)**:
+- `best.pt` / `epoch_N.pt` 저장 **atomic 화** (`save_checkpoint_atomic`: tmp 파일 → `os.replace`). 저장 도중 crash 시 ckpt 파손 창 제거 — `last.pt` 는 원래부터 atomic 이었고 best/epoch 스냅샷만 빠져 있었음. 실행 중인 GRU+DC 프로세스는 메모리에 올린 구 코드로 계속 돌고, supervisor 재시작 또는 SS2D+DC 시작부터 적용된다(학습 수치 영향 0 → 통제비교 무손상).
+
+**차기 재학습부터 적용 (지금 적용 금지 — noDC 쌍과 "everything else identical" 유지가 우선)**:
+
+전제: 2026-07-08 실측 GPU util 99% 포화 — 아래는 wall-time 개선일 뿐 결과 수치와 무관하며, 상한도 크지 않다.
+
+1. **H2D 전송 `non_blocking=True`** (상한 ~4%): 배치당 ~470MB(BS=8, 6텐서 fp32)의 동기 복사 ~40ms 를 GPU 연산과 중첩. `pin_memory=True` 가 이미 켜져 있어 `.to(device, non_blocking=True)` 로 바꾸기만 하면 됨(train/val 각 6줄).
+2. **`torch.backends.cudnn.benchmark = True`** (UNet conv 한정 5~15%, **조건부**): 입력 shape 고정(384², BS 고정)이라 이득 조건은 충족. 단 ① 알고리즘 탐색/선택에 따른 cudnn workspace VRAM 스파이크 — ETER v6 에서 workspace 증가로 첫 forward OOM → BS 8→4 강하했던 전례(`docs/eter_v6_changes.md`), ② 현재의 "step1 max 도달 후 평평 = OOM 예측 가능" 성질 상실, ③ run 간 bit-level 재현성 상실. → **23GB+ 빠듯한 SS2D 계열 런에는 금지**, VRAM 여유 런에만 선별 적용. GRU 의 cuDNN RNN 커널과 SS2D 의 mamba custom 커널은 이 플래그와 무관(효과는 DFU U-Net conv 에만).
+3. **val 의 per-slice 화**: `run_val` 의 PSNR/NMSE/L1 이 val batch(=BS//2=4)에 pooled 되는 §6 주의사항의 근본 해소. per-slice 로 통일하면 학습-시점 val 과 사후 paired 평가가 같은 좌표계가 되어 §6 식의 절대값 불일치 자체가 사라짐. skimage SSIM 의 CPU 실행(val ~25분/회의 일부)도 이때 함께 재검토.
+4. (미미) wandb per-batch 로깅 → every-N throttle, tqdm 로그 파일 비대화 억제.
+
+## 10. 관련 문헌 (RNN/SSM + Data Consistency, 2026-07-15 조사)
+
+DC 축 폐기 근거(§7)의 문헌 배경. Consensus 검색 기반.
+
+- **교수님 ETER-net**: Oh et al., "A k-space-to-image reconstruction network for MRI using recurrent neural network", *Med. Phys.* 2020 — bi-RNN 도메인 변환, **DC 없음**.
+- **RNN + DC (unrolled·interleaved)**: Qin et al. *CRNN-MRI* (IEEE TMI 2017, 566 cite); Lønning et al. *RIM* (Med. Image Anal. 2019); Yiasemis et al. *RecurrentVarNet* (CVPR 2022); Karkalousos et al. *CIRIM* (PMB 2021). 공통점: 작은 recurrent unit × DC 매 iteration.
+- **Mamba/SSM MRI 재구성**: Korkmaz et al. *MambaRecon* (WACV 2025); Huang et al. *MambaMIR* (Med. Image Anal. 2024); Meng et al. *DH-Mamba* (IEEE TCSVT 2025); Zou et al. *MMR-Mamba* (Med. Image Anal. 2024). — 이미 성숙·경쟁적 분야.
+- **Mamba + DC (unrolled)**: Kabas et al. *MambaRoll* (2024, physics-driven unrolled SSM); Fang et al. *SO-Mamba* (2026, DC-coupled unrolled).
+- **SS2D 비전 백본**: Ruan et al. *VM-UNet* (ACM TOMM 2024).
+
+---
 
 관련: `docs/eternet_paper_data_consistency.md`(교수님 ETER-Net 엔 DC 없음), `docs/summary_2026-06-11.md`(v7_titan dead-heat), `docs/eval_metric_redesign.md`(masked composite 정의).

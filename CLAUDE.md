@@ -14,7 +14,7 @@ ViT 를 아예 빼고 교수님 원본 순수 ETER-Net 위에서 시퀀스 모�
 |---|---|---|---|
 | v1~v6_x (루트) | 320×320, ViT-Small | RTX 5060Ti 8GB, `mri_env` — **옛 머신 전용, 이 저장소엔 ckpt 없음** | "복원" 단계, v6_3 채택후보(ETER v6_3 완료 여부 미문서화) |
 | v7 → v7_titan | 384×384, ViT-Base | TITAN RTX 24GB×2(단일 GPU 사용), `base` | "향상" 단계, **현재 운영** — ETER/SS2D 완주, dead-heat |
-| v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승), DC 쌍은 후순위 |
+| v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승) = **최종**; DC 축 폐기(비표준 확장) |
 
 트랙별 상세 비교표는 `docs/summary_2026-06-11.md` §2, 버전별 하이퍼파라미터는 `docs/version_evolution.md` §2 참고.
 
@@ -48,9 +48,9 @@ ViT 를 아예 빼고 교수님 원본 순수 ETER-Net 위에서 시퀀스 모�
 - **[docs/eval_metric_redesign.md](docs/eval_metric_redesign.md)** (2026-05-22) — **brain mask + weighted composite metric 재설계**. 배경 부풀림 진단, brain mask = Otsu×0.4 + largest CC (`dataloader_h5_v5.py:243`), composite = 0.5·SSIM + 0.3·(PSNR/40) + 0.2·(1−NMSE), masked L1+SSIM loss. v7_titan 본 학습 직전 적용.
 - **[docs/ss2d_v7_titan_changes.md](docs/ss2d_v7_titan_changes.md)** (2026-05-31) — **SS2D v7_titan 재학습 정상화**. DDP 폐기→scratch, true checkpoint resume(full-state `ss2d_vit_last.pt`, LR연속, unit-test PASS), auto-restart supervisor, BS6 풀-step smoke. VAL_EVERY 5→2, patience 10→50, NUM_EPOCHS=50(ETER 비교). 비교 baseline: ETER v7_titan masked composite 0.9127 / SSIM 0.9084.
 - **[docs/summary_2026-06-11.md](docs/summary_2026-06-11.md)** (2026-06-11, 갱신 2026-06-16) — **최신 마스터 요약**. v6(320)+v7_titan(384) 통합. SS2D v7_titan **ep50 완주**(composite 0.9127 / SSIM_m 0.9083), ETER 완주(0.9127/0.9084)와 **dead-heat(near-tie 확정)**. 동일-epoch ep10~30 SS2D 우위 → **ep40 ETER 재추월(교차점, §4.5)** — 2026-06-02 "조기 우위" 서사 정정. L1 SS2D 우위(9.298<9.518), NMSE ETER 우위. (이전 스냅샷: [summary_2026-06-02.md](docs/summary_2026-06-02.md))
-### v8_eter_pure 갈래 (순수 ETER-Net · GRU vs SS2D 통제비교) — no-DC 쌍 완주
+### v8_eter_pure 갈래 (순수 ETER-Net · GRU vs SS2D 통제비교) — no-DC 쌍 완주 = 최종 (DC 축 폐기)
 - **[docs/eternet_paper_data_consistency.md](docs/eternet_paper_data_consistency.md)** (2026-05-31) — 교수님 원본 ETER-net(논문+코드) 확인 결과 명시적 Data-Consistency 블록 없음. 프로젝트의 DC block(v4~)은 SS2D-arm 전용 증강이라 v7_titan ETER-vs-SS2D 비교의 confound였음 — v8_eter_pure 의 no-DC 우선 설계 근거.
-- **[docs/v8_eter_pure_rnn_vs_ss2d.md](docs/v8_eter_pure_rnn_vs_ss2d.md)** (2026-07-05, 갱신 2026-07-07) — **교수님 순수 ETER-Net(no ViT, no DC)에서 sequence model 만 GRU↔SS2D 교체하는 통제비교**. v7_titan dead-heat 의 confound(Mamba+DC vs GRU) 제거. 결과: **SS2D 완승** — best composite **0.9200**(ep48) vs GRU 0.9182(ep50), 5지표 전부·params 21×↓(31M vs 668M), matched-epoch 전구간 wire-to-wire 우위 → "DC 목발" 가설 반박. 로그기반 분석 `v8_eter_pure/analyze_v8_nodc.py` → `results/eval/v8_nodc/`. **per-slice paired 검증**(전체 7334 슬라이스, `eval_paired_v8_nodc.py`): SS2D 가 5지표 전부 74~78% 슬라이스 승률(Wilcoxon p≈0). **4-way viz**(`visualize_v8_pure_compare.py`): GRU 는 두개골 바깥 배경에 ringing 아티팩트, SS2D 는 깨끗함(§6).
+- **[docs/v8_eter_pure_rnn_vs_ss2d.md](docs/v8_eter_pure_rnn_vs_ss2d.md)** (2026-07-05, 갱신 2026-07-15) — **교수님 순수 ETER-Net(no ViT, no DC)에서 sequence model 만 GRU↔SS2D 교체하는 통제비교**. v7_titan dead-heat 의 confound(Mamba+DC vs GRU) 제거. 결과: **SS2D 완승** — best composite **0.9200**(ep48) vs GRU 0.9182(ep50), 5지표 전부·params 21×↓(31M vs 668M), matched-epoch 전구간 wire-to-wire 우위 → "DC 목발" 가설 반박. 로그기반 분석 `v8_eter_pure/analyze_v8_nodc.py` → `results/eval/v8_nodc/`. **per-slice paired 검증**(전체 7334 슬라이스, `eval_paired_v8_nodc.py`): SS2D 가 5지표 전부 74~78% 슬라이스 승률(Wilcoxon p≈0). **4-way viz**(`visualize_v8_pure_compare.py`): GRU 는 두개골 바깥 배경에 ringing 아티팩트, SS2D 는 깨끗함(§6). **갱신 2026-07-15**: DC 축 폐기 확정(§7) — 문헌상 비표준(교수님 ETER-net·문헌 RNN+DC 모두 다른 구조)·GRU+DC ep4 NaN·SS2D+DC 도 GRU+DC 와 수치 등가로 판명 → no-DC 가 최종 비교. 문헌 §10.
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
 
@@ -91,7 +91,7 @@ SS2D 는 루트와 동일 클래스(`u_choh_model_SS2D_ViT_v4.py`)를 그대로 
        └──────── cat(seq출력, aliased image) ────┘   ← 2-way concat
                       │
          UNet_choh_skip (DFU, depth=5, wf=6)
-                      │  (use_dc=True 인 DC arm 만: 이 뒤에 DC block 추가 — 현재는 no-DC 쌍만 학습됨)
+                      │  (use_dc=True 인 DC arm 만: 이 뒤에 DC block 추가 — DC 축 폐기, no-DC 만 최종)
               출력: (B, 1, 384, 384)
 ```
 GRU/SS2D 를 제외한 모든 것이 100% 동일(`models/pure_eternet/u_pure_eternet_{gru,ss2d}.py`) — 단일 변수 통제.
@@ -203,7 +203,7 @@ python visualize_v7_titan_compare.py
 
 ### v8_eter_pure (384, ViT 없음, GRU vs SS2D)
 ```bash
-# SEQ_MODEL=gru|ss2d, USE_DC=0|1 로 4런 중 하나 선택 (현재 no-DC 2런만 완주)
+# SEQ_MODEL=gru|ss2d, USE_DC=0|1 로 런 선택 (no-DC 2런이 최종; DC 축 폐기 — docs/v8_eter_pure_rnn_vs_ss2d.md §7)
 SEQ_MODEL=ss2d USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pure_v8_autoresume.sh
 
 # per-slice paired 평가 (전체 val, ~2h) + 4-way 시각화 (GT/U-Net/GRU/SS2D)

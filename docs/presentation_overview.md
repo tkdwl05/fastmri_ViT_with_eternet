@@ -630,5 +630,5 @@ SS2D 가 더 확실히 이긴다. 상세: `docs/v8_eter_pure_rnn_vs_ss2d.md`.
 은 여전히 미착수(v7_titan/v8 는 DC 자체 개선보다 아키텍처/공정성 축을 우선했다). §7.2 의 "단기
 과제 #1(ETER v6_3 완료 확인)" 도 여전히 미해결로 남아있다 — v6_3 ckpt/로그가 이 저장소 있는
 머신에 없어 여기서는 확인 불가(`docs/summary_2026-06-11.md` §6-⑤). 프로젝트의 실질적 초점은
-이후 v7_titan → v8_eter_pure 로 완전히 이동했다. v8 의 DC 축(GRU-DC, SS2D-DC 2런) 완성 여부는
-아직 미결정·후순위(`docs/v8_eter_pure_rnn_vs_ss2d.md` §7).
+이후 v7_titan → v8_eter_pure 로 완전히 이동했다. v8 의 DC 축(GRU-DC, SS2D-DC 2런)은 **폐기**(2026-07-15) —
+문헌상 비표준·SS2D+DC 가 GRU+DC 와 수치 등가(`docs/v8_eter_pure_rnn_vs_ss2d.md` §7).
