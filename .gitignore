@@ -46,3 +46,16 @@ results/vis/v7_titan_compare/*
 results/vis/v7_titan_eval_modes/*
 !results/vis/v7_titan_eval_modes/*.png
 !results/vis/v7_titan_eval_modes/metrics_eval_modes.txt
+
+# v8_eter_pure no-DC 결과 GitHub 공유 (4-way viz·평가표·곡선; 대용량 per_slice CSV/log 은 계속 무시)
+!results/vis/v8_pure_eternet_compare/
+results/vis/v8_pure_eternet_compare/*
+!results/vis/v8_pure_eternet_compare/*.png
+!results/vis/v8_pure_eternet_compare/metrics_summary.txt
+!results/eval/
+results/eval/*
+!results/eval/v8_nodc/
+results/eval/v8_nodc/*
+!results/eval/v8_nodc/matched_epoch_table.md
+!results/eval/v8_nodc/win_rate_summary.md
+!results/eval/v8_nodc/curves_composite_ssim_psnr.png
