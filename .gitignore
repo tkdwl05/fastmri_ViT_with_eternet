@@ -59,3 +59,11 @@ results/eval/v8_nodc/*
 !results/eval/v8_nodc/matched_epoch_table.md
 !results/eval/v8_nodc/win_rate_summary.md
 !results/eval/v8_nodc/curves_composite_ssim_psnr.png
+# v8 R 일반화 cross-eval 결과 공유 (곡선·표; 대용량 per_slice CSV 없음)
+!results/eval/v8_r_sweep/
+results/eval/v8_r_sweep/*
+!results/eval/v8_r_sweep/*.png
+!results/eval/v8_r_sweep/r_generalization_table.md
+!results/eval/v8_r_sweep_norm/
+results/eval/v8_r_sweep_norm/*
+!results/eval/v8_r_sweep_norm/r_generalization_table.md
