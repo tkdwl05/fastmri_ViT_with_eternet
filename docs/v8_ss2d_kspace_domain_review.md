@@ -97,6 +97,26 @@ out    = self.unet(in_cnn)
 - **모델 쪽 — 자연스럽게 처리됨**: seq model 은 R 스칼라를 입력받지 않고 `x_ksp` 의 0 패턴(= 측정 라인)으로 샘플링을 인지한다. 따라서 소수 R 이든 정수 R 이든 **그냥 다른 샘플링 패턴일 뿐** → 별도 조건/재학습 없이 처리(§4.2-②④ mask-aware·전역 RF 가 뒷받침). 단 학습 밀도에서 먼 R 은 OOD → §4.2-⑤(multi-AR 학습)로 완화.
 - **오히려 이득**: 이산 {2,4,6,8} 대신 **R∈[2,8] 연속 sweep** 으로 평가하면 일반화 곡선이 연속이 되어 LMO 의 "연속 AR 대응" 화두와 정합 + 임상 정합↑. → §4.3-1단계의 R cross-eval 을 연속 sweep 으로 확장 권장(마스크만 밀도 기반으로 바꾸면 평가 코드는 동일).
 
+### 4.5 실측 결과 (2026-07 — R cross-eval + R-불변 정규화)
+
+**방법**: R4 학습한 no-DC 모델(GRU 668M·SS2D 31M)을 **재학습 없이** R∈{2,4,6,8}에서 평가. 전체 val 을 stride-4 로 파일 전반 대표샘플(~1834슬라이스/R, 첫-N 편향 제거). 스크립트 `v8_eter_pure/eval_r_generalization_v8.py`(`--stride`·`--r-invariant-norm`), 산출물 `results/eval/v8_r_sweep/`, 곡선 `r_generalization_curves.png`. **표준지표 SSIM/PSNR/NMSE 로 보고** — 내부 `composite`(0.5·SSIM+0.3·PSNR/40+0.2·(1−NMSE))는 EarlyStop·best-ckpt 선택용 커스텀 스칼라일 뿐 **비표준이라 headline 제외**(fastMRI 표준 = 세 지표 개별).
+
+| R | SSIM GRU/SS2D | PSNR(dB) GRU/SS2D | NMSE GRU/SS2D |
+|---:|---|---|---|
+| 2 | 0.9013 / 0.9000 | 26.86 / 26.72 | 0.0222 / 0.0231 |
+| **4** (학습) | 0.9203 / **0.9218** | 33.91 / **34.03** | 0.0042 / **0.0041** |
+| 6 | 0.8691 / 0.8708 | 30.16 / 30.25 | 0.0096 / 0.0094 |
+| 8 | 0.8155 / 0.8170 | 27.86 / 27.92 | 0.0164 / 0.0162 |
+
+**판정**:
+1. **두 모델 다 R4 과적합** — 세 지표 모두 R4 에서 peak, 양옆으로 하락. R4 직접학습이라 LMO식 "재학습-없는 일반화"는 우리 직접매핑 아키텍처에서 성립 안 함(§4.3-3 확인).
+2. **SS2D 우위는 R4 특화** — R4/6/8 에선 SS2D 가 SSIM·PSNR·NMSE **셋 다** 우세하나 격차가 R4 최대→R↑ 축소, **R2 에선 셋 다 GRU 근소 우세(역전)**. → "Mamba 전역성이 일반화에도 유리"는 **R4 근방 한정**.
+3. **R2 는 지표가 갈린다 (개별지표의 가치)** — R2 는 **SSIM 이 R6 보다 오히려 높지만(0.901>0.869; 구조 보존, 측정 데이터 많음) PSNR/NMSE 는 R6 보다 나쁨(강도/픽셀오차)**. 단일 composite 는 이 분기를 가렸음 → **개별 SSIM/PSNR/NMSE 보고가 옳음.** R2 강도오차는 R-불변 정규화(입력 magnitude R4 통일)로 극히 일부만 회복(PSNR +0.28dB/7dB 격차, composite +0.003, SS2D-vs-GRU 불변) → **단순 전역 스케일 아닌 aliasing-구조 OOD.** 근본 레버는 §4.2-③ 정규화가 아니라 **§4.2-⑤ multi-AR 학습** 또는 **DC(측정 앵커)**.
+
+**곁가지 (double descent)** — 학습로그상 `train_loss≈val_L1`(갭~0)·loss~9 plateau = **interpolation 한참 전**(underparameterized-for-task; dense recon 은 학습이미지 픽셀단위 재현이 목표라 threshold 가 천문학적). epoch 를 늘려도 DD 안 나옴(첫 overfit 상승 자체가 없음). DD 관측엔 데이터 축소+label noise 로 interpolation 도달시키는 별개 실험 필요.
+
+**남은 확장(우선순위 낮음)**: §4.4 연속 R∈[2,8] sweep(밀도기반 float-R 마스크). 이산 {2,4,6,8}로 R4-peak·SS2D 특화·R2 분기가 이미 명확해 후순위.
+
 ---
 
 관련: `docs/v8_eter_pure_rnn_vs_ss2d.md`(no-DC 완승·2×2), `docs/eternet_paper_data_consistency.md`(ETER-net 엔 DC 없음, DC 는 증강 probe), 계획 `/root/.claude/plans/abundant-wishing-pebble.md`(DC 완주→2×2, R cross-eval 확장 후보).
