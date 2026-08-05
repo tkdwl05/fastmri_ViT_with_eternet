@@ -17,7 +17,7 @@ R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(
 | v1~v6_x (루트) | 320×320, ViT-Small | RTX 5060Ti 8GB, `mri_env` — **옛 머신 전용, 이 저장소엔 ckpt 없음** | "복원" 단계, v6_3 채택후보(ETER v6_3 완료 여부 미문서화) |
 | v7 → v7_titan | 384×384, ViT-Base | TITAN RTX 24GB×2(단일 GPU 사용), `base` | "향상" 단계 — ETER/SS2D ep50 완주, dead-heat (완료·역사) |
 | v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승 0.9200) = **GRU↔SS2D 비교의 최종 결론**; DC 축 폐기(비표준 확장) |
-| v9_mamba (unleashed/radapt) | 384×384, ViT 없음 | TITAN RTX 24GB(GPU0 단독), `base` | **현재 운영** — v8 승자(SS2D) 강화(게이팅·3블록·병목해제). unleashed(R4 품질)→radapt(R 일반화) 80ep 순차 체인. 2026-07-21 launch, unleashed ~ep14/80 진행 중 |
+| v9_mamba (unleashed/radapt) | 384×384, ViT 없음 | TITAN RTX 24GB(GPU0 단독), `base` | **현재 운영** — v8 승자(SS2D) 강화(게이팅·3블록·병목해제). **unleashed 80ep 완주(07-30): best 0.9203 > v8 SS2D 0.9200 목표 달성**(근소·유의, per-slice 5지표 win-rate 54~56%). radapt 는 07-30 NVML 장애로 좌초 → **08-05 재기동**(scratch, ETA ~08-14) |
 
 트랙별 상세 비교표는 `docs/summary_2026-06-11.md` §2, 버전별 하이퍼파라미터는 `docs/version_evolution.md` §2 참고.
 
@@ -57,7 +57,7 @@ R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(
 - **[docs/v8_ss2d_kspace_domain_review.md](docs/v8_ss2d_kspace_domain_review.md)** (2026-07-08) — 외부 리뷰(ETER-net+SS2D) 판정 + SS2D 가 domain-transform 자리(k-space 입력, GRU 와 동일)임을 코드로 확정. 리뷰어의 "지역성↔전역성 미스매치" 우려는 no-DC 완승으로 실증 기각. 후속 로드맵: 가속률(R) 일반화 성립 조건(DC·mask-aware·multi-AR·전역 RF) — **v9_mamba radapt 의 설계 근거**.
 
 ### v9_mamba 갈래 (강화 SS2D · R4 품질 극대화 + R 일반화) — 현재 운영
-- **[docs/v9_mamba_unleashed_and_radapt.md](docs/v9_mamba_unleashed_and_radapt.md)** (2026-07-23) — **v9 신규 트랙 두 변형**. v8 no-DC 파이프라인은 그대로 두고 **시퀀스 모델만 강화 SS2D**(`models/mamba_eternet/ss2d_v9.py`: 게이팅 복원 `y=y·SiLU(z)` + 3-블록 잔차 스택 + 병목 해제 out_ch 20→64, d_inner 128→256/d_state 16→32)로 교체. **fp16 selective-scan + ds=3 다운샘플**(128² coarse scan)로 풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. **unleashed** = 고정 R4 품질 극대화(mask/DC 없음), **radapt** = 같은 백본 + R 일반화 3요소(mask-channel conditioning·v8 DC block 재사용·multi-AR 학습 R∈{2,3,4,5,6,8}). 원본(`ss2d.py`·`myUNet_DF.py`·`dataloader_h5_v5.py`) **무수정**, 신규 파일만 추가. 목표 = v8 SS2D 0.9200 돌파. 현재 unleashed ~ep14/80(best ep12 0.9029, 아직 v8 미달), radapt 미시작(unleashed DONE 후 자동 체인).
+- **[docs/v9_mamba_unleashed_and_radapt.md](docs/v9_mamba_unleashed_and_radapt.md)** (2026-07-23) — **v9 신규 트랙 두 변형**. v8 no-DC 파이프라인은 그대로 두고 **시퀀스 모델만 강화 SS2D**(`models/mamba_eternet/ss2d_v9.py`: 게이팅 복원 `y=y·SiLU(z)` + 3-블록 잔차 스택 + 병목 해제 out_ch 20→64, d_inner 128→256/d_state 16→32)로 교체. **fp16 selective-scan + ds=3 다운샘플**(128² coarse scan)로 풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. **unleashed** = 고정 R4 품질 극대화(mask/DC 없음), **radapt** = 같은 백본 + R 일반화 3요소(mask-channel conditioning·v8 DC block 재사용·multi-AR 학습 R∈{2,3,4,5,6,8}). 원본(`ss2d.py`·`myUNet_DF.py`·`dataloader_h5_v5.py`) **무수정**, 신규 파일만 추가. **결과(08-05 갱신)**: unleashed 80ep 완주(07-30, early_stop 없음) — best ep78 **composite 0.9203 / ssim_m 0.9145 / psnr 35.18** 로 목표(v8 SS2D 0.9200/0.9140) **근소 돌파**. 0.9200 도달 최초 ep70 — matched-ep50 시점엔 0.9171 로 미달, 우위는 80ep 연장 구간에서(§11 정직 주석: best 도달 wall-clock 은 v9 가 더 소요). **per-slice paired 검증**(`v9_mamba_unleashed/eval_paired_v9.py`, 전체 7334슬라이스, v8 CSV 조인): vs v8-SS2D **5지표 전부 승, win-rate 54~56%**(Wilcoxon p≤4e-13 — 유의하나 근소) / vs GRU 78~82% 완승. 로그기반 3-way 곡선·표 `analyze_v9_unleashed.py` → `results/eval/v9_unleashed/`. radapt 는 07-30 자동 launch 가 NVML 다운으로 좌초(supervisor 50회 소진, ckpt 0개) → **08-05 재기동**(scratch, MAX_RETRY=200, ETA ~08-14).
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
 
@@ -188,7 +188,7 @@ v9_mamba_radapt/runs/
 ```
 - ckpt/state 는 v7/v8 의 `runs/` 서브폴더와 달리 **`./logs/<RUN_NAME>/`** 아래에 쌓인다: `ss2d_v9_last.pt`(매 ep, full-state resume), `ss2d_v9_epoch_N.pt`(매 5ep), `ss2d_v9_best.pt`(best composite). RUN_NAME = `PureETER_SS2D_V9_unleashed_R4_brain384` / `..._radapt_multiAR_brain384`.
 - 완료 sentinel = **`logs/<RUN_NAME>/DONE` 파일**(v8 의 stale-log grep 버그 대체). 체인 드라이버가 unleashed 의 DONE 을 확인한 뒤에야 radapt 를 시작한다.
-- 평가/시각화 결과는 아직 없음 → 향후 `results/eval/v9*`·`results/vis/v9*`. R-sweep 은 post-hoc(v8 `v8_eter_pure/eval_r_generalization_v8.py` 재사용/변형).
+- 평가 결과: `results/eval/v9_unleashed/`(per-slice paired CSV·win-rate·3-way 곡선, 2026-08-05 — 로컬 전용). 시각화·radapt R-sweep 은 radapt 완주 후 post-hoc(v8 `v8_eter_pure/eval_r_generalization_v8.py` 재사용/변형).
 
 ## 결과 폴더 구조 (results/)
 
@@ -198,13 +198,14 @@ results/
 ├── eval/
 │   ├── v8_nodc/          # v8 per-slice CSV·win-rate·matched-epoch·composite/SSIM/PSNR 곡선
 │   ├── v8_r_sweep/       # v8 R 일반화 cross-eval (raw)
-│   └── v8_r_sweep_norm/  #   〃 (normalized)
+│   ├── v8_r_sweep_norm/  #   〃 (normalized)
+│   └── v9_unleashed/     # v9 per-slice paired CSV·win-rate·3-way 곡선 (2026-08-05, 로컬 전용)
 └── vis/
     ├── v7_titan_compare/         # v7_titan 4-way GT/U-Net/ETER/SS2D
     ├── v7_titan_eval_modes/      # v7_titan eval-mode 비교
     └── v8_pure_eternet_compare/  # v8 4-way GT/U-Net/GRU/SS2D
 ```
-(v9 결과는 아직 없음 → 향후 `results/eval/v9*`·`results/vis/v9*`.)
+(v9 시각화는 아직 없음 → 향후 `results/vis/v9*`. radapt R-sweep 도 완주 후.)
 
 **`.gitignore` 화이트리스트** — `results/` 는 기본 무시, 아래만 예외적으로 GitHub 공유:
 `results/vis/{v7_titan_compare,v7_titan_eval_modes,v8_pure_eternet_compare}/` 의 PNG/txt +

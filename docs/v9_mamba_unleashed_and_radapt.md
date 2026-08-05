@@ -194,38 +194,62 @@ PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True CUDA_VISIBLE_DEVICES=0 WANDB_MO
 d_inner256 · d_state32 · n_blocks3 · 게이팅 · out_ch64 · **ds=3** · fp16 스캔 · BS8 · 80ep · ~34M params.
 최종 스모크: unleashed 2.51 h/ep·16.7GB, radapt 2.61 h/ep·17.2GB (둘 다 v8 보다 빠름).
 **품질 미검증**: 다운샘플이 정량지표에 주는 영향은 학습 후 실측(ds=2/4 는 ablation 후보). d_state 32→16 이
-스캔 cost 의 최대 레버였음(§ 스윕).
+스캔 cost 의 최대 레버였음(§ 스윕). → **§11 에서 해소**(ds=3 로 v8 돌파, ds=2 ablation 불필요 판정).
 
-## 11. 학습 진행 로그 (2026-07-23 갱신)
+## 11. 결과 — unleashed 80ep 완주 (2026-08-05 최종 갱신; 07-23 라이브 로그를 최종본으로 대체)
 
-**unleashed 학습 중** (launch 2026-07-21 13:02 UTC, 순차 체인). 2026-07-23 기준 **ep14/80 진행**,
-1.17 s/batch·BS8·GPU 100% 유지. best ckpt = ep12 (`ss2d_v9_best.pt`).
+**완주**: launch 2026-07-21 13:02 UTC → **DONE 2026-07-30 22:51** (80ep, early_stop 없음, ~9.4일 — 실측 ~2.51 h/ep 유지).
 
-**val 궤적** (R4, 매 2 epoch, v8 와 동일 지표 정의):
+### 11.1 최종 성적 — 목표(v8 SS2D 0.9200 돌파) 달성 (근소)
 
-| ep | composite | SSIM_m | PSNR | NMSE | L1 |
-|---:|---:|---:|---:|---:|---:|
-| 2 | 0.8753 | 0.8753 | 31.91 | 0.0087 | 12.76 |
-| 4 | 0.8909 | 0.8913 | 32.87 | 0.0068 | 11.50 |
-| 6 | 0.8993 | 0.8972 | 33.57 | 0.0056 | 10.58 |
-| 8 | 0.9019 | 0.9015 | 33.64 | 0.0055 | 10.54 |
-| 10 | 0.9026 | 0.9028 | 33.63 | 0.0055 | 10.54 |
-| 12 | 0.9029 | 0.9019 | 33.73 | 0.0054 | 10.44 |
+| | composite | SSIM_m | PSNR | NMSE | L1 |
+|---|---:|---:|---:|---:|---:|
+| **v9 best ckpt (ep78)** | **0.9203** | 0.9145 | 35.18 | 0.0039 | 8.9314 |
+| v8 SS2D best (ep48) | 0.9200 | 0.9140 | 35.16 | 0.0039 | 8.9311 |
+| v8 GRU best (ep50) | 0.9182 | 0.9126 | 35.03 | 0.0040 | 9.0542 |
 
-**관찰**:
-- 초반 급상승 후 ep8~12 **완만화**(0.9019→0.9026→0.9029, +0.0003/2ep).
-- **아직 v8 SS2D(comp 0.9200 / ssim_m 0.9140 / psnr 35.16) 아래** — v9 ep12 comp 0.9029·ssim_m 0.9019·
-  psnr 33.7. 68 epoch + LR cosine annealing(현재 1.87e-4→1e-6) 남아 **후반 개선 여부가 관건**. 이것이
-  **다운샘플(ds=3) 품질 영향 규명의 핵심 데이터**: 후반에도 0.9200 미달 plateau 시 → ds=2(더 고해상 스캔)
-  또는 다운샘플 완화 재검토 필요. train-val gap 정상(train PSNR ~37 vs val 33.7).
+- 0.9203 최초 도달 ep72(**ssim_m 최고 0.9147**), best ckpt 저장분은 ep78(동률 갱신), 최종 ep80 = 0.9201.
+- 로그 기준 L1 은 v8-SS2D 와 사실상 동률(8.9314 vs 8.9311) — 단 per-slice 평균 l1 은 v9 우위(8.879 < 8.883, win-rate 54.4%).
+- **ds=3 다운샘플 우려 해소**: ep40 시점 비관(0.9146, v8 대비 열위) → 후반 cosine anneal 로 역전.
+  **ds=2 ablation 불필요** 판정.
 
-**인프라 주의**: 2026-07-23 nvidia-smi `NVML Unknown Error` 재발([[host-nvml-issue]]) — **학습 프로세스는
-CUDA 컨텍스트 유지하며 계속 진행 중**(ep14 batch 전진 확인)이나, 프로세스가 죽으면 supervisor 재기동이 CUDA
-재획득 실패할 수 있음(호스트 도커 재시작 필요). 실패/재시작 감시 모니터 armed.
+### 11.2 per-slice paired 검증 (2026-08-05, `v9_mamba_unleashed/eval_paired_v9.py`)
 
-**radapt**: 미시작(unleashed 완주 후 체인 자동 시작).
+전체 val **7334 슬라이스**에서 v9 best 를 추론, v8 no-DC per-slice CSV(`results/eval/v8_nodc/`)와
+`(file, slice_idx)` 조인(**7334/7334 전건 매칭**). 산출 → `results/eval/v9_unleashed/`.
+
+| 비교 | 5지표 win-rate | Wilcoxon |
+|---|---|---|
+| **v9 vs v8-SS2D** | **54.2~56.0% — 5지표 전부 v9 승** | p ≤ 4e-13 (유의하나 근소) |
+| v9 vs v8-GRU | 78.4~82.3% 완승 | p ≈ 0 |
+
+- 정합 sanity: per-slice ssim 평균 **0.9145 = 학습 로그 ep78 val_ssim_m 정확 일치**(v8-SS2D 0.9140,
+  GRU 0.9126 도 각자 로그와 일치). composite 절대값(0.9107)이 로그(0.9203)보다 낮은 것은 per-slice vs
+  배치풀링(학습 val BS=4, 배치 공유 ref-max) 정의 차이 — v8 도 동일 오프셋(0.9104 vs 0.9200), paired 비교는 유효.
+- 해석: **v9 는 v8-SS2D 를 전 지표에서 통계적으로 유의하게 이기지만 격차는 근소(≈56%)** — "동급+α".
+  GRU 대비는 v8-SS2D 때(74~78%)보다 더 벌어진 **78~82%**.
+
+### 11.3 정직 주석 — 우위는 80ep 연장 구간에서
+
+- **matched-ep50 시점 v9 = 0.9171 < v8-SS2D@ep48~50(0.9200)**. v9 가 v8 best 에 도달한 최초 epoch = **ep70**.
+- ep당 시간은 v9 가 빠르지만(2.51 vs 2.78 h/ep) **best 도달 wall-clock 은 v9 ≈181h > v8-SS2D ≈133h**.
+- 즉 "같은 학습량에서 더 좋다"가 아니라 "**ep당 속도 이득으로 더 긴 스케줄(80ep)을 소화해 최종 품질을
+  넘었다**"가 정확한 서사. 강화 SS2D(게이팅·3블록·병목해제)+ds=3 의 순수 아키텍처 이득은 근소.
+- 로그기반 3-way 곡선·matched-epoch 표: `v9_mamba_unleashed/analyze_v9_unleashed.py` →
+  `results/eval/v9_unleashed/{curves_v9_vs_v8.png, matched_epoch_table_v9.md, win_rate_summary_v9.md}`.
+
+### 11.4 인프라 사건 — radapt 자동 체인 좌초 → 08-05 재기동
+
+- 07-23 nvidia-smi `NVML Unknown Error` 재발([[host-nvml-issue]]) — **학습 프로세스는 CUDA 컨텍스트
+  유지로 생존**, 완주까지 무사.
+- **07-30 22:52 체인이 radapt 자동 launch → 새 프로세스가 CUDA 획득 실패**(`RuntimeError: CUDA GPU 필수`,
+  wandb.init 이전이라 쓰레기 run 없음). supervisor 50회(~52분) 소진 → 23:44 체인 중단(radapt ckpt 0개).
+  07-29 경고했던 리스크가 정확히 현실화.
+- **08-05 host docker restart 로 NVML 복구** 확인 후 radapt supervisor **단독 재기동**(scratch,
+  `MAX_RETRY=200` env 오버라이드로 flake 자가복구 창 ~52분→~3.5h 확대). ETA 80ep×2.61 h/ep ≈ 8.7일 →
+  **~08-13/14 완주 예상**. 이전 실패 로그는 `v9_mamba_radapt/runs/ss2d/*.log.failed-20260730` 보존.
 
 ---
 
 관련: 계획 `shimmying-doodling-dusk.md`, `docs/v8_eter_pure_rnn_vs_ss2d.md`, `docs/v8_ss2d_kspace_domain_review.md`.
-CLAUDE.md 트랙표·`docs/INDEX.md` 반영은 **학습 완주 후**.
+CLAUDE.md 트랙표·`docs/INDEX.md` 최종값 반영 완료(2026-08-05).
