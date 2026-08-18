@@ -4,7 +4,7 @@
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
 > **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 학습 재개 완료(08-18, ETA ~08-25) — 완주 후 포함 여부 결정(부록 B-3).
-> **미완 요소**: §4.4 기준선 결과(스크립트 준비, GPU 대기), Fig.1·Fig.4(미작성), 참고문헌 중 ⚠ 표시 서지(투고 전 확정), 저자·소속·펀딩.
+> **미완 요소**: §4.4 기준선 결과(스크립트 준비, GPU 대기), Fig.1(미작성), 참고문헌 중 ⚠ 표시 서지(투고 전 확정), 저자·소속·펀딩. (Fig.4 는 08-18 생성 완료)
 > 영어 전환은 내용(교수님 검토) 확정 후.
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:
@@ -467,7 +467,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 | Fig.1 아키텍처 다이어그램 (a: 공통 골격+양 arm, b: 강화 SS2D) | 신규 작성 필요 (§3.2/3.3 기반) | ❌ 미작성 |
 | Fig.2 학습 곡선 (GRU vs SS2D vs 강화판, SSIM/PSNR) | `results/eval/v9_unleashed/curves_v9_vs_v8.png` | ✅ (논문용 재도색 권장) |
 | Fig.3 4-way 정성 비교 + 배경 ringing | `results/vis/v8_pure_eternet_compare/compare_*.png` | ✅ (슬라이스 선별 필요) |
-| Fig.4 per-slice 우위 비율/차이 분포 | `results/eval/{v8_nodc,v9_unleashed}/per_slice_paired*.csv` 에서 신규 플롯 | ❌ 미작성 |
+| Fig.4 per-slice 우위 비율/차이 분포 | `paper/figs/fig4_per_slice_distribution.{png,pdf}` — 생성 스크립트 `paper/make_fig4_per_slice.py` (입력 `results/eval/v9_unleashed/per_slice_paired_v9.csv`) | ✅ 2026-08-18 (2행×4지표 paired-Δ 히스토그램 + win-rate, 양수=치환/강화 우위 규약) |
 | Tab.1 best 지표 비교 | `docs/v8_eter_pure_rnn_vs_ss2d.md` §3 | ✅ |
 | Tab.2 per-slice win-rate | `results/eval/*/win_rate_summary*.md` | ✅ |
 | Tab.3 강화판 비교 | `docs/v9_mamba_unleashed_and_radapt.md` §11.1 | ✅ |

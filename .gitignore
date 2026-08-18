@@ -67,3 +67,7 @@ results/eval/v8_r_sweep/*
 !results/eval/v8_r_sweep_norm/
 results/eval/v8_r_sweep_norm/*
 !results/eval/v8_r_sweep_norm/r_generalization_table.md
+
+# 논문 그림 (paper/figs/) 은 GitHub 공유 — *.png / *.pdf 전역 무시의 예외 (2026-08-18)
+!paper/figs/*.png
+!paper/figs/*.pdf
