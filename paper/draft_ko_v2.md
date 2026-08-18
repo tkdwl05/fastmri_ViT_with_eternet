@@ -4,7 +4,7 @@
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
 > **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 학습 재개 완료(08-18, ETA ~08-25) — 완주 후 포함 여부 결정(부록 B-3).
-> **미완 요소**: §4.4 기준선 결과(스크립트 준비, GPU 대기), Fig.1(미작성), 참고문헌 중 ⚠ 표시 서지(투고 전 확정), §3.4 데이터 서브셋 확보 경위(✎), 저자·소속·펀딩. (Fig.4 는 08-18 생성 완료)
+> **미완 요소**: §4.4 기준선 결과(스크립트 준비, GPU 대기), Fig.1(미작성), 참고문헌 중 ⚠ 표시 서지(투고 전 확정), 저자·소속·펀딩. (§3.4 데이터 서브셋 경위는 08-18 확정 — 공식 배포본 확보 서브셋·공식 구획 준수) (Fig.4 는 08-18 생성 완료)
 > 영어 전환은 내용(교수님 검토) 확정 후.
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:
@@ -215,7 +215,7 @@ bilinear 업샘플해 U-Net 에 전달한다(전역 문맥은 SSM, 풀해상도 
 | 항목 | 값 |
 |---|---|
 | 데이터 | fastMRI brain multicoil [19], **혼합 contrast** (AXT1/AXT1POST/AXT1PRE/AXT2/AXFLAIR) |
-| 규모 | train 4,108 파일 / 65,028 슬라이스 · val 464 파일 / 7,334 슬라이스 — fastMRI 제공 train/val 구획의 확보 서브셋(`reconstruction_rss` 보유 파일 전부 사용; 서브셋 확보 경위 서술 ✎투고 전 확정) |
+| 규모 | NYU fastMRI 공식 brain multicoil 배포본의 확보 서브셋 — train 구획 4,108 파일 / 65,028 슬라이스(확보 4,110개 중 `reconstruction_rss` 부재 2개 제외) · val 구획 464 파일 / 7,334 슬라이스(확보분 전부 사용, 제외 0). 공식 train/val 구획 분리를 그대로 따름(구획 간 교차 없음) |
 | 정답(GT) | 데이터셋 제공 RSS 재구성(`reconstruction_rss`)을 384×384 center-crop/zero-pad |
 | 전처리 | full k-space → iFFT(ortho) → 이미지 도메인 384×384 crop/pad → 재-FFT 로 384² k-space 유도 (retrospective) |
 | 코일 | 앞 16개 코일 사용(초과분 절단, 부족분 zero-fill) → 실/허수 분리 32채널 |
