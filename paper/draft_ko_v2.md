@@ -4,7 +4,7 @@
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
 > **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 학습 재개 완료(08-18, ETA ~08-25) — 완주 후 포함 여부 결정(부록 B-3).
-> **미완 요소**: §4.4 기준선 결과(스크립트 준비, GPU 대기 — radapt 완주 후), 참고문헌 중 ⚠ 표시 서지(투고 전 확정), 저자·소속·펀딩. (해소됨: Fig.1·Fig.4 그림 08-18 생성, §3.4 데이터 경위 08-18 확정)
+> **미완 요소**: §4.4 기준선 결과(GPU 대기), 참고문헌 잔여 ⚠ 서지, 저자·소속·펀딩, 그리고 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). **외부 검토 반영 현황은 부록 D.**
 > 영어 전환은 내용(교수님 검토) 확정 후.
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:
@@ -23,18 +23,19 @@ state-space model; Mamba [30]의 2차원 확장인 SS2D [31])로 교체했을 �
 fastMRI brain multicoil 데이터 [19] (384×384, R=4)에서 두 모델은 시퀀스 모델을 제외한 모든
 구성요소(데이터로더·손실·최적화·후처리 U-Net)를 공유하며, 원 논문에 충실하게 명시적
 data-consistency(DC) 블록 없이 학습된다. 그 결과 SS2D 치환 모델은 **21× 적은 파라미터(31M vs
-668M)로 표준 4지표(SSIM·PSNR·NMSE·L1) 전부에서 GRU 를 상회**했으며(best brain-masked SSIM
-0.9140 vs 0.9126, PSNR 35.16 vs 35.03 dB), 전체 검증 7,334 슬라이스의 paired 비교에서 지표별로
-슬라이스의 74~78%에서 우위를 보였다(Wilcoxon signed-rank, p<0.001). 정성적으로 GRU 재구성에서
-관찰되는 두개골 외부 배경의 ringing 아티팩트가 SS2D 에서는 나타나지 않았다. 나아가 통제를
-해제하고 SS2D 를 강화(게이팅 복원·잔차 3블록·병목 해제·coarse-scan 다운샘플)한 변형은 epoch 당
-학습시간을 단축(2.78→2.51 h/ep)하면서 최종 품질을 추가 개선했다(SSIM 0.9145, 슬라이스의
-54~56%에서 우위, p<0.001). 본 결과는 직접 도메인 변환형 재구성에서 RNN→SSM 치환이 DC 의 도움
-없이도 일관된 이득을 줌을 통제된 조건에서 보인 것으로, ETER-Net 계열의 자연스러운 차세대 확장
+668M)로 표준 4지표(SSIM·PSNR·NMSE·L1) 전부에서 GRU 와 동등 이상 — 실제로는 전 지표 우위 — 의
+품질**을 보였다(brain-masked 슬라이스 평균 SSIM 0.9140 vs 0.9126, PSNR 33.90 vs 33.78 dB).
+전체 검증 7,334 슬라이스(464 볼륨)의 paired 비교에서 지표별로 슬라이스의 74~78%, 볼륨의
+90~95%에서 우위였다(볼륨 단위 Wilcoxon signed-rank, p<0.001). 정성적으로 GRU 재구성에서
+관찰되는 두개골 외부 배경의 ringing 아티팩트가 SS2D 에서는 관찰되지 않았다. 나아가 통제를
+해제한 강화 SS2D 변형(게이팅·잔차 스택·병목 해제·coarse-scan)은 더 긴 학습 스케줄(80 epoch)을
+소화해 최종 SSIM 을 0.9145 로 추가 개선했다(슬라이스의 54~56%에서 우위 — 유의하나 근소). 본
+결과는 직접 도메인 변환형 재구성에서 RNN→SSM 치환이 DC 의 도움 없이, 대폭 적은 파라미터로,
+일관된 품질 이득을 줌을 통제된 조건에서 보인 것으로, ETER-Net 계열의 자연스러운 차세대 확장
 방향을 제시한다.
 
 **Keywords**: MRI reconstruction; accelerated MRI; k-space; domain transformation; recurrent
-neural network; state-space model; Mamba; fastMRI
+neural network; state-space model; Mamba; parameter efficiency; fastMRI
 
 ---
 
@@ -47,7 +48,7 @@ MRI 는 전리방사선 없이 뛰어난 연조직 대조도를 제공하는 핵
 순차적으로 채워진다. 완전한 영상을 얻으려면 이 줄들을 나이퀴스트 조건에 맞춰 빠짐없이 수집해야
 하므로 한 시퀀스의 촬영이 수 분, 다중 contrast 검사 전체로는 수십 분에 이른다. 이 수집 속도는
 경사자계 전환에 따른 말초신경 자극이나 RF 에너지 축적(SAR) 같은 물리·생리적 안전 한계로
-제약되므로, 하드웨어 성능만으로는 근본적으로 단축할 수 없다 [19]. 긴 촬영은 곧 비용이다: 환자는
+제약되므로, 하드웨어 성능만으로는 근본적으로 단축할 수 없다 [19,22]. 긴 촬영은 곧 비용이다: 환자는
 그 시간 동안 정지해 있어야 하고(폐쇄공포 환자·소아·중증 환자에게 특히 가혹하다), 움직임은 모션
 아티팩트와 재촬영으로 이어지며, 검사 처리량 저하는 대기 시간과 의료 비용 증가로, 심장 등 동적
 영상에서는 시간해상도 제한으로 직결된다 [19,22,24]. 따라서 k-space 의 일부만 수집하고
@@ -86,8 +87,10 @@ flatten-reshape 구조 탓에 파라미터가 비대해지고(본 세팅 668M), 
 모델링하며, 4방향 selective scan 으로 2차원에 확장한 SS2D(VMamba) [31] 이후 비전 과제에서
 RNN/Transformer 의 대안으로 빠르게 자리잡았다. MRI 재구성에도 Mamba 적용 연구가 이미 다수
 존재하지만 [32–40], 이들은 모두 **이미지 도메인 prior/정규화기 또는 unrolled 백본** 자리에 SSM
-을 넣는 새 아키텍처 제안이다. 즉 **도메인 변환(k-space→image) 자리의 RNN 을 SSM 으로 1:1
-치환하면 무엇이 달라지는가에 대한 통제 비교는 문헌에 없다**. 우리의 선행 내부 실험(ViT 인코더
+을 넣는 새 아키텍처 제안이다. 본 논문에서 **"도메인 변환 자리"란 언더샘플된 k-space 를 입력받아
+이미지 도메인 특징을 직접 출력함으로써 역푸리에 변환의 역할 자체를 학습으로 대체하는 모듈**
+(입력=k-space, 출력=이미지 도메인)을 가리킨다 — 이 자리의 RNN 을 SSM 으로 1:1 치환하면 무엇이
+달라지는가에 대한 통제 비교는, **우리가 아는 한(to our knowledge), 문헌에 없다**. 우리의 선행 내부 실험(ViT 인코더
 하이브리드 [3] 유사 구조)에서 GRU(+U-Net 후처리) 대 SS2D(+DC) 비교는 brain-masked SSIM 0.9084
 vs 0.9083 의 사실상 동률(dead-heat)로 끝났으나, 이 비교는 DC 유무와 후처리 구조가 시퀀스 모델
 종류와 얽힌 confound 를 안고 있었다. 본 연구는 confound 를 제거한 순수 골격에서 질문을 격리한다:
@@ -97,14 +100,15 @@ vs 0.9083 의 사실상 동률(dead-heat)로 끝났으나, 이 비교는 DC 유�
 본 논문의 기여는 세 가지다.
 
 1. **단일 변수 통제 비교**: ETER-Net 골격(ViT 없음, DC 없음)에서 시퀀스 모델만 GRU↔SS2D 로
-   교체한 통제 실험으로, SS2D 가 표준 4지표 전부·matched-epoch 전 구간(wire-to-wire)·검증
-   슬라이스의 74~78%에서 일관 우위임을 보인다 — **파라미터는 21× 적다**(31M vs 668M).
+   교체한 통제 실험으로, **21× 적은 파라미터**(31M vs 668M)의 SS2D 가 표준 4지표 전부·
+   matched-epoch 전 구간(wire-to-wire)·검증 슬라이스의 74~78%(볼륨의 90~95%)에서 동등 이상
+   — 실제로는 일관 우위 — 임을 보인다.
 2. **DC 무관성 실증**: DC 가 전혀 없는 세팅에서의 완승으로, 선행 dead-heat 에 대한 "SS2D 는 DC
    덕"(DC-crutch) 가설을 반박한다. 아울러 도메인 변환형 골격에 종단 single soft-DC 를 붙이는
    것이 unrolled 문헌의 DC 관행 [8–11,13–16]과 구조적으로 다름을 정리하고 no-DC 설계를 정당화한다.
 3. **통제 해제 시의 상한 탐색**: 게이팅·잔차 스택·병목 해제·coarse-scan 다운샘플을 더한 강화
-   SS2D 로 epoch 당 학습 속도와 최종 품질을 동시 개선한다. matched-epoch 기준의 정직한 해석
-   (§5.3)을 함께 제시한다.
+   SS2D 로 더 긴 학습 스케줄(80 epoch)을 소화해 최종 품질을 추가로 근소 개선한다.
+   matched-epoch 기준의 정직한 해석(§4.3)을 함께 제시한다.
 
 이하 §2 는 관련 연구, §3 은 골격·변형·학습/평가 프로토콜, §4 는 결과, §5 는 고찰, §6 은 결론이다.
 
@@ -137,12 +141,15 @@ attention 의 전역 수용영역을 활용한 Transformer 계열 — SwinMR [27
 구조와 결합한 ReconFormer [29] — 이 CNN 의 지역성 한계를 공략해 왔으나, 시퀀스 길이 제곱의
 연산이 고해상도에서 부담이다. Mamba [30]와 그 2차원 확장 SS2D/VMamba [31]는 같은 전역 문맥을
 선형 복잡도로 제공한다. MRI 재구성 적용은 이미 활발하다: 이미지/이중 도메인 prior 로서의
-MambaRecon [32], DM/DH-Mamba [33](k-space 직접 스캔의 스펙트럼 파괴 문제를 지적), CAM [35],
-HiFi-Mamba [36], 불확실성 추정을 겸한 MambaMIR [39], 다중 모달 융합 MMR-Mamba [40], unrolled
-백본으로서의 MambaRoll [34], SO-Mamba [38], 연산자 학습 관점의 LMO [37] 등이다. **차별점**:
-이들 연구는 새 아키텍처 제안과 SOTA 경쟁이 목적이고, SSM 의 자리는 이미지 도메인(또는 이중
-도메인) prior/정규화기다. 본 연구는 **기존 골격에서 RNN↔SSM 치환 효과를 격리하는 통제 실험**이
-목적이며, 도메인 변환(k→image) 자리의 SSM 은 [32–40] 어디에도 없다.
+MambaRecon [32], DH-Mamba [33], CAM [35], HiFi-Mamba [36], 불확실성 추정을 겸한 MambaMIR
+[39], 다중 모달 융합 MMR-Mamba [40], unrolled 백본으로서의 MambaRoll [34], SO-Mamba [38],
+연산자 학습 관점의 LMO [37] 등이다. 특히 DH-Mamba [33]은 이중 도메인 구조의 k-space 브랜치에서
+SSM 스캔을 수행하며 k-space 직접 스캔의 스펙트럼 파괴 위험을 지적했다 — 그러나 그 구조에서
+k-space↔이미지 도메인 사이의 이동은 여전히 명시적 (i)FFT 가 담당하고, SSM 은 각 도메인 안의
+보정(prior) 역할이다. **차별점**: 이들 연구는 새 아키텍처 제안과 SOTA 경쟁이 목적이고, SSM 의
+자리는 도메인 내부의 prior/정규화기다. 본 연구는 **기존 골격에서 RNN↔SSM 치환 효과를 격리하는
+통제 실험**이 목적이며, 도메인 변환(k→image) 자리 — 즉 (i)FFT 의 역할 자체를 학습하는 자리
+(§1 의 조작적 정의) — 의 SSM 은 우리가 아는 한 [32–40] 어디에도 없다.
 
 ### 2.4 본 연구의 위치 (비교 표)
 
@@ -151,7 +158,7 @@ HiFi-Mamba [36], 불확실성 추정을 겸한 MambaMIR [39], 다중 모달 융�
 | 직접 도메인 변환 | AUTOMAP [17], **ETER-Net [1–3]**, KIKI-net [18] | **k-space→image 변환 그 자체** | 없음(원 논문 기준) | 본 연구의 골격 — 변환 모듈의 세대 교체를 검증 |
 | Unrolled + DC | [8–11,13–16] | 반복 내부의 작은 정규화 unit | 매 반복 interleave | 구조가 달라 직접 비교 대상 아님 (§5-3) |
 | Mamba-MRI | [32–40] | 이미지/이중 도메인 prior, unrolled 백본 | 대부분 있음 | SSM 을 쓰지만 **자리가 다름** |
-| **본 연구** | — | **도메인 변환 자리의 RNN↔SSM 1:1 치환** | 없음 (통제) | 문헌에 없는 통제 비교를 채움 |
+| **본 연구** | — | **도메인 변환 자리의 RNN↔SSM 1:1 치환** | 없음 (통제) | 우리가 아는 한 문헌에 없는 통제 비교를 채움 |
 
 ## 3. 방법 (Methods)
 
@@ -206,8 +213,9 @@ de-aliasing 후처리 U-Net 이다. f_θ 를 제외한 모든 것을 고정한�
 384² 풀해상도 4방향 스캔의 연산 병목은 **fp16 selective scan** 과 **다운샘플 front-end(ds=3)**
 로 해결했다: stem 이 풀해상도 k-space 를 먼저 처리한 뒤 특징을 128² 로 낮춰 coarse scan 하고
 bilinear 업샘플해 U-Net 에 전달한다(전역 문맥은 SSM, 풀해상도 디테일은 U-Net 이 분업). 그 결과
-풀용량을 유지하면서 통제판보다 빠른 2.51 h/epoch(vs 2.78)를 달성해, 동일 학습 예산에서 epoch
-50→80 연장이 가능했다. 총 파라미터 ~33M(SSM 스택 ~2M). 학습 위생으로 Mamba 상태 파라미터
+풀용량을 유지한 채 epoch 당 학습시간을 통제판과 비슷한 수준으로 눌러(2.84 vs 3.07 h/ep — 측정
+정의·실행환경 주의는 §4.5 Table 5), 실험 기간 내에 epoch 50→80 연장이 가능했다. 총 파라미터
+~33M(SSM 스택 ~2M). 학습 위생으로 Mamba 상태 파라미터
 (`A_log`, `D`)는 weight-decay 에서 제외했다.
 
 ### 3.4 데이터셋과 언더샘플링 프로토콜
@@ -218,7 +226,7 @@ bilinear 업샘플해 U-Net 에 전달한다(전역 문맥은 SSM, 풀해상도 
 | 규모 | NYU fastMRI 공식 brain multicoil 배포본의 확보 서브셋 — train 구획 4,108 파일 / 65,028 슬라이스(확보 4,110개 중 `reconstruction_rss` 부재 2개 제외) · val 구획 464 파일 / 7,334 슬라이스(확보분 전부 사용, 제외 0). 공식 train/val 구획 분리를 그대로 따름(구획 간 교차 없음) |
 | 정답(GT) | 데이터셋 제공 RSS 재구성(`reconstruction_rss`)을 384×384 center-crop/zero-pad |
 | 전처리 | full k-space → iFFT(ortho) → 이미지 도메인 384×384 crop/pad → 재-FFT 로 384² k-space 유도 (retrospective) |
-| 코일 | 앞 16개 코일 사용(초과분 절단, 부족분 zero-fill) → 실/허수 분리 32채널 |
+| 코일 | 앞 16개 코일 사용(초과분 절단, 부족분 zero-fill) → 실/허수 분리 32채널 — 코일 압축(SCC/GCC) 대신 재현 단순성을 위한 선택(§5-(6)) |
 | 언더샘플링 | R=4 equispaced Cartesian 1D 마스크, 중앙 ACS 8% (train 은 매 샘플 offset 랜덤, val 은 고정) |
 | 증강 | 수평/수직 flip p=0.5 — flip 후 FFT 재계산으로 k-space 물리 정합 유지 |
 
@@ -227,9 +235,19 @@ bilinear 업샘플해 U-Net 에 전달한다(전역 문맥은 SSM, 풀해상도 
 - **Brain mask**: Otsu 임계 × 0.4 + 최대 연결성분(largest CC). 배경(영상의 절반 이상)이 지표를
   부풀리는 것을 차단한다.
 - **손실**: masked L1 + (1 − SSIM).
-- **평가**: brain-masked SSIM / PSNR / NMSE / L1 — **주 지표는 SSIM**(fastMRI 챌린지 표준
-  [20,21]), 나머지는 병기한다. 단 본 지표는 뇌 영역 한정이므로, 배경을 포함하는 fastMRI 공식
-  프로토콜(320 crop·raw)의 리더보드/문헌 수치와는 좌표계가 달라 직접 대조하지 않는다.
+- **평가 지표 정의** (전부 슬라이스 단위, 정답 y·재구성 x̂·마스크 m):
+  - **SSIM**: skimage `structural_similarity` 를 전체 영상에서 계산(기본 윈도, data_range =
+    마스크 내부 y 의 max−min)한 뒤 **SSIM map 을 마스크 픽셀에서만 평균**.
+  - **PSNR** = 20·log₁₀( max_m(y) / √MSE_m ), MSE_m = Σ((x̂−y)²·m)/Σm — peak 는 슬라이스별
+    마스크 내 최댓값. **NMSE** = Σ((x̂−y)²·m)/Σ(y²·m). **L1** = Σ(|x̂−y|·m)/Σm.
+  - 모든 영상은 ×10⁶ 스케일된 RSS magnitude 기준 — 즉 표의 L1 8.88 은 원 신호 단위로
+    8.88×10⁻⁶ 에 해당한다.
+  - **본문·표의 모든 수치는 슬라이스 단위 통계로 통일**한다(학습 로그의 배치 풀링 수치는 학습
+    곡선(Fig. 2) 재현용으로만 사용).
+- **주 지표는 SSIM**(fastMRI 챌린지 표준 [20,21]), 나머지는 병기한다. 본 지표는 뇌 영역
+  한정이므로, 배경을 포함하는 fastMRI 공식 프로토콜(320 crop·raw)의 리더보드/문헌 수치와는
+  좌표계가 달라 직접 대조하지 않는다. 한편 마스킹은 GRU 의 두개골 외부 아티팩트(§4.2)에 벌점을
+  주지 않으므로, 본 비교 맥락에서는 **GRU 에 유리한 보수적 선택**이다.
 - **모델 선택**: best checkpoint·조기 종료 기준으로는 SSIM·PSNR·NMSE 를 가중 합성한 내부
   스칼라를 사용했다. 이 스칼라는 문헌 표준이 아니므로 방법 절의 이 한 줄로만 서술하며, **본
   논문의 모든 결과 표·수치는 표준 지표로만 제시**한다. 본 논문의 결론은 표준 지표 전부에서
@@ -259,62 +277,76 @@ signed-rank 검정을 적용하고, 효과크기로 **우위 슬라이스 비율
 통계학의 probabilistic index [46]에 해당, 임상시험의 win-ratio 계열 [47]과 동족)을 함께
 보고한다. 영어 원고 표기 예: *"SS2D achieved higher SSIM in 78.2% of slices (5,737/7,334;
 Wilcoxon signed-rank test, p < 0.001)."* p 값은 저널 관례에 따라 p<0.001 로 표기한다(원값은
-저장소 산출물에 보존).
+저장소 산출물에 보존). 검정은 양측, 유의수준 0.05 다. **같은 볼륨의 슬라이스들은 독립이 아니므로
+(클러스터 구조), 슬라이스 단위 분석과 볼륨 단위 분석을 병행한다**: 볼륨별 평균 paired 차이에
+대한 Wilcoxon signed-rank(n=464)와 볼륨 단위 우위 비율을 함께 보고하고, 슬라이스 단위 우위
+비율과 평균 차이의 95% CI 는 볼륨 클러스터 부트스트랩(2,000회 재표집)으로 구한다. 4개 지표는
+상관이 높아 다중비교 보정(Bonferroni ×4)을 적용해도 본문의 모든 유의성 결론은 불변이다.
 
 ## 4. 결과 (Results)
 
 ### 4.1 통제 비교 — SS2D 의 일관 우위 (Table 1, 2; Fig. 2)
 
-**Table 1. Best checkpoint 기준 (val 전체, brain-masked).**
+**Table 1. Best checkpoint 기준 (val 전체 7,334 슬라이스, brain-masked, 슬라이스 단위 평균).**
 
-| | epoch | SSIM | PSNR (dB) | NMSE | L1 | params |
+| | best epoch | SSIM | PSNR (dB) | NMSE | L1 (×10⁻⁶) | params |
 |---|---:|---:|---:|---:|---:|---:|
-| **SS2D (통제판)** | 48 | **0.9140** | **35.16** | **0.0039** | **8.931** | **31M** |
-| GRU | 50 | 0.9126 | 35.03 | 0.0040 | 9.054 | 668M |
+| **SS2D (통제판)** | 48/50 | **0.9140** | **33.90** | **0.00438** | **8.883** | **31M** |
+| GRU | 50/50 | 0.9126 | 33.78 | 0.00449 | 9.002 | 668M |
 
 - **Matched-epoch 전 구간 우위(wire-to-wire)**: 25개 검증 지점(ep2~50)에서 SS2D 가 SSIM 기준 전
   지점 ≥ GRU(Δ +0.0000~+0.0055; 동률은 ep14 1지점뿐), PSNR 기준 전 지점 우위였다. ViT
-  하이브리드 선행 실험에서 관찰됐던 후반 역전(crossover)은 없었다. (Fig. 2)
+  하이브리드 선행 실험에서 관찰됐던 후반 역전(crossover)은 없었다. (Fig. 2 — 단일 시드의 단일
+  궤적임을 캡션에 명시; §5-(6))
 - **Per-slice paired 검증** (val 7,334 슬라이스 전수, Wilcoxon signed-rank; 차이 분포는 Fig. 4a):
 
-**Table 2. Per-slice paired 비교.**
+**Table 2. Per-slice paired 비교** (Δ 는 항상 양수 = SS2D 우위 방향, NMSE/L1 부호 반전 —
+Fig. 4 규약과 동일. CI 는 볼륨 클러스터 부트스트랩 2,000회, §3.8).
 
-| 지표 | GRU mean±std | SS2D mean±std | SS2D 우위 슬라이스 비율 | p |
-|---|---:|---:|---:|---:|
-| SSIM | 0.9126±0.0894 | 0.9140±0.0890 | **78.2%** | <0.001 |
-| PSNR | 33.78±2.59 | 33.90±2.63 | **73.8%** | <0.001 |
-| NMSE | 0.0045±0.0053 | 0.0044±0.0053 | **73.8%** | <0.001 |
-| L1 | 9.00±3.05 | 8.88±3.05 | **76.1%** | <0.001 |
+| 지표 | GRU mean±std | SS2D mean±std | Δ 중앙값 (IQR) | 우위 슬라이스 [95% CI] | 우위 볼륨 | p(볼륨, n=464) |
+|---|---:|---:|---:|---:|---:|---:|
+| SSIM | 0.9126±0.0894 | 0.9140±0.0890 | +0.0013 (+0.0002, +0.0025) | **78.2%** [76.8, 79.7] | **94.8%** | <0.001 |
+| PSNR (dB) | 33.78±2.59 | 33.90±2.63 | +0.12 (−0.01, +0.26) | **73.8%** [72.1, 75.5] | **89.9%** | <0.001 |
+| NMSE | 0.00449±0.00530 | 0.00438±0.00527 | +8.9e-5 (−0.6e-5, +2.1e-4) | **73.8%** [72.0, 75.5] | **90.1%** | <0.001 |
+| L1 (×10⁻⁶) | 9.00±3.05 | 8.88±3.05 | +0.12 (+0.005, +0.24) | **76.1%** [74.4, 77.8] | **90.5%** | <0.001 |
 
-즉 aggregate 우위가 소수 슬라이스에 의한 것이 아니라 **대다수 슬라이스에서 일관**된다.
-(주: 본 표의 PSNR/NMSE/L1 절대값은 Table 1 과 다르다 — 학습 시 검증이 배치 풀링으로 계산된 반면
-본 표는 슬라이스 단위 계산이다. SSIM 은 양쪽 모두 슬라이스 단위라 정확히 일치하며, paired 비교
-자체는 3개 모델 동일 프로토콜로 유효하다.)
+즉 aggregate 우위가 소수 슬라이스·소수 볼륨에 의한 것이 아니라 **대다수 슬라이스(74~78%)와
+압도적 다수 볼륨(90~95%)에서 일관**된다. 슬라이스 평균 Δ 의 클러스터 부트스트랩 95% CI 도 4지표
+전부 0 을 배제한다(예: ΔSSIM +0.0014 [+0.0013, +0.0015]). contrast 서브그룹별 일관성은 부록 C
+Table S1(5개 contrast 전부에서 모든 지표 우위 비율 ≥68.7%).
 
 ### 4.2 정성 비교 — GRU 의 배경 ringing (Fig. 3)
 
-4-way 시각화(GT / U-Net / GRU / SS2D)에서 **GRU 는 두개골 바깥 배경에 반복적 ringing/줄무늬
-아티팩트**를 보이는 반면 SS2D 의 해당 영역은 깨끗했다(검토한 모든 슬라이스에서 일관).
-brain-mask 밖이라 정량 지표에는 반영되지 않는 순수 정성적 차이로, GRU 재구성이 관심영역 밖에서
-덜 안정적임을 시사한다.
+4-way 시각화(GT / 사전학습 U-Net 참고 기준선(§3.7) / GRU / SS2D)에서 **GRU 는 두개골 바깥
+배경에 반복적 ringing/줄무늬 아티팩트**를 보이는 반면 SS2D 의 해당 영역은 깨끗했다(검토한
+시각화 슬라이스에서 일관되게 관찰 — 검토 슬라이스 수 명시와 마스크 외부 잔차의 정량화는 보완
+예정 ✎부록 D P1-5). brain-mask 밖이라 정량 지표에는 반영되지 않는 순수 정성적 차이로(§3.5 의
+보수적 마스킹 논점 참조), GRU 재구성이 관심영역 밖에서 덜 안정적임을 시사한다.
 
 ### 4.3 강화 SS2D — 상한 탐색 (Table 3; Fig. 2, 4)
 
-**Table 3. 강화 SS2D vs 통제판 (val 전체, brain-masked, best checkpoint).**
+**Table 3. 강화 SS2D vs 통제판 (val 전체 7,334 슬라이스, brain-masked, 슬라이스 단위 평균).**
 
-| | SSIM | PSNR (dB) | NMSE | L1 |
+| | SSIM | PSNR (dB) | NMSE | L1 (×10⁻⁶) |
 |---|---:|---:|---:|---:|
-| **강화 SS2D (best ep78/80)** | **0.9145** | **35.18** | 0.0039 | 8.931 |
-| SS2D 통제판 (best ep48/50) | 0.9140 | 35.16 | 0.0039 | 8.931 |
-| GRU (best ep50/50) | 0.9126 | 35.03 | 0.0040 | 9.054 |
+| **강화 SS2D (best ep78/80)** | **0.9145** | **33.92** | 0.00439 | **8.879** |
+| SS2D 통제판 (best ep48/50) | 0.9140 | 33.90 | **0.00438** | 8.883 |
+| GRU (best ep50/50) | 0.9126 | 33.78 | 0.00449 | 9.002 |
 
-- Per-slice 우위 슬라이스 비율: vs 통제판 SS2D **54~56%**(표준 4지표 전부, Wilcoxon p<0.001 —
-  유의하나 근소), vs GRU **78~82%**(완승). 차이 분포는 Fig. 4b.
+- Per-slice 우위 슬라이스 비율: vs 통제판 SS2D **54~56%**(4지표, 클러스터 부트스트랩 95% CI
+  하한 52.5%), vs GRU **78~82%**(완승). 볼륨 단위로도 4지표 전부 유의하다(우위 볼륨 55.0~66.4%,
+  Wilcoxon n=464, 최대 p=0.002). 차이 분포는 Fig. 4b.
+- **이득의 크기는 작고, 지표·서브그룹에 따라 균일하지 않다**: 평균 차이의 95% CI 가 0 을
+  배제하는 것은 SSIM 뿐이고(ΔSSIM +0.0005 [+0.0003, +0.0006]), PSNR·L1 의 평균 차이는 CI 가
+  0 을 포함하며, NMSE 는 평균 기준 사실상 동률이다(Δ −1.0×10⁻⁵ — Table 3 에서 통제판이 근소
+  우세) — 순위 기반(중앙값·우위 비율·Wilcoxon)으로는 4지표 전부 강화판 우위. contrast
+  서브그룹에서도 SSIM 우위 비율이 AXFLAIR 67.8% ~ AXT1 48.2%(역전)로 불균일하다(부록 C
+  Table S1).
 - **정직한 해석**: matched-ep50 시점 강화판 SSIM 은 0.9130 으로 통제판 best(0.9140)에 미달하며,
   통제판 best 에 도달한 것은 연장 구간의 ep64(동률)~ep66(상회)이다. 즉 "같은 학습량에서 더
-  좋다"가 아니라 **"epoch 당 속도 이득(2.51 vs 2.78 h/ep)으로 더 긴 스케줄(80ep)을 소화해 최종
-  품질을 넘었다"**가 정확한 서사다(best 도달 wall-clock 은 강화판 ≈181h > 통제판 ≈133h).
-  아키텍처 강화 자체의 순수 이득은 근소하다.
+  좋다"가 아니라 **"더 긴 스케줄(80ep)을 소화해 최종 품질을 근소하게 넘었다"**가 정확한 서사다
+  (best 도달 wall-clock 강화판 ≈187 h(ep66×2.84) > 통제판 ≈147 h(ep48×3.07); h/ep 측정 정의는
+  §4.5). 아키텍처 강화 자체의 순수 이득은 근소하다.
 - Coarse-scan(ds=3) 다운샘플은 품질을 해치지 않았다: ep40 시점 열위였다가 후반 cosine anneal
   구간에서 역전, 최종 상회했다.
 
@@ -324,6 +356,24 @@ brain-mask 밖이라 정량 지표에는 반영되지 않는 순수 정성적 �
 (표준 4지표 mean±std + 본 모델들과의 우위 슬라이스 비율)를 **Table 4** 로 여기에 삽입한다.
 **[스크립트 준비 완료: `v8_eter_pure/eval_paired_baselines.py` — radapt 학습(GPU 점유, ~08-25
 완주 예상) 종료 후 실행.]**
+
+### 4.5 효율 비교 (Table 5)
+
+**Table 5. 파라미터·시간 효율.** 학습 h/ep 는 5-epoch 체크포인트 저장 간격의 중앙값(검증 포함
+wall-clock, 재시작·정전으로 인한 outlier 구간 제외)으로 산출했다.
+
+| | params | 학습 h/ep (검증 포함)† | 추론 ms/slice | peak VRAM |
+|---|---:|---:|---:|---:|
+| GRU | 668M | 2.41 | ✎측정 예정 | ✎ |
+| SS2D 통제판 | 31M | 3.07 | ✎ | ✎ |
+| 강화 SS2D | ~33M | 2.84‡ | ✎ | ✎ |
+
+† v8 두 arm(GRU/SS2D 통제판)은 동일 실행환경에서 학습되어 상호 비교 가능하다 — **epoch 당
+학습시간은 GRU 가 더 빠르다**(순차 RNN 이지만 cuDNN 최적화 이점). 본 논문의 효율 주장은
+학습 속도가 아니라 **파라미터(21×)와 동등 이상 품질**에 있다.
+‡ 강화판은 v8 완주 후 컨테이너/데이터로더 환경 개선을 거쳐 학습되어, v8 과의 wall-clock 직접
+비교에는 환경 차이가 섞여 있다(명목 2.84 < 3.07 이나 이 차이의 해석에는 주의). 추론
+ms/slice·VRAM 은 radapt 완주 후 측정해 채운다(✎부록 D P1-3).
 
 ## 5. 고찰 (Discussion)
 
@@ -365,6 +415,12 @@ SSM 이 RNN 을 일관되게 상회함을 실증한다 — 이는 해당 우려�
 - Retrospective 시뮬레이션(384² 재-FFT 프로토콜)·앞 16코일 절단은 재현성을 위한 선택이나 원
   수집 조건과의 차이다. Knee 등 타 해부부위, prospective 언더샘플링, non-Cartesian 궤적 [2]은
   미검증이다.
+- best checkpoint 선택과 최종 보고가 같은 val 세트를 공유한다(fastMRI 관행이나 명시해 둔다) —
+  별도 내부 test 분할은 두지 않았다.
+- 코일 압축(SCC/GCC) 대신 앞 16코일 절단을 채택했다(재현 단순성) — 코일 압축과의 결합은 향후
+  과제다.
+- 시퀀스 모듈을 제거한 **U-Net-only 기준**(치환 이득 해석의 분모)은 아직 없다 — 학습·평가해
+  보완할 예정이다(✎부록 D P0-2).
 
 **(7) Novelty 포지셔닝 (솔직한 자기 평가).** Mamba-MRI 아키텍처 자체는 이미 성숙 분야다
 [32–40]. 본 논문의 가치는 새 아키텍처가 아니라 (a) 도메인 변환 자리에서의 1:1 통제 치환 실험,
@@ -385,12 +441,17 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
 - **Author Contributions**: (CRediT 분류로 작성 예정 — 저자 구성 확정 후, 부록 B-1)
 - **Funding**: (미정 — 확인 필요)
-- **Institutional Review Board Statement**: 본 연구는 공개 비식별 데이터셋 fastMRI [19]의 2차
-  이용만을 포함한다. (NYU fastMRI 데이터 사용 약정 준수; 별도 IRB 심의 면제 해당 여부 문구는
-  투고 저널 양식에 맞춰 확정)
+- **Institutional Review Board Statement**: 본 연구는 공개 비식별 데이터셋 fastMRI [19,49]의
+  2차 이용만을 포함한다. (NYU fastMRI 데이터 사용 약정 준수; 별도 IRB 심의 면제 해당 여부
+  문구는 투고 저널 양식에 맞춰 확정)
+- **Informed Consent Statement**: Not applicable (공개 비식별 데이터셋의 2차 이용).
 - **Data Availability Statement**: fastMRI 데이터셋은 https://fastmri.med.nyu.edu 에서 신청
   가능. 학습·평가 코드는 게재 시 GitHub 공개 예정.
 - **Conflicts of Interest**: 없음(예정 — 확인 필요).
+- **Acknowledgments**: Data used in the preparation of this article were obtained from the NYU
+  fastMRI Initiative database (fastmri.med.nyu.edu) [19,49]. NYU fastMRI investigators provided
+  the data but did not participate in the analysis or writing of this article. (✎ fastMRI DUA 의
+  공식 acknowledgment 문구 원문과 대조 확인)
 - **셀프 체크**: 투고 전 CLAIM 체크리스트 [48] 자체 점검(자료집 §5 권고).
 
 ---
@@ -400,9 +461,9 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 *⚠ 표시 = 서지 미확정(bib note 참조), 투고 전 Crossref/출판사 페이지로 확정할 것.*
 
 **직접 계보 (ETER-Net 계열)**
-1. Oh et al. (2020). A k-space-to-image reconstruction network for MRI using recurrent neural network. *Medical Physics*. `oh2020eternet` ⚠
+1. Oh et al. (2021). A k-space-to-image reconstruction network for MRI using recurrent neural network. *Medical Physics*. doi:10.1002/mp.14566. `oh2021eternet` (연도 2021 로 확정 — 외부 검토 08-18; 저자 명단 원문 대조 ✎)
 2. Oh et al. (2022). An end-to-end recurrent neural network for radial MR image reconstruction. *Sensors*. `oh2022radial` ⚠
-3. Oh (2025). A hybrid Vision Transformer-BiRNN architecture for direct k-space to image reconstruction in accelerated MRI. *Journal of Imaging*. `oh2025vitbirnn` ⚠ ★직접 선행
+3. Oh (2026). A hybrid Vision Transformer-BiRNN architecture for direct k-space to image reconstruction in accelerated MRI. *Journal of Imaging* 12(1). doi:10.3390/jimaging12010011. `oh2025vitbirnn` ★직접 선행 (2025 온라인 선공개 여부 확인 ✎)
 
 **고전 기반**
 4. Pruessmann et al. (1999). SENSE: sensitivity encoding for fast MRI. *MRM* 42(5):952–962. `pruessmann1999sense`
@@ -427,6 +488,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 19. Zbontar et al. (2018). fastMRI: an open dataset and benchmarks for accelerated MRI. arXiv:1811.08839. `zbontar2018fastmri`
 20. Knoll et al. (2020). Overview of the 2019 fastMRI challenge. *MRM* 84(6):3054–3070. `knoll2020advancing`
 21. Muckley et al. (2021). Results of the 2020 fastMRI challenge. *IEEE TMI* 40(9):2306–2317. `muckley2021results`
+49. Knoll et al. (2020). fastMRI: a publicly available raw k-space and DICOM dataset of knee images for accelerated MR image reconstruction using machine learning. *Radiology: AI* 2(1):e190007. `knoll2020fastmri` — 데이터 사용 요건상 [19]와 병행 인용 (Acknowledgments 참조)
 
 **리뷰**
 22. Heckel et al. (2024). Deep learning for accelerated and robust MRI reconstruction. *MAGMA* 37:335–368. `heckel2024deep`
@@ -445,9 +507,9 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 **SSM/Mamba 원류·MRI 적용**
 30. Gu & Dao (2023). Mamba: linear-time sequence modeling with selective state spaces. arXiv:2312.00752. `gu2023mamba`
 31. Liu et al. (2024). VMamba: visual state space model. *NeurIPS*. `liu2024vmamba`
-32. Korkmaz et al. (2025). MambaRecon. *WACV*. `korkmaz2025mambarecon` ⚠
-33. Meng et al. (2025). DM/DH-Mamba: dual-domain (hierarchical/multi-scale) Mamba for MRI reconstruction. `dmmamba2025`+`meng2025dhmamba` ⚠(동일 논문 여부 확인 후 통합)
-34. Kabas et al. (2024). Physics-driven autoregressive state space models (MambaRoll). `kabas2024mambaroll` ⚠
+32. Korkmaz & Patel (2025). MambaRecon: MRI reconstruction with structured state space models. *WACV*. arXiv:2409.12401. `korkmaz2025mambarecon`
+33. Meng et al. (2025). DH-Mamba: exploring dual-domain hierarchical state space models for MRI reconstruction. arXiv:2501.08163 (v1 제목: DM-Mamba — 동일 논문으로 통합 확정, 외부 검토 08-18); IEEE TCSVT 게재. `dhmamba2025` (권호 확정 ✎)
+34. Kabas et al. (2024). Physics-driven autoregressive state space models for medical image reconstruction (MambaRoll). arXiv:2412.09331. `kabas2024mambaroll` (저널판 권호 확정 ✎)
 35. Meng et al. (2026). Image content aware state space model (CAM). `meng2026cam` ⚠
 36. Chen et al. (2025). HiFi-Mamba. `chen2025hifimamba` ⚠
 37. Li et al. (2025). LMO: linear Mamba operator for MRI reconstruction. *CVPR*. `li2025lmo`
@@ -485,8 +547,8 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
 ## 부록 B. 교수님 상의 포인트 (초안 논외, 회의용)
 
-1. **[3](교수님 2025 ViT-BiRNN, J. Imaging)과의 관계 설정** — 본 논문을 [1,3]의 직접 후속(도메인
-   변환 모듈의 세대 교체)으로 프레이밍하는 안. 저자 구성·기여 서술에 영향.
+1. **[3] (교수님 ViT-BiRNN, *J. Imaging* 2026)과의 관계 설정** — 본 논문을 [1,3]의 직접 후속
+   (도메인 변환 모듈의 세대 교체)으로 프레이밍하는 안. 저자 구성·기여 서술에 영향.
 2. **투고처** — 자료집 §6 + v1 부록 B 평가 종합 (2026-08-18 갱신):
 
    | 순위(안) | 저널 | 근거 | 비고 |
@@ -499,20 +561,83 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
    **권장 액션**: Bioengineering SI 게스트 에디터에게 가제+초록 사전 문의(비용 0) → 긍정이면 SI,
    부정이면 Sensors. 전 후보 OA·APC — 금액·할인 투고 전 확인. ([3] *J. Imaging* 도 MDPI —
-   교수님 선호 확인 가치.)
+   교수님 선호 확인 가치.) **문의 골자(외부 검토 제안, 08-18)**: *"We study brain MRI
+   reconstruction with a parameter-efficient state-space model that cuts parameters 21× — would
+   a controlled architecture-comparison study on accelerated brain MRI reconstruction fit the
+   scope of this Special Issue?"* — 컴퓨팅 가속 요소(fp16 selective scan·coarse scan·단일 GPU
+   학습)를 전면 배치.
 3. **radapt(R 일반화) 포함 여부** — 08-18 학습 재개, **~08-25 완주 예상**. 포함 시
    "치환+강화+일반화" 3막 구성으로 기여가 두터워지나 투고 지연. 미포함 시 본 초안 그대로 + 후속
-   논문 분리. (Bioengineering SI 마감 11-30 이면 포함 여유 있음.)
+   논문 분리. (Bioengineering SI 마감 11-30 이면 포함 여유 있음.) **외부 검토 의견(08-18)**:
+   결과가 깨끗하면 결과 절 한 절로 압축 포함 권장 — "단일 가속률" 한계를 스스로 해소하는 이득이
+   지연 비용보다 큼; 애매하면 미련 없이 후속 논문 분리.
 4. **DC 서술 수위** — §5-(3)의 "문헌 비표준 + 학습 불안정" 근거를 본문에 둘지 부록으로 뺄지.
-5. **단일 시드 한계** — 리뷰 방어용 멀티시드 재학습(비용 큼) 필요성 판단.
+   **외부 검토 의견(08-18): 본문 유지 확정** — "왜 DC 가 없나"는 리뷰어의 확정 질문.
+5. **단일 시드 한계** — 리뷰 방어용 멀티시드 재학습(비용 큼) 필요성 판단. **외부 검토 의견
+   (08-18): 필요** — ΔSSIM 0.0014 가 시드 노이즈보다 큰지가 성립 조건. 전체 재학습이 부담이면
+   축약 프로토콜(예: 25ep×3시드로 GRU/SS2D 순위 안정성만 확인) 절충 제안.
 6. **composite 노출 수위 — 해결(2026-08-07 사용자 결정)**: 결과 표·본문 수치에서 전면 제거,
    §3.5 에 모델 선택 기준으로만 한 줄 서술. 모든 서사(wire-to-wire·연장구간 돌파)는 표준 지표로
    재검증 완료.
 7. **(v2 신규) reader study** — 자료집 §3.2 가 권고하는 소규모 영상의학과 의사 평가를 넣을지.
-   현재는 §5-(5)에서 한계로 정면 서술하는 전략. 의학 계열 저널로 갈 경우 재론.
+   현재는 §5-(5)에서 한계로 정면 서술하는 전략. 의학 계열 저널로 갈 경우 재론. **외부 검토 의견
+   (08-18)**: 공학 저널(Sensors/Bioengineering) 전제면 현행 전략 유지.
+
+## 부록 C. 보충표 (Supplementary)
+
+**Table S1. Contrast 서브그룹별 우위 슬라이스 비율** (per-slice CSV 재집계, 2026-08-18.
+각 칸 = SSIM 기준 우위 비율 (4지표 범위)).
+
+| Contrast | n (슬라이스) | SS2D vs GRU | 강화판 vs 통제판 |
+|---|---:|---:|---:|
+| AXFLAIR | 518 | 76.8% (71.0~76.8) | 67.8% (64.3~67.8) |
+| AXT1 | 492 | 78.5% (68.7~78.5) | **48.2% (48.2~49.2)** |
+| AXT1POST | 1,560 | 83.3% (77.6~83.3) | 54.3% (53.4~55.5) |
+| AXT1PRE | 458 | 84.7% (80.3~84.7) | 52.8% (47.4~52.8) |
+| AXT2 | 4,306 | 75.8% (72.6~75.8) | 56.0% (53.8~56.0) |
+
+해석: **통제 비교(SS2D vs GRU)의 우위는 5개 contrast 전부에서 일관**된다(모든 지표 ≥68.7%,
+SSIM 기준 전부 ≥75.8%) — 혼합 contrast 학습의 서브그룹 어디에서도 결론이 뒤집히지 않는다.
+반면 **강화판의 근소 우위는 contrast 간 불균일**하다 — AXFLAIR 에서 가장 크고(67.8%),
+AXT1 에서는 역전된다(48.2%) — §4.3 의 "유의하나 근소·불균일" 서술의 근거.
+
+## 부록 D. 외부 검토 보고서(2026-08-18) 반영 현황
+
+**P0 (투고 전 필수)**
+
+| # | 항목 | 상태 |
+|---|---|---|
+| 1 | Table 4 기준선 | ⏳ radapt 완주(~08-25) 후 즉시 실행 |
+| 2 | U-Net-only 정량 | 부분 — Fig.3 의 U-Net = leaderboard 사전학습본임을 §4.2 에 명시. **동일 파이프라인 U-Net-only 학습은 미실시** → §5-(6) 한계 명기 + radapt 후 학습·평가 예정 |
+| 3 | 슬라이스 상관(클러스터) | ✅ 볼륨 단위 Wilcoxon(n=464)·우위 볼륨 비율·클러스터 부트스트랩 CI 병행(§3.8, Table 2, §4.3). 4지표 전부 볼륨 수준 유의 확인 |
+| 4 | 표 수치 체계 통일 | ✅ 본문·표 전부 슬라이스 단위로 재계산·통일(§3.5 규정). 배치 풀링 수치는 Fig.2 재현용으로만 |
+| 5 | Table 3 동일값 의심 | ✅ 해소 — 슬라이스 단위 재계산으로 구분됨(L1 8.879 vs 8.883; NMSE 는 실제로 강화판이 평균 근소 열위 — §4.3 에 정직 서술) |
+| 6 | wall-clock 산식 | ✅ 재산출 — ckpt 간격 중앙값 기준 GRU 2.41 / SS2D 3.07 / 강화판 2.84 h/ep(Table 5). **기존 문서값(2.78/2.51)은 측정 기준 불일치로 폐기**. 부수 발견: v8↔강화판 사이 실행환경 개선(컨테이너/데이터로더)이 있어 wall-clock 직접 비교에 confound — Table 5 각주 명시 |
+| 7 | 지표 정의 | ✅ §3.5 수식 수준 정의 + ×10⁶ 스케일 명시(코드 `eval_paired_v9.py` 대조) |
+| 8 | 깨진 링크 2곳 | ✅ 수정 |
+| 9 | ⚠ 서지 | 부분 — 검토 확정 5건 반영([1][3][32][33][34]). 잔여 8건([2][15][16][35][36][39][40][47]) 별도 확정 예정 |
+| 10 | fastMRI 인용/문구 | ✅ [49] 병행 인용 + Acknowledgments 신설(✎공식 문구 원문 대조 1건 잔여) |
+| 11 | Informed Consent | ✅ 추가 |
+
+**P1 (방어력 강화)**
+
+| # | 항목 | 상태 |
+|---|---|---|
+| 1 | 멀티시드 | ⏸ 교수님 결정(부록 B-5 — 검토 의견·축약 프로토콜 반영) |
+| 2 | 효율 프레임·CI | ✅ 초록·기여 재프레임("21×, 동등 이상") + Table 2 에 median(IQR)·클러스터 CI·볼륨 통계 |
+| 3 | 효율 표 | 부분 — Table 5 신설(params·h/ep 실측). 추론 ms/slice·VRAM 은 GPU 확보 후(✎) |
+| 4 | 표준 프로토콜 보충표 | 부분 — 보수적 마스킹 논점 §3.5 명시 ✅. 320-crop 표준 지표 보충표는 GPU 확보 후(✎) |
+| 5 | ringing 정량화 | 부분 — 문구 완화·U-Net 정체 명시 ✅. 마스크 외부 잔차 정량·오류맵·N 명시는 GPU 확보 후(✎) |
+| 6 | contrast 서브그룹 | ✅ Table S1(부록 C) + §4.1/§4.3 본문 연결 |
+| 7 | "to our knowledge"·정의 명문화·[33] 구분 | ✅ §1④ 조작적 정의, §2.3 DH-Mamba 정면 구분, 절대 부정 명제 전부 완화 |
+| 8 | val 이중 사용 | ✅ §5-(6) 명시 |
+| 9 | 코일 압축 | ✅ §3.4·§5-(6) 명시 |
+| 10 | 초록 압축 | ✅ 강화판 세부 한 구절로 압축 + keywords 에 parameter efficiency |
 
 ---
 
 *변경 이력: v1(2026-08-07, 교수님 상의용) → v2(2026-08-18, 투고 준비 자료집 기반 재구조화 —
 서론 5문단 체계·Related Works 확장·문제 정식화·평가 신뢰성 고찰·MDPI 후반부 항목·참고문헌
-48편 병합[`paper/references.bib`]).*
+48편 병합[`paper/references.bib`]) → v2.1(2026-08-18, 외부 검토 보고서 반영 — 부록 D: 볼륨 단위
+통계·클러스터 CI·표 슬라이스 단위 통일·h/ep 재측정(환경 confound 발견)·효율 프레임 전환·지표
+정의 정밀화·contrast 보충표·서지 5건 확정).*

@@ -331,15 +331,6 @@
   url     = {https://pmc.ncbi.nlm.nih.gov/articles/PMC10764001/}
 }
 
-@misc{dmmamba2025,
-  author        = {Meng, Yucong and Yang, Zhiwei and Song, Zhijian and Shi, Yonghong},
-  title         = {{DM-Mamba}: Dual-domain Multi-scale Mamba for {MRI} reconstruction},
-  year          = {2025},
-  eprint        = {2501.08163},
-  archivePrefix = {arXiv},
-  url           = {https://arxiv.org/abs/2501.08163}
-}
-
 @inproceedings{li2025lmo,
   author    = {Li, Wei and Jiang, Jiawei and Wu, Jie and Yu, Kaihao and Zheng, Jianwei},
   title     = {{LMO}: Linear Mamba Operator for {MRI} Reconstruction},
@@ -576,12 +567,13 @@
 
 % --- ETER-Net 계열 (본 논문의 직접 계보) ---
 
-@article{oh2020eternet,
-  author  = {Oh, Changheun and others},
+@article{oh2021eternet,
+  author  = {Oh, Changheun and Kim, Dongchan and Chung, Jun-Young and Han, Yeji and Park, HyunWook},
   title   = {A k-space-to-image reconstruction network for {MRI} using recurrent neural network},
   journal = {Medical Physics},
-  year    = {2020},
-  note    = {⚠ 저자 전체·권호·페이지·DOI 미확정 — 투고 전 확정 (Consensus 2026-08-07 확인: Med. Phys. 2020, Oh et al.)}
+  year    = {2021},
+  doi     = {10.1002/mp.14566},
+  note    = {연도 2021·DOI 확정(외부 검토 2026-08-18, 온라인 공개 2020-11). 저자 명단은 통상 표기 — 원문 PDF 대조 ✎}
 }
 
 @article{oh2022radial,
@@ -596,8 +588,11 @@
   author  = {Oh, Changheun and others},
   title   = {A Hybrid Vision Transformer-{BiRNN} Architecture for Direct k-Space to Image Reconstruction in Accelerated {MRI}},
   journal = {Journal of Imaging},
-  year    = {2025},
-  note    = {★ 교수님 2025 최신작(직접 선행). ⚠ 저자·권호·DOI 미확정 — 투고 전 확정}
+  volume  = {12},
+  number  = {1},
+  year    = {2026},
+  doi     = {10.3390/jimaging12010011},
+  note    = {★ 교수님 최신작(직접 선행). DOI·권호 확정(외부 검토 2026-08-18) — vol 12(1)=2026, 2025 온라인 선공개 여부 원문 확인 ✎}
 }
 
 % --- Mamba 원류 ---
@@ -624,25 +619,31 @@
 % --- Mamba-MRI (v1 초안 참고문헌에서 이관) ---
 
 @inproceedings{korkmaz2025mambarecon,
-  author    = {Korkmaz, Yilmaz and others},
-  title     = {{MambaRecon}: {MRI} Reconstruction with Structured State Space Models},
-  booktitle = {IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
-  year      = {2025},
-  note      = {⚠ 서지 확정 필요}
+  author        = {Korkmaz, Yilmaz and Patel, Vishal M.},
+  title         = {{MambaRecon}: {MRI} Reconstruction with Structured State Space Models},
+  booktitle     = {IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  year          = {2025},
+  eprint        = {2409.12401},
+  archivePrefix = {arXiv}
 }
 
-@article{meng2025dhmamba,
-  author  = {Meng, Yucong and others},
-  title   = {{DH-Mamba}: Exploring Dual-Domain Hierarchical State Space Models for {MRI} Reconstruction},
-  year    = {2025},
-  note    = {⚠ IEEE TCSVT 게재로 파악(Consensus 2026-08-07). arXiv:2501.08163 {DM-Mamba}(본 bib `dmmamba2025`)의 저널판으로 추정 — 동일 논문 여부 확인 후 한 항목으로 통합할 것}
+@misc{dhmamba2025,
+  author        = {Meng, Yucong and Yang, Zhiwei and Song, Zhijian and Shi, Yonghong},
+  title         = {{DH-Mamba}: Exploring Dual-domain Hierarchical State Space Models for {MRI} Reconstruction},
+  year          = {2025},
+  eprint        = {2501.08163},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2501.08163},
+  note          = {v1 제목: DM-Mamba — 동일 논문 통합 확정(외부 검토 2026-08-18). IEEE TCSVT 게재 — 권호 확정 ✎}
 }
 
 @misc{kabas2024mambaroll,
   author        = {Kabas, Bilal and others},
   title         = {Physics-Driven Autoregressive State Space Models for Medical Image Reconstruction},
   year          = {2024},
-  note          = {MambaRoll. ⚠ IEEE TMI 게재 여부·eprint 번호 미확정 — 투고 전 확정}
+  eprint        = {2412.09331},
+  archivePrefix = {arXiv},
+  note          = {MambaRoll — 실재 확정(외부 검토 2026-08-18). 저널판(IEEE TMI) 권호 확정 ✎}
 }
 
 @misc{meng2026cam,
