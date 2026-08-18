@@ -4,7 +4,7 @@
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
 > **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 학습 재개 완료(08-18, ETA ~08-25) — 완주 후 포함 여부 결정(부록 B-3).
-> **미완 요소**: §4.4 기준선 결과(GPU 대기), 참고문헌 잔여 ⚠ 서지, 저자·소속·펀딩, 그리고 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). **외부 검토 반영 현황은 부록 D.**
+> **미완 요소**: §4.4 기준선 결과(GPU 대기), 저자·소속·펀딩, 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). 서지는 08-18 전건 확정(잔여 ✎: [33][34] 저널 권호만). **외부 검토 반영 현황은 부록 D.**
 > 영어 전환은 내용(교수님 검토) 확정 후.
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:
@@ -458,12 +458,13 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
 ## 참고문헌 (번호 ↔ `paper/references.bib` 키 매핑)
 
-*⚠ 표시 = 서지 미확정(bib note 참조), 투고 전 Crossref/출판사 페이지로 확정할 것.*
+*전 항목 Crossref/arXiv 조회로 서지 확정(2026-08-18). 잔여 확인(✎) 2건: [33] IEEE TCSVT 권호,
+[34] 저널판 권호(게재 확정 시) — 아직 arXiv 인용으로 유효.*
 
 **직접 계보 (ETER-Net 계열)**
-1. Oh et al. (2021). A k-space-to-image reconstruction network for MRI using recurrent neural network. *Medical Physics*. doi:10.1002/mp.14566. `oh2021eternet` (연도 2021 로 확정 — 외부 검토 08-18; 저자 명단 원문 대조 ✎)
-2. Oh et al. (2022). An end-to-end recurrent neural network for radial MR image reconstruction. *Sensors*. `oh2022radial` ⚠
-3. Oh (2026). A hybrid Vision Transformer-BiRNN architecture for direct k-space to image reconstruction in accelerated MRI. *Journal of Imaging* 12(1). doi:10.3390/jimaging12010011. `oh2025vitbirnn` ★직접 선행 (2025 온라인 선공개 여부 확인 ✎)
+1. Oh, Kim, Chung, Han & Park (2021). A k-space-to-image reconstruction network for MRI using recurrent neural network. *Medical Physics* 48(1):193–203. doi:10.1002/mp.14566. `oh2021eternet`
+2. Oh, Chung & Han (2022). An end-to-end recurrent neural network for radial MR image reconstruction. *Sensors* 22(19):7277. doi:10.3390/s22197277. `oh2022radial`
+3. Oh (2025). A hybrid Vision Transformer-BiRNN architecture for direct k-space to image reconstruction in accelerated MRI. *Journal of Imaging* 12(1):11. doi:10.3390/jimaging12010011. `oh2025vitbirnn` ★직접 선행 — 단독 저자
 
 **고전 기반**
 4. Pruessmann et al. (1999). SENSE: sensitivity encoding for fast MRI. *MRM* 42(5):952–962. `pruessmann1999sense`
@@ -479,8 +480,8 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 12. Sriram et al. (2020). GrappaNet. *CVPR*. `sriram2020grappanet`
 13. Qin et al. (2019). Convolutional recurrent neural networks for dynamic MR image reconstruction. *IEEE TMI* 38(1):280–290. `qin2019crnn`
 14. Yiasemis et al. (2022). Recurrent Variational Network. *CVPR*. `yiasemis2022recurrentvarnet`
-15. Karkalousos et al. (2022). Assessment of data consistency through cascades of independently recurrent inference machines (CIRIM). *Phys. Med. Biol.* `karkalousos2022cirim` ⚠
-16. Hammernik et al. (2021). Systematic evaluation of iterative deep neural networks for fast parallel MRI reconstruction. *MRM* 86. `hammernik2021systematic` ⚠
+15. Karkalousos et al. (2022). Assessment of data consistency through cascades of independently recurrent inference machines (CIRIM). *Phys. Med. Biol.* 67(12):124001. doi:10.1088/1361-6560/ac6cc2. `karkalousos2022cirim`
+16. Hammernik et al. (2021). Systematic evaluation of iterative deep neural networks for fast parallel MRI reconstruction. *MRM* 86(4):1859–1872. doi:10.1002/mrm.28827. `hammernik2021systematic`
 17. Zhu et al. (2018). Image reconstruction by domain-transform manifold learning (AUTOMAP). *Nature* 555:487–492. `zhu2018automap`
 18. Eo et al. (2018). KIKI-net. *MRM* 80(5):2188–2201. `eo2018kiki`
 
@@ -510,12 +511,12 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 32. Korkmaz & Patel (2025). MambaRecon: MRI reconstruction with structured state space models. *WACV*. arXiv:2409.12401. `korkmaz2025mambarecon`
 33. Meng et al. (2025). DH-Mamba: exploring dual-domain hierarchical state space models for MRI reconstruction. arXiv:2501.08163 (v1 제목: DM-Mamba — 동일 논문으로 통합 확정, 외부 검토 08-18); IEEE TCSVT 게재. `dhmamba2025` (권호 확정 ✎)
 34. Kabas et al. (2024). Physics-driven autoregressive state space models for medical image reconstruction (MambaRoll). arXiv:2412.09331. `kabas2024mambaroll` (저널판 권호 확정 ✎)
-35. Meng et al. (2026). Image content aware state space model (CAM). `meng2026cam` ⚠
-36. Chen et al. (2025). HiFi-Mamba. `chen2025hifimamba` ⚠
+35. Meng, Yang, Fu, Song & Shi (2026). Image content matters: an image content aware state space model for accelerated MRI reconstruction (CAM). *Proc. AAAI* 40(10):8025–8033. doi:10.1609/aaai.v40i10.37748. `meng2026cam`
+36. Chen et al. (2025). HiFi-Mamba: dual-stream W-Laplacian enhanced Mamba for high-fidelity MRI reconstruction. arXiv:2508.09179. `chen2025hifimamba`
 37. Li et al. (2025). LMO: linear Mamba operator for MRI reconstruction. *CVPR*. `li2025lmo`
 38. Fang et al. (2026). SO-Mamba: state-ownership Mamba for unrolled MRI reconstruction. arXiv:2605.22031. `somamba2026`
-39. Huang et al. (2024). MambaMIR. arXiv:2402.18451. `huang2024mambamir` ⚠
-40. Zou et al. (2024). MMR-Mamba. arXiv:2406.18950. `zou2024mmrmamba` ⚠
+39. Huang et al. (2025). Enhancing global sensitivity and uncertainty quantification in medical image reconstruction with Monte Carlo arbitrary-masked Mamba (= MambaMIR 저널판; preprint arXiv:2402.18451). *Med. Image Anal.* 99:103334. doi:10.1016/j.media.2024.103334. `huang2024mambamir`
+40. Zou et al. (2025). MMR-Mamba: multi-modal MRI reconstruction with Mamba and spatial-frequency information fusion. *Med. Image Anal.* 102:103549. doi:10.1016/j.media.2025.103549 (preprint arXiv:2406.18950). `zou2024mmrmamba`
 
 **신뢰성·임상 검증**
 41. Antun et al. (2020). On instabilities of deep learning in image reconstruction. *PNAS* 117(48):30088–30095. `antun2020instabilities`
@@ -526,7 +527,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
 **통계·보고 지침**
 46. Acion et al. (2006). Probabilistic index. *Statistics in Medicine* 25(4):591–602. `acion2006probabilistic`
-47. Wang & Pocock (2016). A win ratio approach to comparing continuous non-normal outcomes. *Pharmaceutical Statistics*. `wang2016winratio` ⚠
+47. Wang & Pocock (2016). A win ratio approach to comparing continuous non-normal outcomes. *Pharmaceutical Statistics* 15(3):238–245. doi:10.1002/pst.1743. `wang2016winratio`
 48. Mongan et al. (2020). CLAIM checklist. *Radiology: AI* 2(2):e200029. `mongan2020claim`
 
 ---
@@ -547,7 +548,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 
 ## 부록 B. 교수님 상의 포인트 (초안 논외, 회의용)
 
-1. **[3] (교수님 ViT-BiRNN, *J. Imaging* 2026)과의 관계 설정** — 본 논문을 [1,3]의 직접 후속
+1. **[3] (교수님 ViT-BiRNN, *J. Imaging* 2025)과의 관계 설정** — 본 논문을 [1,3]의 직접 후속
    (도메인 변환 모듈의 세대 교체)으로 프레이밍하는 안. 저자 구성·기여 서술에 영향.
 2. **투고처** — 자료집 §6 + v1 부록 B 평가 종합 (2026-08-18 갱신):
 
@@ -615,7 +616,7 @@ AXT1 에서는 역전된다(48.2%) — §4.3 의 "유의하나 근소·불균일
 | 6 | wall-clock 산식 | ✅ 재산출 — ckpt 간격 중앙값 기준 GRU 2.41 / SS2D 3.07 / 강화판 2.84 h/ep(Table 5). **기존 문서값(2.78/2.51)은 측정 기준 불일치로 폐기**. 부수 발견: v8↔강화판 사이 실행환경 개선(컨테이너/데이터로더)이 있어 wall-clock 직접 비교에 confound — Table 5 각주 명시 |
 | 7 | 지표 정의 | ✅ §3.5 수식 수준 정의 + ×10⁶ 스케일 명시(코드 `eval_paired_v9.py` 대조) |
 | 8 | 깨진 링크 2곳 | ✅ 수정 |
-| 9 | ⚠ 서지 | 부분 — 검토 확정 5건 반영([1][3][32][33][34]). 잔여 8건([2][15][16][35][36][39][40][47]) 별도 확정 예정 |
+| 9 | ⚠ 서지 | ✅ **전건 확정** — 검토 5건 + Crossref/arXiv 직접 조회 8건+권호 보완([1] 48(1):193–203, [2] Sensors 22(19):7277, [3] 2025 확정·단독저자, [15] PMB 67(12), [16] MRM 86(4), [35] **AAAI 2026** 40(10):8025–8033, [36] arXiv:2508.09179, [39][40] **Med.Image.Anal. 저널판**(99:103334 / 102:103549), [47] 15(3):238–245). 잔여 ✎: [33] TCSVT·[34] 저널판 권호만 |
 | 10 | fastMRI 인용/문구 | ✅ [49] 병행 인용 + Acknowledgments 신설(✎공식 문구 원문 대조 1건 잔여) |
 | 11 | Informed Consent | ✅ 추가 |
 
