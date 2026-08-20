@@ -1,0 +1,15 @@
+\begin{table}[ht]
+\centering
+\caption{Per-slice paired comparison, SS2D vs.\ GRU. $\Delta$ is oriented so that positive favors SS2D (signs of NMSE/L1 are negated). CIs: volume-cluster bootstrap (2{,}000 resamples); $p$: two-sided volume-level Wilcoxon signed-rank.}
+\label{tab:paired-v8}
+\begin{tabular}{lrrrrrr}
+\toprule
+Metric & GRU (mean$\pm$std) & SS2D (controlled) (mean$\pm$std) & $\Delta$ median (IQR) & Slices favoring [95\% CI] & Volumes favoring & $p$ (volume, $n{=}464$) \\
+\midrule
+SSIM & 0.9126$\pm$0.0894 & 0.9140$\pm$0.0890 & +0.0013 (+0.0002, +0.0025) & \textbf{78.2\%} [76.8, 79.7] & \textbf{94.8\%} & $<$0.001 \\
+PSNR (dB) & 33.78$\pm$2.59 & 33.90$\pm$2.63 & +0.12 (-0.01, +0.26) & \textbf{73.8\%} [72.1, 75.5] & \textbf{89.9\%} & $<$0.001 \\
+NMSE --- $\Delta\times 10^{-5}$ & 0.00449$\pm$0.00525 & 0.00438$\pm$0.00526 & +8.9 (-0.6, +20.6) & \textbf{73.8\%} [72.0, 75.5] & \textbf{90.1\%} & $<$0.001 \\
+L1 ($\times 10^{-6}$) & 9.00$\pm$3.05 & 8.88$\pm$3.05 & +0.115 (+0.005, +0.237) & \textbf{76.1\%} [74.4, 77.8] & \textbf{90.5\%} & $<$0.001 \\
+\bottomrule
+\end{tabular}
+\end{table}

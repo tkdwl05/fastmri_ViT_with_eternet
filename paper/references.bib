@@ -1,0 +1,758 @@
+% MRI Reconstruction — 논문 준비용 참고문헌 (2026-08-18 작성)
+% Zotero: 파일 > 가져오기 로 임포트. 번호는 자료집 4장 리스트와 대응.
+
+% ===== 리뷰·서베이 =====
+
+@article{heckel2024deep,
+  author  = {Heckel, Reinhard and Jacob, Mathews and Chaudhari, Akshay and Perlman, Or and Shimron, Efrat},
+  title   = {Deep learning for accelerated and robust {MRI} reconstruction},
+  journal = {Magnetic Resonance Materials in Physics, Biology and Medicine},
+  volume  = {37},
+  pages   = {335--368},
+  year    = {2024},
+  doi     = {10.1007/s10334-024-01173-8}
+}
+
+@article{hammernik2023physics,
+  author  = {Hammernik, Kerstin and K{\"u}stner, Thomas and Yaman, Burhaneddin and Huang, Zhengnan and Rueckert, Daniel and Knoll, Florian and Ak{\c{c}}akaya, Mehmet},
+  title   = {Physics-Driven Deep Learning for Computational Magnetic Resonance Imaging},
+  journal = {IEEE Signal Processing Magazine},
+  volume  = {40},
+  number  = {1},
+  pages   = {98--114},
+  year    = {2023},
+  doi     = {10.1109/MSP.2022.3215288}
+}
+
+@article{knoll2020deeplearning,
+  author  = {Knoll, Florian and Hammernik, Kerstin and Zhang, Chi and Moeller, Steen and Pock, Thomas and Sodickson, Daniel K. and Ak{\c{c}}akaya, Mehmet},
+  title   = {Deep-Learning Methods for Parallel {MR} Image Reconstruction},
+  journal = {IEEE Signal Processing Magazine},
+  volume  = {37},
+  number  = {1},
+  pages   = {128--140},
+  year    = {2020},
+  doi     = {10.1109/MSP.2019.2950640}
+}
+
+@article{wang2024knowledge,
+  author  = {Wang, Shanshan and others},
+  title   = {Knowledge-driven deep learning for fast {MR} imaging: Undersampled {MR} image reconstruction from supervised to un-supervised learning},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {92},
+  number  = {2},
+  year    = {2024},
+  doi     = {10.1002/mrm.30105}
+}
+
+@misc{advancing2025systematic,
+  author        = {Safari, Mojtaba and Eidex, Zach and Chang, Chih-Wei and Qiu, Richard L. J. and Yang, Xiaofeng},
+  title         = {Advancing {MRI} Reconstruction: A Systematic Review of Deep Learning and Compressed Sensing Integration},
+  year          = {2025},
+  eprint        = {2501.14158},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2501.14158}
+}
+
+@article{hossain2024systematic,
+  author  = {Hossain, Md. Biddut and others},
+  title   = {A Systematic Review and Identification of the Challenges of Deep Learning Techniques for Undersampled Magnetic Resonance Image Reconstruction},
+  journal = {Sensors},
+  volume  = {24},
+  number  = {3},
+  pages   = {753},
+  year    = {2024},
+  doi     = {10.3390/s24030753}
+}
+
+% ===== 고전 기반 =====
+
+@article{pruessmann1999sense,
+  author  = {Pruessmann, Klaas P. and Weiger, Markus and Scheidegger, Markus B. and Boesiger, Peter},
+  title   = {{SENSE}: Sensitivity encoding for fast {MRI}},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {42},
+  number  = {5},
+  pages   = {952--962},
+  year    = {1999}
+}
+
+@article{griswold2002grappa,
+  author  = {Griswold, Mark A. and Jakob, Peter M. and Heidemann, Robin M. and Nittka, Mathias and Jellus, Vladimir and Wang, Jianmin and Kiefer, Berthold and Haase, Axel},
+  title   = {Generalized autocalibrating partially parallel acquisitions ({GRAPPA})},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {47},
+  number  = {6},
+  pages   = {1202--1210},
+  year    = {2002},
+  doi     = {10.1002/mrm.10171}
+}
+
+@article{lustig2007sparse,
+  author  = {Lustig, Michael and Donoho, David and Pauly, John M.},
+  title   = {Sparse {MRI}: The application of compressed sensing for rapid {MR} imaging},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {58},
+  number  = {6},
+  pages   = {1182--1195},
+  year    = {2007},
+  doi     = {10.1002/mrm.21391}
+}
+
+% ===== 딥러닝 기둥 =====
+
+@inproceedings{wang2016accelerating,
+  author    = {Wang, Shanshan and Su, Zhenghang and Ying, Leslie and Peng, Xi and Zhu, Shun and Liang, Feng and Feng, Dagan and Liang, Dong},
+  title     = {Accelerating magnetic resonance imaging via deep learning},
+  booktitle = {2016 IEEE 13th International Symposium on Biomedical Imaging (ISBI)},
+  pages     = {514--517},
+  year      = {2016},
+  doi       = {10.1109/ISBI.2016.7493320}
+}
+
+@article{hammernik2018learning,
+  author  = {Hammernik, Kerstin and Klatzer, Teresa and Kobler, Erich and Recht, Michael P. and Sodickson, Daniel K. and Pock, Thomas and Knoll, Florian},
+  title   = {Learning a variational network for reconstruction of accelerated {MRI} data},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {79},
+  number  = {6},
+  pages   = {3055--3071},
+  year    = {2018},
+  doi     = {10.1002/mrm.26977}
+}
+
+@article{schlemper2018deep,
+  author  = {Schlemper, Jo and Caballero, Jose and Hajnal, Joseph V. and Price, Anthony N. and Rueckert, Daniel},
+  title   = {A Deep Cascade of Convolutional Neural Networks for Dynamic {MR} Image Reconstruction},
+  journal = {IEEE Transactions on Medical Imaging},
+  volume  = {37},
+  number  = {2},
+  pages   = {491--503},
+  year    = {2018},
+  doi     = {10.1109/TMI.2017.2760978}
+}
+
+@article{aggarwal2019modl,
+  author  = {Aggarwal, Hemant K. and Mani, Merry P. and Jacob, Mathews},
+  title   = {{MoDL}: Model-Based Deep Learning Architecture for Inverse Problems},
+  journal = {IEEE Transactions on Medical Imaging},
+  volume  = {38},
+  number  = {2},
+  pages   = {394--405},
+  year    = {2019},
+  doi     = {10.1109/TMI.2018.2865356}
+}
+
+@article{zhu2018automap,
+  author  = {Zhu, Bo and Liu, Jeremiah Z. and Cauley, Stephen F. and Rosen, Bruce R. and Rosen, Matthew S.},
+  title   = {Image reconstruction by domain-transform manifold learning},
+  journal = {Nature},
+  volume  = {555},
+  pages   = {487--492},
+  year    = {2018},
+  doi     = {10.1038/nature25988}
+}
+
+@article{eo2018kiki,
+  author  = {Eo, Taejoon and Jun, Yohan and Kim, Taeseong and Jang, Jinseong and Lee, Ho-Joon and Hwang, Dosik},
+  title   = {{KIKI}-net: cross-domain convolutional neural networks for reconstructing undersampled magnetic resonance images},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {80},
+  number  = {5},
+  pages   = {2188--2201},
+  year    = {2018},
+  doi     = {10.1002/mrm.27201}
+}
+
+@inproceedings{sriram2020endtoend,
+  author    = {Sriram, Anuroop and Zbontar, Jure and Murrell, Tullie and Defazio, Aaron and Zitnick, C. Lawrence and Yakubova, Nafissa and Knoll, Florian and Johnson, Patricia},
+  title     = {End-to-End Variational Networks for Accelerated {MRI} Reconstruction},
+  booktitle = {Medical Image Computing and Computer Assisted Intervention (MICCAI 2020)},
+  series    = {LNCS},
+  volume    = {12262},
+  pages     = {64--73},
+  year      = {2020},
+  doi       = {10.1007/978-3-030-59713-9_7}
+}
+
+@inproceedings{sriram2020grappanet,
+  author    = {Sriram, Anuroop and Zbontar, Jure and Murrell, Tullie and Zitnick, C. Lawrence and Defazio, Aaron and Sodickson, Daniel K.},
+  title     = {{GrappaNet}: Combining Parallel Imaging With Deep Learning for Multi-Coil {MRI} Reconstruction},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2020},
+  eprint    = {1910.12325},
+  archivePrefix = {arXiv}
+}
+
+@article{qin2019crnn,
+  author  = {Qin, Chen and Schlemper, Jo and Caballero, Jose and Price, Anthony N. and Hajnal, Joseph V. and Rueckert, Daniel},
+  title   = {Convolutional Recurrent Neural Networks for Dynamic {MR} Image Reconstruction},
+  journal = {IEEE Transactions on Medical Imaging},
+  volume  = {38},
+  number  = {1},
+  pages   = {280--290},
+  year    = {2019},
+  doi     = {10.1109/TMI.2018.2863670}
+}
+
+% ===== fastMRI 데이터셋·챌린지 =====
+
+@misc{zbontar2018fastmri,
+  author        = {Zbontar, Jure and Knoll, Florian and Sriram, Anuroop and others},
+  title         = {{fastMRI}: An Open Dataset and Benchmarks for Accelerated {MRI}},
+  year          = {2018},
+  eprint        = {1811.08839},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/1811.08839}
+}
+
+@article{knoll2020fastmri,
+  author  = {Knoll, Florian and Zbontar, Jure and Sriram, Anuroop and others},
+  title   = {{fastMRI}: A Publicly Available Raw k-Space and {DICOM} Dataset of Knee Images for Accelerated {MR} Image Reconstruction Using Machine Learning},
+  journal = {Radiology: Artificial Intelligence},
+  volume  = {2},
+  number  = {1},
+  pages   = {e190007},
+  year    = {2020},
+  doi     = {10.1148/ryai.2020190007}
+}
+
+@article{knoll2020advancing,
+  author  = {Knoll, Florian and Murrell, Tullie and Sriram, Anuroop and others},
+  title   = {Advancing machine learning for {MR} image reconstruction with an open competition: Overview of the 2019 {fastMRI} challenge},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {84},
+  number  = {6},
+  pages   = {3054--3070},
+  year    = {2020},
+  eprint  = {2001.02518},
+  archivePrefix = {arXiv}
+}
+
+@article{muckley2021results,
+  author  = {Muckley, Matthew J. and Riemenschneider, Bruno and Radmanesh, Alireza and others},
+  title   = {Results of the 2020 {fastMRI} Challenge for Machine Learning {MR} Image Reconstruction},
+  journal = {IEEE Transactions on Medical Imaging},
+  volume  = {40},
+  number  = {9},
+  pages   = {2306--2317},
+  year    = {2021},
+  doi     = {10.1109/TMI.2021.3075856}
+}
+
+% ===== Self-supervised =====
+
+@article{yaman2020ssdu,
+  author  = {Yaman, Burhaneddin and Hosseini, Seyed Amir Hossein and Moeller, Steen and Ellermann, Jutta and U{\u{g}}urbil, K{\^a}mil and Ak{\c{c}}akaya, Mehmet},
+  title   = {Self-supervised learning of physics-guided reconstruction neural networks without fully sampled reference data},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {84},
+  number  = {6},
+  pages   = {3172--3191},
+  year    = {2020},
+  doi     = {10.1002/mrm.28378}
+}
+
+% ===== 생성모델·Diffusion =====
+
+@inproceedings{jalal2021robust,
+  author    = {Jalal, Ajil and Arvinte, Marius and Daras, Giannis and Price, Eric and Dimakis, Alexandros G. and Tamir, Jonathan I.},
+  title     = {Robust Compressed Sensing {MRI} with Deep Generative Priors},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2021},
+  eprint    = {2108.01368},
+  archivePrefix = {arXiv}
+}
+
+@article{chung2022score,
+  author  = {Chung, Hyungjin and Ye, Jong Chul},
+  title   = {Score-based diffusion models for accelerated {MRI}},
+  journal = {Medical Image Analysis},
+  volume  = {80},
+  pages   = {102479},
+  year    = {2022},
+  doi     = {10.1016/j.media.2022.102479}
+}
+
+@inproceedings{bangun2025r3dm,
+  author    = {Bangun, Arya and Cao, Zhuo and Quercia, Alessio and Scharr, Hanno and Pfaehler, Elisabeth},
+  title     = {{MRI} Reconstruction with Regularized {3D} Diffusion Model ({R3DM})},
+  booktitle = {IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  year      = {2025},
+  url       = {https://openaccess.thecvf.com/content/WACV2025/papers/Bangun_MRI_Reconstruction_with_Regularized_3D_Diffusion_Model_R3DM_WACV_2025_paper.pdf}
+}
+
+@article{colddiffusion2024,
+  author  = {Shen, Guoyao and Li, Mengyu and Farris, Chad W. and Anderson, Stephan and Zhang, Xin},
+  title   = {Learning to reconstruct accelerated {MRI} through K-space cold diffusion without noise},
+  journal = {Scientific Reports},
+  volume  = {14},
+  year    = {2024},
+  doi     = {10.1038/s41598-024-72820-2}
+}
+
+@inproceedings{mayo2025physics,
+  author    = {Mayo, Perla and Pirkl, Carolin M. and Achim, Alin and Menze, Bjoern and Golbabaee, Mohammad},
+  title     = {Physics informed guided diffusion for accelerated multi-parametric {MRI} reconstruction},
+  booktitle = {Medical Image Computing and Computer Assisted Intervention (MICCAI 2025)},
+  year      = {2025},
+  url       = {https://papers.miccai.org/miccai-2025/paper/0264_paper.pdf}
+}
+
+% ===== Transformer / Mamba =====
+
+@article{huang2022swinmr,
+  author  = {Huang, Jiahao and Fang, Yingying and Wu, Yinzhe and others},
+  title   = {Swin transformer for fast {MRI}},
+  journal = {Neurocomputing},
+  volume  = {493},
+  pages   = {281--304},
+  year    = {2022},
+  eprint  = {2201.03230},
+  archivePrefix = {arXiv}
+}
+
+@inproceedings{fabian2022humus,
+  author    = {Fabian, Zalan and Soltanolkotabi, Mahdi},
+  title     = {{HUMUS}-Net: Hybrid Unrolled Multi-scale Network Architecture for Accelerated {MRI} Reconstruction},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2022},
+  eprint    = {2203.08213},
+  archivePrefix = {arXiv}
+}
+
+@article{guo2024reconformer,
+  author  = {Guo, Pengfei and Mei, Yiqun and Zhou, Jinyuan and Jiang, Shanshan and Patel, Vishal M.},
+  title   = {{ReconFormer}: Accelerated {MRI} Reconstruction Using Recurrent Transformer},
+  journal = {IEEE Transactions on Medical Imaging},
+  volume  = {43},
+  number  = {1},
+  year    = {2024},
+  url     = {https://pmc.ncbi.nlm.nih.gov/articles/PMC10764001/}
+}
+
+@inproceedings{li2025lmo,
+  author    = {Li, Wei and Jiang, Jiawei and Wu, Jie and Yu, Kaihao and Zheng, Jianwei},
+  title     = {{LMO}: Linear Mamba Operator for {MRI} Reconstruction},
+  booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year      = {2025},
+  url       = {https://openaccess.thecvf.com/content/CVPR2025/papers/Li_LMO_Linear_Mamba_Operator_for_MRI_Reconstruction_CVPR_2025_paper.pdf}
+}
+
+@misc{somamba2026,
+  author        = {Fang, Pengcheng and Chen, Hongli and Tang, Fangfang and Liu, Feng and Cai, Xiaohao and Shan, Shanshan},
+  title         = {{SO-Mamba}: State-Ownership Mamba for Unrolled {MRI} Reconstruction},
+  year          = {2026},
+  eprint        = {2605.22031},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2605.22031}
+}
+
+% ===== INR =====
+
+@misc{kspaceinr2023,
+  title         = {Efficient {MRI} Parallel Imaging Reconstruction by K-Space Rendering via Generalized Implicit Neural Representation},
+  year          = {2023},
+  eprint        = {2309.06067},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2309.06067}
+}
+
+@misc{inr2025patient,
+  author        = {Xu, Di and Liu, Hengjie and Miao, Xin and others},
+  title         = {Accelerated Patient-specific Non-Cartesian {MRI} Reconstruction using Implicit Neural Representations},
+  year          = {2025},
+  eprint        = {2503.05051},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2503.05051}
+}
+
+@misc{lowrankinr2025,
+  author        = {Zhang, Haonan and Lao, Guoyan and Zhang, Yuyao and Wei, Hongjiang},
+  title         = {Low-Rank Augmented Implicit Neural Representation for Unsupervised High-Dimensional Quantitative {MRI} Reconstruction},
+  year          = {2025},
+  eprint        = {2506.09100},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2506.09100}
+}
+
+% ===== Foundation / Universal =====
+
+@misc{sdum2025,
+  author        = {Wang, Puyang and Guo, Pengfei and Chai, Keyi and Zhou, Jinyuan and Xu, Daguang and Jiang, Shanshan},
+  title         = {{SDUM}: A Scalable Deep Unrolled Model for Universal {MRI} Reconstruction},
+  year          = {2025},
+  eprint        = {2512.17137},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2512.17137}
+}
+
+@misc{crunet2026,
+  author        = {Lyu, Donghang and Staring, Marius and Lamb, Hildo J. and Doneva, Mariya},
+  title         = {{CRUNet-MR-Univ}: A Foundation Model for Diverse Cardiac {MRI} Reconstruction},
+  year          = {2026},
+  eprint        = {2601.04428},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2601.04428}
+}
+
+@article{feng2026foundation,
+  author  = {Feng, Ruimin and He, Xingxin and Mercer, Ronald W. and Stewart, Zachary E. and Liu, Fang},
+  title   = {On the Utility of Foundation Models for Fast {MRI}: Vision-Language-Guided Image Reconstruction},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {96},
+  number  = {2},
+  pages   = {943--959},
+  year    = {2026},
+  doi     = {10.1002/mrm.70374}
+}
+
+% ===== 신뢰성·임상 검증 =====
+
+@article{antun2020instabilities,
+  author  = {Antun, Vegard and Renna, Francesco and Poon, Clarice and Adcock, Ben and Hansen, Anders C.},
+  title   = {On instabilities of deep learning in image reconstruction and the potential costs of {AI}},
+  journal = {Proceedings of the National Academy of Sciences},
+  volume  = {117},
+  number  = {48},
+  pages   = {30088--30095},
+  year    = {2020},
+  doi     = {10.1073/pnas.1907377117}
+}
+
+@article{gottschling2025troublesome,
+  author  = {Gottschling, Nina M. and Antun, Vegard and Hansen, Anders C. and Adcock, Ben},
+  title   = {The Troublesome Kernel: On Hallucinations, No Free Lunches, and the Accuracy-Stability Tradeoff in Inverse Problems},
+  journal = {SIAM Review},
+  volume  = {67},
+  number  = {1},
+  year    = {2025},
+  doi     = {10.1137/23M1568739}
+}
+
+@inproceedings{krainovic2024robustness,
+  title     = {Robustness of Deep Learning for Accelerated {MRI}},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  year      = {2024},
+  url       = {https://dl.acm.org/doi/10.5555/3692070.3693280}
+}
+
+@misc{trigger2026hallucinations,
+  author        = {Bu{\u{g}}day, Suna and Saeys, Yvan and Peck, Jonathan},
+  title         = {Triggering hallucinations in model-based {MRI} reconstruction via adversarial perturbations},
+  year          = {2026},
+  eprint        = {2602.18536},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2602.18536}
+}
+
+@article{recht2020interchangeability,
+  author  = {Recht, Michael P. and Zbontar, Jure and Sodickson, Daniel K. and others},
+  title   = {Using Deep Learning to Accelerate Knee {MRI} at {3T}: Results of an Interchangeability Study},
+  journal = {American Journal of Roentgenology},
+  volume  = {215},
+  number  = {6},
+  pages   = {1421--1429},
+  year    = {2020},
+  doi     = {10.2214/AJR.20.23313}
+}
+
+@article{johnson2023prospective,
+  author  = {Johnson, Patricia M. and Lin, Dana J. and Zbontar, Jure and others},
+  title   = {Deep Learning Reconstruction Enables Prospectively Accelerated Clinical Knee {MRI}},
+  journal = {Radiology},
+  volume  = {307},
+  number  = {2},
+  pages   = {e220425},
+  year    = {2023},
+  doi     = {10.1148/radiol.220425}
+}
+
+@article{radmanesh2022limits,
+  author  = {Radmanesh, Alireza and Muckley, Matthew J. and Murrell, Tullie and others},
+  title   = {Exploring the Acceleration Limits of Deep Learning {VarNet}-based Two-dimensional Brain {MRI}},
+  journal = {Radiology: Artificial Intelligence},
+  volume  = {4},
+  number  = {6},
+  pages   = {e210313},
+  year    = {2022},
+  doi     = {10.1148/ryai.210313}
+}
+
+@article{fda2024phantom,
+  title   = {Evaluating Machine Learning-Based {MRI} Reconstruction Using Digital Image Quality Phantoms},
+  journal = {Bioengineering},
+  volume  = {11},
+  number  = {6},
+  pages   = {614},
+  year    = {2024},
+  doi     = {10.3390/bioengineering11060614}
+}
+
+@article{magma2025qc,
+  title   = {Quantitative image quality metrics enable resource-efficient quality control of clinically applied {AI}-based reconstructions in {MRI}},
+  journal = {Magnetic Resonance Materials in Physics, Biology and Medicine},
+  year    = {2025},
+  doi     = {10.1007/s10334-025-01253-3}
+}
+
+% ===== 데이터셋(비-fastMRI)·체크리스트 =====
+
+@article{wang2024cmrxrecon,
+  author  = {Wang, Chengyan and others},
+  title   = {{CMRxRecon}: A publicly available k-space dataset and benchmark to advance deep learning for cardiac {MRI}},
+  journal = {Scientific Data},
+  volume  = {11},
+  year    = {2024},
+  doi     = {10.1038/s41597-024-03525-4}
+}
+
+@article{cmrxrecon2024dataset,
+  title   = {{CMRxRecon2024}: A Multimodality, Multiview k-Space Dataset Boosting Universal Machine Learning for Accelerated Cardiac {MRI}},
+  journal = {Radiology: Artificial Intelligence},
+  year    = {2025},
+  doi     = {10.1148/ryai.240443}
+}
+
+@misc{cmrxrecon2023results,
+  author        = {Lyu, Jun and Qin, Chen and Wang, Shuo and Wang, Fanwen and Li, Yan and others},
+  title         = {The state-of-the-art in Cardiac {MRI} Reconstruction: Results of the {CMRxRecon} Challenge in {MICCAI} 2023},
+  year          = {2024},
+  eprint        = {2404.01082},
+  archivePrefix = {arXiv},
+  note          = {Medical Image Analysis (2025) 게재},
+  url           = {https://arxiv.org/abs/2404.01082}
+}
+
+@article{lyu2023m4raw,
+  author  = {Lyu, Mengye and others},
+  title   = {{M4Raw}: A multi-contrast, multi-repetition, multi-channel {MRI} k-space dataset for low-field {MRI} research},
+  journal = {Scientific Data},
+  volume  = {10},
+  year    = {2023},
+  doi     = {10.1038/s41597-023-02181-4}
+}
+
+@article{mongan2020claim,
+  author  = {Mongan, John and Moy, Linda and Kahn, Charles E.},
+  title   = {Checklist for Artificial Intelligence in Medical Imaging ({CLAIM}): A Guide for Authors and Reviewers},
+  journal = {Radiology: Artificial Intelligence},
+  volume  = {2},
+  number  = {2},
+  pages   = {e200029},
+  year    = {2020},
+  doi     = {10.1148/ryai.2020200029}
+}
+
+% ===== 국문 문헌 =====
+
+@article{jksr2023ai,
+  title   = {{MRI} 신호획득과 영상재구성에서의 인공지능 적용},
+  journal = {대한영상의학회지 (Journal of the Korean Society of Radiology)},
+  year    = {2022},
+  doi     = {10.3348/jksr.2022.0156}
+}
+
+@article{jksr2025msk,
+  title   = {근골격 자기공명영상에서의 딥러닝 기반 영상 재구성 기법},
+  journal = {대한영상의학회지 (Journal of the Korean Society of Radiology)},
+  year    = {2025},
+  doi     = {10.3348/jksr.2025.0015}
+}
+
+% ============================================================================
+% ===== 프로젝트 직접 계보·추가 문헌 (draft_ko_v2 작성 시 병합, 2026-08-18) =====
+% 원칙: 서지 미확정 필드는 기재하지 않고 note 로 표시 (투고 전 Crossref 확정)
+% ============================================================================
+
+% --- ETER-Net 계열 (본 논문의 직접 계보) ---
+
+@article{oh2021eternet,
+  author  = {Oh, Changheun and Kim, Dongchan and Chung, Jun-Young and Han, Yeji and Park, HyunWook},
+  title   = {A k-space-to-image reconstruction network for {MRI} using recurrent neural network},
+  journal = {Medical Physics},
+  volume  = {48},
+  number  = {1},
+  pages   = {193--203},
+  year    = {2021},
+  doi     = {10.1002/mp.14566},
+  note    = {Crossref 전항목 확정(2026-08-18) — 저자 명단 일치}
+}
+
+@article{oh2022radial,
+  author  = {Oh, Changheun and Chung, Jun-Young and Han, Yeji},
+  title   = {An End-to-End Recurrent Neural Network for Radial {MR} Image Reconstruction},
+  journal = {Sensors},
+  volume  = {22},
+  number  = {19},
+  pages   = {7277},
+  year    = {2022},
+  doi     = {10.3390/s22197277},
+  note    = {Crossref 확정(2026-08-18)}
+}
+
+@article{oh2025vitbirnn,
+  author  = {Oh, Changheun},
+  title   = {A Hybrid Vision Transformer-{BiRNN} Architecture for Direct k-Space to Image Reconstruction in Accelerated {MRI}},
+  journal = {Journal of Imaging},
+  volume  = {12},
+  number  = {1},
+  pages   = {11},
+  year    = {2025},
+  doi     = {10.3390/jimaging12010011},
+  note    = {★ 교수님 최신작(직접 선행) — 단독 저자. Crossref 확정(2026-08-18): 연도 2025}
+}
+
+% --- Mamba 원류 ---
+
+@misc{gu2023mamba,
+  author        = {Gu, Albert and Dao, Tri},
+  title         = {Mamba: Linear-Time Sequence Modeling with Selective State Spaces},
+  year          = {2023},
+  eprint        = {2312.00752},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2312.00752}
+}
+
+@inproceedings{liu2024vmamba,
+  author        = {Liu, Yue and others},
+  title         = {{VMamba}: Visual State Space Model},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2024},
+  eprint        = {2401.10166},
+  archivePrefix = {arXiv},
+  note          = {SS2D(4방향 selective scan) 원류}
+}
+
+% --- Mamba-MRI (v1 초안 참고문헌에서 이관) ---
+
+@inproceedings{korkmaz2025mambarecon,
+  author        = {Korkmaz, Yilmaz and Patel, Vishal M.},
+  title         = {{MambaRecon}: {MRI} Reconstruction with Structured State Space Models},
+  booktitle     = {IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  year          = {2025},
+  eprint        = {2409.12401},
+  archivePrefix = {arXiv}
+}
+
+@misc{dhmamba2025,
+  author        = {Meng, Yucong and Yang, Zhiwei and Song, Zhijian and Shi, Yonghong},
+  title         = {{DH-Mamba}: Exploring Dual-domain Hierarchical State Space Models for {MRI} Reconstruction},
+  year          = {2025},
+  eprint        = {2501.08163},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2501.08163},
+  note          = {v1 제목: DM-Mamba — 동일 논문 통합 확정(외부 검토 2026-08-18). IEEE TCSVT 게재 — 권호 확정 ✎}
+}
+
+@misc{kabas2024mambaroll,
+  author        = {Kabas, Bilal and others},
+  title         = {Physics-Driven Autoregressive State Space Models for Medical Image Reconstruction},
+  year          = {2024},
+  eprint        = {2412.09331},
+  archivePrefix = {arXiv},
+  note          = {MambaRoll — 실재 확정(외부 검토 2026-08-18). 저널판(IEEE TMI) 권호 확정 ✎}
+}
+
+@inproceedings{meng2026cam,
+  author    = {Meng, Yucong and Yang, Zhiwei and Fu, Kexue and Song, Zhijian and Shi, Yonghong},
+  title     = {Image Content Matters: An Image Content Aware State Space Model for Accelerated {MRI} Reconstruction},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {40},
+  number    = {10},
+  pages     = {8025--8033},
+  year      = {2026},
+  doi       = {10.1609/aaai.v40i10.37748},
+  note      = {CAM. Crossref 확정(2026-08-18)}
+}
+
+@misc{chen2025hifimamba,
+  author        = {Chen, Hongli and Fang, Pengcheng and Chen, Yuxia and Ren, Yingxuan and Hao, Jing and Tang, Fangfang and others},
+  title         = {{HiFi-Mamba}: Dual-Stream W-Laplacian Enhanced Mamba for High-Fidelity {MRI} Reconstruction},
+  year          = {2025},
+  eprint        = {2508.09179},
+  archivePrefix = {arXiv},
+  note          = {arXiv 확정(2026-08-18)}
+}
+
+@article{huang2024mambamir,
+  author  = {Huang, Jiahao and Yang, Liutao and Wang, Fanwen and Wu, Yinzhe and Nan, Yang and Wu, Weiwen and Wang, Chengyan and Shi, Kuangyu and others},
+  title   = {Enhancing global sensitivity and uncertainty quantification in medical image reconstruction with Monte Carlo arbitrary-masked Mamba},
+  journal = {Medical Image Analysis},
+  volume  = {99},
+  pages   = {103334},
+  year    = {2025},
+  doi     = {10.1016/j.media.2024.103334},
+  note    = {MambaMIR 의 저널판(개제목; preprint arXiv:2402.18451). Crossref 확정(2026-08-18)}
+}
+
+@article{zou2024mmrmamba,
+  author  = {Zou, Jing and Liu, Lanqing and Chen, Qi and Wang, Shujun and Hu, Zhanli and Xing, Xiaohan and Qin, Jing},
+  title   = {{MMR-Mamba}: Multi-modal {MRI} reconstruction with Mamba and spatial-frequency information fusion},
+  journal = {Medical Image Analysis},
+  volume  = {102},
+  pages   = {103549},
+  year    = {2025},
+  doi     = {10.1016/j.media.2025.103549},
+  note    = {preprint arXiv:2406.18950. Crossref 확정(2026-08-18)}
+}
+
+% --- Unrolled RNN 계열 보강 (v1 초안 참고문헌에서 이관) ---
+
+@inproceedings{yiasemis2022recurrentvarnet,
+  author        = {Yiasemis, George and others},
+  title         = {Recurrent Variational Network: A Deep Learning Inverse Problem Solver applied to the task of Accelerated {MRI} Reconstruction},
+  booktitle     = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year          = {2022},
+  eprint        = {2111.09639},
+  archivePrefix = {arXiv}
+}
+
+@article{karkalousos2022cirim,
+  author  = {Karkalousos, Dimitrios and Noteboom, Samantha and Hulst, Hanneke E. and Vos, Frans M. and Caan, Matthan W. A.},
+  title   = {Assessment of data consistency through cascades of independently recurrent inference machines for fast and robust accelerated {MRI} reconstruction},
+  journal = {Physics in Medicine \& Biology},
+  volume  = {67},
+  number  = {12},
+  pages   = {124001},
+  year    = {2022},
+  doi     = {10.1088/1361-6560/ac6cc2},
+  note    = {CIRIM. Crossref 확정(2026-08-18)}
+}
+
+@article{hammernik2021systematic,
+  author  = {Hammernik, Kerstin and others},
+  title   = {Systematic evaluation of iterative deep neural networks for fast parallel {MRI} reconstruction with sensitivity-weighted coil combination},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {86},
+  number  = {4},
+  pages   = {1859--1872},
+  year    = {2021},
+  doi     = {10.1002/mrm.28827},
+  note    = {Crossref 확정(2026-08-18)}
+}
+
+% --- 통계 방법 (win-rate 보고 근거) ---
+
+@article{acion2006probabilistic,
+  author  = {Acion, Laura and Peterson, John J. and Temple, Scott and Arndt, Stephan},
+  title   = {Probabilistic index: an intuitive non-parametric approach to measuring the size of treatment effects},
+  journal = {Statistics in Medicine},
+  volume  = {25},
+  number  = {4},
+  pages   = {591--602},
+  year    = {2006},
+  doi     = {10.1002/sim.2256}
+}
+
+@article{wang2016winratio,
+  author  = {Wang, Duolao and Pocock, Stuart},
+  title   = {A win ratio approach to comparing continuous non-normal outcomes in clinical trials},
+  journal = {Pharmaceutical Statistics},
+  volume  = {15},
+  number  = {3},
+  pages   = {238--245},
+  year    = {2016},
+  doi     = {10.1002/pst.1743},
+  note    = {Crossref 확정(2026-08-18)}
+}

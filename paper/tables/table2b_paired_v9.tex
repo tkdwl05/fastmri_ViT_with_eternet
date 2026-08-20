@@ -1,0 +1,15 @@
+\begin{table}[ht]
+\centering
+\caption{Per-slice paired comparison, enhanced vs.\ controlled SS2D (same conventions as Table 2).}
+\label{tab:paired-v9}
+\begin{tabular}{lrrrrrr}
+\toprule
+Metric & SS2D (controlled) (mean$\pm$std) & Enhanced SS2D (mean$\pm$std) & $\Delta$ median (IQR) & Slices favoring [95\% CI] & Volumes favoring & $p$ (volume, $n{=}464$) \\
+\midrule
+SSIM & 0.9140$\pm$0.0890 & 0.9145$\pm$0.0875 & +0.0002 (-0.0009, +0.0015) & \textbf{55.8\%} [53.8, 57.6] & \textbf{66.4\%} & $<$0.001 \\
+PSNR (dB) & 33.90$\pm$2.63 & 33.92$\pm$2.63 & +0.02 (-0.11, +0.15) & \textbf{54.2\%} [52.5, 55.9] & \textbf{58.6\%} & $<$0.001 \\
+NMSE --- $\Delta\times 10^{-5}$ & 0.00438$\pm$0.00526 & 0.00439$\pm$0.00536 & +1.2 (-7.5, +11.4) & \textbf{54.2\%} [52.5, 55.9] & \textbf{61.4\%} & $<$0.001 \\
+L1 ($\times 10^{-6}$) & 8.88$\pm$3.05 & 8.88$\pm$3.13 & +0.014 (-0.088, +0.114) & \textbf{54.4\%} [52.6, 56.2] & \textbf{55.0\%} & 0.002 \\
+\bottomrule
+\end{tabular}
+\end{table}

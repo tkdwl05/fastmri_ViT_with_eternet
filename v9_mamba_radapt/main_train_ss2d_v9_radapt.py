@@ -1,0 +1,435 @@
+"""
+v9 radapt (R 대응) — trainer.
+
+v9 언리시드 trainer 클론 + R-대응 3요소:
+  1. 모델 = PureETER_SS2D_V9_Radapt (마스크 조건화 + DC).
+  2. train dataloader = FastMRI_H5_MultiAR (배치별 R∈AR_CHOICES 랜덤). val 은 R4 고정(비교 기준).
+  3. DC 안정화: GradScaler init_scale 낮춤(GRADSCALER_INIT_SCALE) + α clamp[0,1] post-step
+     (v8 DC NaN 진단: α overshoot→fp16 forward NaN + DC-증폭 gradient→U-Net fp16 backward overflow).
+Optimizer no-WD 그룹(Mamba A_log/D 제외), DONE sentinel, true-resume/atomic/mask-loss/composite 는 언리시드와 동일.
+
+실행: python v9_mamba_radapt/main_train_ss2d_v9_radapt.py
+"""
+
+import os
+import sys
+import time
+import datetime
+import random
+import pytz
+
+import torch
+import torch.nn as nn
+import numpy as np
+import wandb
+from tqdm.auto import tqdm
+from skimage.metrics import structural_similarity as compare_ssim
+
+_HERE         = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_HERE)
+sys.path.append(os.path.join(_HERE, 'configs'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'dataloaders'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'pure_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'hybrid_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'mamba_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'tools'))
+
+from myConfig_ss2d_v9_radapt import *          # noqa: F401,F403
+from u_choh_SSIM import SSIM
+from dataloader_h5_v5 import FastMRI_H5_Dataloader
+from dataloader_h5_v9_multiAR import FastMRI_H5_MultiAR
+from torch.utils.data import DataLoader
+from check_recon_env import check_env_for_model
+
+# ── override (스모크/sanity) ──
+NUM_EPOCHS         = int(os.environ.get('SANITY_NUM_EPOCHS', NUM_EPOCHS))
+VAL_EVERY_N_EPOCHS = int(os.environ.get('SANITY_VAL_EVERY_N_EPOCHS', VAL_EVERY_N_EPOCHS))
+BATCH_SIZE         = int(os.environ.get('SMOKE_BS', BATCH_SIZE))
+ACCUM_STEPS        = int(os.environ.get('ACCUM_STEPS', ACCUM_STEPS))
+NUM_VAL_FILES      = None
+
+PATH_FOLDER = os.path.join(_PROJECT_ROOT, 'logs', RUN_NAME)
+os.makedirs(PATH_FOLDER, exist_ok=True)
+PREFIX      = CKPT_PREFIX
+DONE_FILE   = os.path.join(PATH_FOLDER, 'DONE')
+DATA_TRAIN  = os.path.join(_PROJECT_ROOT, 'fastMRI_data', 'multicoil_train')
+DATA_VAL    = os.path.join(_PROJECT_ROOT, 'fastMRI_data', 'multicoil_val')
+
+
+def save_checkpoint_atomic(obj, path):
+    tmp = path + '.tmp'
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
+def skimage_ssim_batch_masked(pred, target, mask):
+    p = pred.detach().float().cpu().numpy()
+    t = target.detach().float().cpu().numpy()
+    m = mask.detach().float().cpu().numpy()
+    if p.ndim == 4:
+        p, t, m = p[:, 0], t[:, 0], m[:, 0]
+    m_bool = m > 0.5
+    vals = []
+    for i in range(p.shape[0]):
+        if not m_bool[i].any():
+            continue
+        t_in = t[i][m_bool[i]]
+        dr = float(t_in.max() - t_in.min())
+        if dr <= 0:
+            continue
+        _, ssim_map = compare_ssim(t[i], p[i], data_range=dr, full=True)
+        vals.append(float(ssim_map[m_bool[i]].mean()))
+    return float(np.mean(vals)) if vals else 0.0
+
+
+def build_model(device):
+    from u_pure_eternet_ss2d_v9_radapt import PureETER_SS2D_V9_Radapt
+    model = PureETER_SS2D_V9_Radapt(
+        n_coil=N_COIL, out_ch=SS2D_OUT_CH,
+        unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+        ss2d_d_inner=SS2D_D_INNER, ss2d_d_state=SS2D_D_STATE,
+        ss2d_n_blocks=SS2D_N_BLOCKS, ss2d_dropout=SS2D_DROPOUT,
+        ss2d_use_checkpoint=SS2D_USE_CHECKPOINT, ss2d_downsample=SS2D_DOWNSAMPLE,
+        mask_condition=MASK_CONDITION,
+        dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+    )
+    return model.to(device)
+
+
+def build_optimizer(model):
+    """Mamba 위생: A_log/D/dt_proj.bias(=_no_weight_decay) 는 weight_decay 제외."""
+    decay, no_decay = [], []
+    for _, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
+        if getattr(p, '_no_weight_decay', False):
+            no_decay.append(p)
+        else:
+            decay.append(p)
+    opt = torch.optim.Adam(
+        [{'params': decay,    'weight_decay': LAMBDA_REGULAR_PER_PIXEL},
+         {'params': no_decay, 'weight_decay': 0.0}],
+        lr=LEARNING_RATE_ADAM,
+    )
+    print(f"   optimizer: Adam  decay={len(decay)} params (wd={LAMBDA_REGULAR_PER_PIXEL})  "
+          f"no_decay={len(no_decay)} params")
+    return opt
+
+
+def run_val(model, val_loader, device):
+    model.eval()
+    all_ssim, all_psnr, all_nmse, all_l1 = [], [], [], []
+    val_bar = tqdm(val_loader, desc='  Val', leave=False, unit='batch')
+    with torch.no_grad():
+        for sample in val_bar:
+            data_in     = sample['data'].float().to(device)
+            data_in_img = sample['data_img'].float().to(device)
+            data_ref    = sample['label'].float().to(device)
+            brain_mask  = sample['brain_mask'].float().to(device)
+            mask        = sample['mask'].float().to(device)
+            sens        = sample['sens'].float().to(device)
+
+            with torch.amp.autocast('cuda'):
+                out = model(data_in_img, data_in, mask, sens)
+
+            out_f = out.float()
+            ref_f = data_ref.float()
+            m     = brain_mask
+            m_sum = m.sum().clamp(min=1.0)
+            diff_sq_sum = ((out_f - ref_f) ** 2 * m).sum()
+            mse  = diff_sq_sum / m_sum
+            ref_max_in_mask = (ref_f * m).max().clamp(min=1e-10)
+            psnr = (20 * torch.log10(ref_max_in_mask / torch.sqrt(mse.clamp(min=1e-10)))).item()
+            ref_sq_sum = (ref_f ** 2 * m).sum().clamp(min=1e-10)
+            nmse = (diff_sq_sum / ref_sq_sum).item()
+            ssim = skimage_ssim_batch_masked(out_f, ref_f, m)
+            l1   = (((out_f - ref_f).abs() * m).sum() / m_sum).item()
+            all_psnr.append(psnr); all_nmse.append(nmse); all_ssim.append(ssim); all_l1.append(l1)
+            val_bar.set_postfix(SSIM=f'{ssim:.4f}', PSNR=f'{psnr:.2f}dB')
+
+    model.train()
+    ssim_m = float(np.mean(all_ssim)); psnr_m = float(np.mean(all_psnr))
+    nmse_m = float(np.mean(all_nmse)); l1_m = float(np.mean(all_l1))
+    psnr_n = min(psnr_m, PSNR_NORM) / PSNR_NORM
+    nmse_n = max(0.0, 1.0 - min(nmse_m, 1.0))
+    composite = COMPOSITE_W_SSIM * ssim_m + COMPOSITE_W_PSNR * psnr_n + COMPOSITE_W_NMSE * nmse_n
+    return {'ssim': ssim_m, 'psnr': psnr_m, 'nmse': nmse_m, 'l1': l1_m, 'composite': composite}
+
+
+def main():
+    print('====================================================')
+    print(f' [v9 SS2D radapt]  BS={BATCH_SIZE}  ACCUM={ACCUM_STEPS}  (eff_bs={BATCH_SIZE*ACCUM_STEPS})')
+    print(f'   run={RUN_NAME}   logs={PATH_FOLDER}')
+    print(f'   multi-AR train R∈{AR_CHOICES}, val R={VAL_ACCELERATION}, mask_cond={MASK_CONDITION}, '
+          f'DC(α₀={DC_INIT_ALPHA}, scale₀={GRADSCALER_INIT_SCALE})')
+    print('====================================================')
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA GPU 필수.")
+    device = torch.device("cuda")
+    print(datetime.datetime.now(pytz.timezone('Asia/Seoul')))
+    if not check_env_for_model('ss2d', 'myConfig_ss2d_v9_radapt', strict=True):
+        return
+
+    if os.path.exists(DONE_FILE) and not os.path.exists(os.path.join(PATH_FOLDER, f'{PREFIX}_last.pt')):
+        os.remove(DONE_FILE)
+
+    model = build_model(device)
+
+    # ── 재개: full-state last.pt → scratch ──
+    last_ckpt_path = os.path.join(PATH_FOLDER, f'{PREFIX}_last.pt')
+    _full_state = None
+    if os.path.exists(last_ckpt_path):
+        _full_state = torch.load(last_ckpt_path, map_location=device)
+        model.load_state_dict(_full_state['model'])
+        resume_mode = 'full'
+        print(f"\n[Resume:full] {last_ckpt_path} → epoch {_full_state['epoch']} 완료")
+    else:
+        resume_mode = 'scratch'
+        print("\n[Scratch] 처음부터 학습")
+
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"모델 파라미터 수: {num_params / 1e6:.1f}M")
+
+    criterion_ssim_loss = SSIM().to(device)
+    optimizer = build_optimizer(model)
+
+    print("\nFastMRI 데이터 파이프라인 연결 중...")
+    choh_data_train = FastMRI_H5_MultiAR(
+        DATA_TRAIN, num_files=None, target_size=IMAGE_SIZE[0],
+        random_mask=True, augment=TRAIN_AUGMENT, augment_flip_p=TRAIN_AUGMENT_FLIP_P,
+        ar_choices=AR_CHOICES,
+    )
+    _train_loader_kwargs = dict(batch_size=BATCH_SIZE, shuffle=True,
+                                 num_workers=NUM_WORKERS_TRAIN, pin_memory=True)
+    if NUM_WORKERS_TRAIN > 0:
+        _train_loader_kwargs.update(persistent_workers=True, prefetch_factor=PREFETCH_FACTOR)
+    trainloader = DataLoader(choh_data_train, **_train_loader_kwargs)
+    print(f"Train Dataloader 준비 완료! ({len(choh_data_train)} 샘플, multi-AR R∈{AR_CHOICES})")
+    choh_data_val = FastMRI_H5_Dataloader(
+        DATA_VAL, num_files=NUM_VAL_FILES, target_size=IMAGE_SIZE[0],
+        acceleration=VAL_ACCELERATION, random_mask=False, augment=False,
+    )
+    val_loader = DataLoader(
+        choh_data_val, batch_size=max(1, BATCH_SIZE // 2), shuffle=False,
+        num_workers=NUM_WORKERS_VAL, pin_memory=True,
+    )
+    print(f"Val   Dataloader 준비 완료! ({len(choh_data_val)} 샘플, R={VAL_ACCELERATION})")
+
+    steps_per_epoch = len(trainloader)
+    opt_steps_per_epoch = max(1, steps_per_epoch // ACCUM_STEPS)
+    total_steps = opt_steps_per_epoch * NUM_EPOCHS
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=1e-6)
+    print(f"Scheduler: CosineAnnealingLR T_max={total_steps} opt-steps, eta_min=1e-6")
+
+    _wandb_tag = os.environ.get('WANDB_RUN_TAG', '')
+    _wandb_id  = RUN_NAME + (f'_{_wandb_tag}' if _wandb_tag else '')
+    wandb.init(
+        project='ViT-MRI-Recon', name=f'{_wandb_id}_BS{BATCH_SIZE}x{ACCUM_STEPS}',
+        id=_wandb_id, resume='allow',
+        config={
+            'track': 'v9_mamba_radapt', 'variant': 'radapt',
+            'ar_choices': list(AR_CHOICES), 'val_acceleration': VAL_ACCELERATION,
+            'mask_condition': MASK_CONDITION, 'dc_init_alpha': DC_INIT_ALPHA,
+            'gradscaler_init_scale': GRADSCALER_INIT_SCALE,
+            'image_size': IMAGE_SIZE, 'ss2d_out_ch': SS2D_OUT_CH,
+            'ss2d_d_inner': SS2D_D_INNER, 'ss2d_d_state': SS2D_D_STATE,
+            'ss2d_n_blocks': SS2D_N_BLOCKS, 'ss2d_dropout': SS2D_DROPOUT,
+            'unet_depth': UNET_DEPTH, 'unet_wf': UNET_WF,
+            'batch_size': BATCH_SIZE, 'accum_steps': ACCUM_STEPS,
+            'eff_batch': BATCH_SIZE * ACCUM_STEPS, 'num_epochs': NUM_EPOCHS,
+            'learning_rate': LEARNING_RATE_ADAM, 'weight_decay': LAMBDA_REGULAR_PER_PIXEL,
+            'num_params': num_params, 'train_samples': len(choh_data_train),
+            'val_samples': len(choh_data_val), 'earlystop_metric': 'val_composite',
+            'earlystop_patience': EARLYSTOP_PATIENCE, 'scheduler': 'CosineAnnealingLR',
+        },
+    )
+
+    print(f"\n학습 시작 (총 {NUM_EPOCHS} 에폭)")
+    # DC-증폭 gradient overflow 완화: init_scale 낮춤 (v8 진단: 기본 65536 과도, ≤8192 유한)
+    scaler = torch.amp.GradScaler('cuda', init_scale=GRADSCALER_INIT_SCALE)
+    model.train()
+    best_val_composite = -1.0
+    best_val = {'ssim': None, 'psnr': None, 'nmse': None, 'l1': None, 'composite': None}
+    no_improve_val_count = 0
+    early_stopped = False
+    tic = time.time()
+    global_step = 0
+    consec_skip = 0
+    total_skip = 0
+    log_path = os.path.join(PATH_FOLDER, 'log.txt')
+
+    start_epoch = 0
+    if resume_mode == 'full':
+        optimizer.load_state_dict(_full_state['optimizer'])
+        scheduler.load_state_dict(_full_state['scheduler'])
+        scaler.load_state_dict(_full_state['scaler'])
+        best_val_composite   = _full_state['best_val_composite']
+        best_val             = _full_state['best_val']
+        no_improve_val_count = _full_state.get('no_improve_val_count', 0)
+        global_step          = _full_state.get('global_step', 0)
+        start_epoch          = _full_state['epoch']
+        rng = _full_state.get('rng', {})
+        try:
+            if rng.get('torch_cpu') is not None:  torch.set_rng_state(rng['torch_cpu'])
+            if rng.get('torch_cuda') is not None: torch.cuda.set_rng_state_all(rng['torch_cuda'])
+            if rng.get('numpy') is not None:      np.random.set_state(rng['numpy'])
+            if rng.get('python') is not None:     random.setstate(rng['python'])
+        except Exception as e:
+            print(f"  [Resume] RNG 복원 일부 실패(무시): {e}")
+        print(f"[Resume:full] start_epoch={start_epoch}, LR={scheduler.get_last_lr()[0]:.3e}, "
+              f"best_composite={best_val_composite:.4f}, global_step={global_step}")
+        with open(log_path, 'a') as f:
+            f.write(f'RESUME start_epoch={start_epoch} best_composite={best_val_composite:.4f}\n')
+    else:
+        with open(log_path, 'a') as f:
+            f.write(f'SCRATCH START run={RUN_NAME} BS={BATCH_SIZE} ACCUM={ACCUM_STEPS} '
+                    f'LR={LEARNING_RATE_ADAM} EPOCHS={NUM_EPOCHS} params={num_params/1e6:.1f}M '
+                    f'multiAR={AR_CHOICES}\n')
+
+    epoch_bar = tqdm(range(start_epoch, NUM_EPOCHS), desc='전체 진행', unit='epoch',
+                     initial=start_epoch, total=NUM_EPOCHS)
+    for epoch in epoch_bar:
+        epoch_loss = epoch_ssim = epoch_psnr = epoch_nmse = epoch_l1 = 0.0
+        batch_bar = tqdm(trainloader, desc=f'Epoch {epoch+1:3d}/{NUM_EPOCHS}', leave=False, unit='batch')
+        optimizer.zero_grad(set_to_none=True)
+
+        for i, sample in enumerate(batch_bar):
+            data_in     = sample['data'].float().to(device)
+            data_in_img = sample['data_img'].float().to(device)
+            data_ref    = sample['label'].float().to(device)
+            brain_mask  = sample['brain_mask'].float().to(device)
+            mask        = sample['mask'].float().to(device)
+            sens        = sample['sens'].float().to(device)
+
+            with torch.amp.autocast('cuda'):
+                out = model(data_in_img, data_in, mask, sens)
+
+            out_fp    = out.float()
+            m_sum     = brain_mask.sum().clamp(min=1.0)
+            loss_l1   = ((out_fp - data_ref).abs() * brain_mask).sum() / m_sum
+            loss_ssim = 1 - criterion_ssim_loss(out_fp, data_ref, mask=brain_mask)
+            loss      = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
+
+            # ── NaN/Inf-skip 가드 (self-heal + anti-spin) ──
+            if not torch.isfinite(loss):
+                optimizer.zero_grad(set_to_none=True)
+                consec_skip += 1; total_skip += 1
+                if consec_skip <= 3 or consec_skip % 50 == 0:
+                    tqdm.write(f'  [NaN-skip] ep{epoch+1} batch{i} loss={loss.item()} '
+                               f'consec={consec_skip} total={total_skip}')
+                if consec_skip >= MAX_CONSEC_SKIP:
+                    _msg = (f'FATAL: {consec_skip} consecutive non-finite loss (ep{epoch+1} batch{i}) '
+                            f'→ fail-fast exit(1).')
+                    tqdm.write('  ' + _msg)
+                    with open(log_path, 'a') as f:
+                        f.write(_msg + '\n')
+                    try:
+                        wandb.finish(exit_code=1)
+                    except Exception:
+                        pass
+                    sys.exit(1)
+                continue
+            consec_skip = 0
+
+            scaler.scale(loss / ACCUM_STEPS).backward()
+            do_step = ((i + 1) % ACCUM_STEPS == 0)
+            if do_step:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                scaler.step(optimizer)
+                scaler.update()
+                scheduler.step()
+                optimizer.zero_grad(set_to_none=True)
+                # α clamp: overshoot(α>1) 물리 차단 = DC forward non-finite 근본원인 제거
+                with torch.no_grad():
+                    model.dc.alpha.clamp_(DC_ALPHA_MIN, DC_ALPHA_MAX)
+
+            with torch.no_grad():
+                out_f = out_fp.detach(); ref_f = data_ref.float(); m_t = brain_mask
+                diff_sq_sum_t = ((out_f - ref_f) ** 2 * m_t).sum()
+                mse_val  = (diff_sq_sum_t / m_sum).item()
+                ref_max_in_mask_t = (ref_f * m_t).max().clamp(min=1e-10).item()
+                psnr_val = 20 * np.log10(ref_max_in_mask_t / max(np.sqrt(mse_val), 1e-10))
+                nmse_val = (diff_sq_sum_t / (ref_f ** 2 * m_t).sum().clamp(min=1e-10)).item()
+                ssim_val_train = 1 - loss_ssim.item()
+
+            global_step += 1
+            wandb.log({
+                'train/loss': loss.item(), 'train/loss_l1': loss_l1.item(),
+                'train/loss_ssim': loss_ssim.item(), 'train/psnr': psnr_val,
+                'train/nmse': nmse_val, 'train/lr': scheduler.get_last_lr()[0],
+                'train/dc_alpha': model.dc.alpha.item(), 'train/grad_scale': scaler.get_scale(),
+            }, step=global_step)
+
+            epoch_loss += loss.item(); epoch_ssim += ssim_val_train
+            epoch_psnr += psnr_val; epoch_nmse += nmse_val; epoch_l1 += loss_l1.item()
+            batch_bar.set_postfix(Loss=f'{loss.item():.4f}', PSNR=f'{psnr_val:.2f}dB',
+                                  a=f'{model.dc.alpha.item():.3f}', LR=f'{scheduler.get_last_lr()[0]:.2e}')
+
+        n_batches = len(trainloader)
+        avg_loss = epoch_loss / n_batches; avg_train_ssim = epoch_ssim / n_batches
+        wandb.log({'epoch': epoch + 1, 'epoch/train_loss': avg_loss,
+                   'epoch/train_ssim_custom': avg_train_ssim,
+                   'epoch/train_psnr': epoch_psnr / n_batches,
+                   'epoch/train_l1': epoch_l1 / n_batches}, step=global_step)
+
+        do_val = (epoch + 1) % VAL_EVERY_N_EPOCHS == 0
+        if do_val:
+            tqdm.write(f'  [Val ep{epoch+1}] running (R={VAL_ACCELERATION})...')
+            val_metrics = run_val(model, val_loader, device)
+            tqdm.write(f'  [Val] composite={val_metrics["composite"]:.4f}  SSIM_m={val_metrics["ssim"]:.4f}'
+                       f'  PSNR={val_metrics["psnr"]:.2f}dB  NMSE={val_metrics["nmse"]:.4f}  L1={val_metrics["l1"]:.4f}')
+            wandb.log({'val/composite': val_metrics['composite'], 'val/ssim_masked': val_metrics['ssim'],
+                       'val/psnr_masked': val_metrics['psnr'], 'val/nmse_masked': val_metrics['nmse'],
+                       'val/l1_masked': val_metrics['l1']}, step=global_step)
+            with open(log_path, 'a') as f:
+                f.write(f'Epoch {epoch+1}/{NUM_EPOCHS}  train_loss={avg_loss:.4f}'
+                        f'  val_composite={val_metrics["composite"]:.4f}  val_ssim_m={val_metrics["ssim"]:.4f}'
+                        f'  val_psnr={val_metrics["psnr"]:.2f}  val_nmse={val_metrics["nmse"]:.4f}'
+                        f'  val_l1={val_metrics["l1"]:.4f}  dc_alpha={model.dc.alpha.item():.4f}\n')
+            if val_metrics['composite'] > best_val_composite:
+                best_val_composite = val_metrics['composite']; best_val = dict(val_metrics)
+                save_checkpoint_atomic(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_best.pt'))
+                tqdm.write(f'  [Best] composite {best_val_composite:.4f} → {PREFIX}_best.pt')
+                no_improve_val_count = 0
+            else:
+                no_improve_val_count += 1
+                tqdm.write(f'  [No improve] {no_improve_val_count}/{EARLYSTOP_PATIENCE}')
+            if no_improve_val_count >= EARLYSTOP_PATIENCE:
+                with open(log_path, 'a') as f:
+                    f.write(f'EARLYSTOP at epoch {epoch+1}\n')
+                early_stopped = True
+                break
+        else:
+            with open(log_path, 'a') as f:
+                f.write(f'Epoch {epoch+1}/{NUM_EPOCHS}  train_loss={avg_loss:.4f}  '
+                        f'dc_alpha={model.dc.alpha.item():.4f}\n')
+
+        if (epoch + 1) % 5 == 0:
+            save_checkpoint_atomic(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_epoch_{epoch+1}.pt'))
+
+        save_checkpoint_atomic({
+            'epoch': epoch + 1, 'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
+            'scaler': scaler.state_dict(), 'best_val_composite': best_val_composite,
+            'best_val': best_val, 'no_improve_val_count': no_improve_val_count,
+            'global_step': global_step,
+            'rng': {'torch_cpu': torch.get_rng_state(), 'torch_cuda': torch.cuda.get_rng_state_all(),
+                    'numpy': np.random.get_state(), 'python': random.getstate()},
+        }, os.path.join(PATH_FOLDER, f'{PREFIX}_last.pt'))
+
+    toc = time.time()
+    print(f'\n학습 완료 (early_stopped={early_stopped})  소요: {toc - tic:.0f}초')
+    print(f'Best Val Composite (R={VAL_ACCELERATION}): {best_val_composite:.4f}')
+    if best_val['ssim'] is not None:
+        print(f'  Best → composite {best_val["composite"]:.4f}  SSIM_m {best_val["ssim"]:.4f}'
+              f'  PSNR {best_val["psnr"]:.2f}dB  NMSE {best_val["nmse"]:.4f}  L1 {best_val["l1"]:.4f}')
+    print(f'  (R-sweep 은 별도 post-hoc 평가 — eval_r_generalization 참고)')
+    with open(DONE_FILE, 'w') as f:
+        f.write(f'done early_stopped={early_stopped} best_composite={best_val_composite:.4f}\n')
+    wandb.finish()
+
+
+if __name__ == '__main__':
+    main()
