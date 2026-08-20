@@ -8,6 +8,10 @@ atomic save(tmp→rename) full-state 라 **true-resume 손실 ≤1 epoch**.
 
 ## 재개 절차 (전원 복구 후)
 
+> **⚡ 원-커맨드(권장)**: `bash v9_mamba_radapt/runs/post_reboot_rearm.sh` — 아래 2~3단계 + 8/7
+> 정전대비 타이머 재장전(지난 시각이면 자동 skip)을 한 번에 수행. **8/8 이전의 어떤 재부팅/컨테이너
+> 재시작 후에도 이 스크립트를 실행해야 타이머가 되살아난다** (분리 타이머는 재부팅을 못 넘김).
+
 1. **host 부팅 + 컨테이너 기동 확인** — 컨테이너(`snorlax_WORK0`)가 자동 시작 안 되면 host 에서
    `sudo docker start <container>` (또는 도커 데몬부터).
 2. **GPU/NVML 확인** (컨테이너 안):
