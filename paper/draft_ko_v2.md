@@ -307,8 +307,8 @@ Fig. 4 규약과 동일. CI 는 볼륨 클러스터 부트스트랩 2,000회, §
 |---|---:|---:|---:|---:|---:|---:|
 | SSIM | 0.9126±0.0894 | 0.9140±0.0890 | +0.0013 (+0.0002, +0.0025) | **78.2%** [76.8, 79.7] | **94.8%** | <0.001 |
 | PSNR (dB) | 33.78±2.59 | 33.90±2.63 | +0.12 (−0.01, +0.26) | **73.8%** [72.1, 75.5] | **89.9%** | <0.001 |
-| NMSE | 0.00449±0.00530 | 0.00438±0.00527 | +8.9e-5 (−0.6e-5, +2.1e-4) | **73.8%** [72.0, 75.5] | **90.1%** | <0.001 |
-| L1 (×10⁻⁶) | 9.00±3.05 | 8.88±3.05 | +0.12 (+0.005, +0.24) | **76.1%** [74.4, 77.8] | **90.5%** | <0.001 |
+| NMSE — Δ×10⁻⁵ | 0.00449±0.00525 | 0.00438±0.00526 | +8.9 (−0.6, +20.6) | **73.8%** [72.0, 75.5] | **90.1%** | <0.001 |
+| L1 (×10⁻⁶) | 9.00±3.05 | 8.88±3.05 | +0.115 (+0.005, +0.237) | **76.1%** [74.4, 77.8] | **90.5%** | <0.001 |
 
 즉 aggregate 우위가 소수 슬라이스·소수 볼륨에 의한 것이 아니라 **대다수 슬라이스(74~78%)와
 압도적 다수 볼륨(90~95%)에서 일관**된다. 슬라이스 평균 Δ 의 클러스터 부트스트랩 95% CI 도 4지표
@@ -541,9 +541,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 | Fig.2 학습 곡선 (GRU vs SS2D vs 강화판, SSIM/PSNR) | `results/eval/v9_unleashed/curves_v9_vs_v8.png` | ✅ (논문용 재도색 권장) |
 | Fig.3 4-way 정성 비교 + 배경 ringing | `results/vis/v8_pure_eternet_compare/compare_*.png` | ✅ (슬라이스 선별 필요) |
 | Fig.4 per-slice 우위 비율/차이 분포 | `paper/figs/fig4_per_slice_distribution.{png,pdf}` — 생성 스크립트 `paper/make_fig4_per_slice.py` (입력 `results/eval/v9_unleashed/per_slice_paired_v9.csv`) | ✅ 2026-08-18 (2행×4지표 paired-Δ 히스토그램 + win-rate, 양수=치환/강화 우위 규약) |
-| Tab.1 best 지표 비교 | `docs/v8_eter_pure_rnn_vs_ss2d.md` §3 | ✅ |
-| Tab.2 per-slice win-rate | `results/eval/*/win_rate_summary*.md` | ✅ |
-| Tab.3 강화판 비교 | `docs/v9_mamba_unleashed_and_radapt.md` §11.1 | ✅ |
+| Tab.1·2·2b·3·S1 (결과 표 일체) | **자동 생성**: `paper/make_tables.py` → `paper/tables/*.{md,tex}` — per-slice CSV 단일 원천, median(IQR)·클러스터 부트스트랩 CI·볼륨 Wilcoxon 내장, seed 고정으로 초안 수치 자가검증(ALL PASS). `.tex` 는 영어 전환용(MDPI 는 Word 도 허용 — 선택 사용) | ✅ 2026-08-20 |
 | Tab.4 기준선(U-Net/E2E-VarNet) | `v8_eter_pure/eval_paired_baselines.py` → `results/eval/baselines_384/` | ⏳ 스크립트 준비, GPU 대기(radapt 완주 ~08-25 후) |
 | (참고) matched-epoch 표 | `results/eval/*/matched_epoch_table*.md` | ✅ (본문 서술로만 사용) |
 

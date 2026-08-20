@@ -1,0 +1,14 @@
+\begin{table}[ht]
+\centering
+\caption{Enhanced vs.\ controlled SS2D (full validation set, brain-masked, per-slice means). Bold = best per metric.}
+\label{tab:enhanced}
+\begin{tabular}{lrrrr}
+\toprule
+ & SSIM & PSNR (dB) & NMSE & L1 ($\times 10^{-6}$) \\
+\midrule
+Enhanced SS2D (best ep78/80) & \textbf{0.9145} & \textbf{33.92} & 0.00439 & \textbf{8.879} \\
+SS2D (controlled) (best ep48/50) & 0.9140 & 33.90 & \textbf{0.00438} & 8.883 \\
+GRU (best ep50/50) & 0.9126 & 33.78 & 0.00449 & 9.002 \\
+\bottomrule
+\end{tabular}
+\end{table}

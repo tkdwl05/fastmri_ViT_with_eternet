@@ -1,0 +1,13 @@
+\begin{table}[ht]
+\centering
+\caption{Best-checkpoint results on the full validation set (7{,}334 slices, brain-masked, per-slice means).}
+\label{tab:best}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & best epoch & SSIM & PSNR (dB) & NMSE & L1 ($\times 10^{-6}$) & params \\
+\midrule
+\textbf{SS2D (controlled)} & \textbf{48/50} & \textbf{0.9140} & \textbf{33.90} & \textbf{0.00438} & \textbf{8.883} & \textbf{31M} \\
+GRU & 50/50 & 0.9126 & 33.78 & 0.00449 & 9.002 & 668M \\
+\bottomrule
+\end{tabular}
+\end{table}
