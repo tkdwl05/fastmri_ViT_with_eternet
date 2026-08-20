@@ -17,7 +17,7 @@ R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(
 | v1~v6_x (루트) | 320×320, ViT-Small | RTX 5060Ti 8GB, `mri_env` — **옛 머신 전용, 이 저장소엔 ckpt 없음** | "복원" 단계, v6_3 채택후보(ETER v6_3 완료 여부 미문서화) |
 | v7 → v7_titan | 384×384, ViT-Base | TITAN RTX 24GB×2(단일 GPU 사용), `base` | "향상" 단계 — ETER/SS2D ep50 완주, dead-heat (완료·역사) |
 | v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승 0.9200) = **GRU↔SS2D 비교의 최종 결론**; DC 축 폐기(비표준 확장) |
-| v9_mamba (unleashed/radapt) | 384×384, ViT 없음 | TITAN RTX 24GB(GPU0 단독), `base` | **현재 운영** — v8 승자(SS2D) 강화(게이팅·3블록·병목해제). **unleashed 80ep 완주(07-30): best 0.9203 > v8 SS2D 0.9200 목표 달성**(근소·유의, per-slice 5지표 win-rate 54~56%). radapt 는 07-30 NVML 장애로 좌초 → **08-05 재기동**(scratch, ETA ~08-14) |
+| v9_mamba (unleashed/radapt) | 384×384, ViT 없음 | TITAN RTX 24GB(GPU0 단독), `base` | **현재 운영** — v8 승자(SS2D) 강화(게이팅·3블록·병목해제). **unleashed 80ep 완주(07-30): best 0.9203 > v8 SS2D 0.9200 목표 달성**(근소·유의, per-slice 5지표 win-rate 54~56%). radapt 는 07-30 NVML 좌초 → 08-05 재기동 → 08-07 정전대비 clean-stop(ep20, 손실 0) → **08-18 true-resume 재개**(ETA ~08-25) |
 
 트랙별 상세 비교표는 `docs/summary_2026-06-11.md` §2, 버전별 하이퍼파라미터는 `docs/version_evolution.md` §2 참고.
 
@@ -57,7 +57,12 @@ R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(
 - **[docs/v8_ss2d_kspace_domain_review.md](docs/v8_ss2d_kspace_domain_review.md)** (2026-07-08) — 외부 리뷰(ETER-net+SS2D) 판정 + SS2D 가 domain-transform 자리(k-space 입력, GRU 와 동일)임을 코드로 확정. 리뷰어의 "지역성↔전역성 미스매치" 우려는 no-DC 완승으로 실증 기각. 후속 로드맵: 가속률(R) 일반화 성립 조건(DC·mask-aware·multi-AR·전역 RF) — **v9_mamba radapt 의 설계 근거**.
 
 ### v9_mamba 갈래 (강화 SS2D · R4 품질 극대화 + R 일반화) — 현재 운영
-- **[docs/v9_mamba_unleashed_and_radapt.md](docs/v9_mamba_unleashed_and_radapt.md)** (2026-07-23) — **v9 신규 트랙 두 변형**. v8 no-DC 파이프라인은 그대로 두고 **시퀀스 모델만 강화 SS2D**(`models/mamba_eternet/ss2d_v9.py`: 게이팅 복원 `y=y·SiLU(z)` + 3-블록 잔차 스택 + 병목 해제 out_ch 20→64, d_inner 128→256/d_state 16→32)로 교체. **fp16 selective-scan + ds=3 다운샘플**(128² coarse scan)로 풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. **unleashed** = 고정 R4 품질 극대화(mask/DC 없음), **radapt** = 같은 백본 + R 일반화 3요소(mask-channel conditioning·v8 DC block 재사용·multi-AR 학습 R∈{2,3,4,5,6,8}). 원본(`ss2d.py`·`myUNet_DF.py`·`dataloader_h5_v5.py`) **무수정**, 신규 파일만 추가. **결과(08-05 갱신)**: unleashed 80ep 완주(07-30, early_stop 없음) — best ep78 **composite 0.9203 / ssim_m 0.9145 / psnr 35.18** 로 목표(v8 SS2D 0.9200/0.9140) **근소 돌파**. 0.9200 도달 최초 ep70 — matched-ep50 시점엔 0.9171 로 미달, 우위는 80ep 연장 구간에서(§11 정직 주석: best 도달 wall-clock 은 v9 가 더 소요). **per-slice paired 검증**(`v9_mamba_unleashed/eval_paired_v9.py`, 전체 7334슬라이스, v8 CSV 조인): vs v8-SS2D **5지표 전부 승, win-rate 54~56%**(Wilcoxon p≤4e-13 — 유의하나 근소) / vs GRU 78~82% 완승. 로그기반 3-way 곡선·표 `analyze_v9_unleashed.py` → `results/eval/v9_unleashed/`. radapt 는 07-30 자동 launch 가 NVML 다운으로 좌초(supervisor 50회 소진, ckpt 0개) → **08-05 재기동**(scratch, MAX_RETRY=200, ETA ~08-14).
+- **[docs/v9_mamba_unleashed_and_radapt.md](docs/v9_mamba_unleashed_and_radapt.md)** (2026-07-23) — **v9 신규 트랙 두 변형**. v8 no-DC 파이프라인은 그대로 두고 **시퀀스 모델만 강화 SS2D**(`models/mamba_eternet/ss2d_v9.py`: 게이팅 복원 `y=y·SiLU(z)` + 3-블록 잔차 스택 + 병목 해제 out_ch 20→64, d_inner 128→256/d_state 16→32)로 교체. **fp16 selective-scan + ds=3 다운샘플**(128² coarse scan)로 풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. **unleashed** = 고정 R4 품질 극대화(mask/DC 없음), **radapt** = 같은 백본 + R 일반화 3요소(mask-channel conditioning·v8 DC block 재사용·multi-AR 학습 R∈{2,3,4,5,6,8}). 원본(`ss2d.py`·`myUNet_DF.py`·`dataloader_h5_v5.py`) **무수정**, 신규 파일만 추가. **결과(08-05 갱신)**: unleashed 80ep 완주(07-30, early_stop 없음) — best ep78 **composite 0.9203 / ssim_m 0.9145 / psnr 35.18** 로 목표(v8 SS2D 0.9200/0.9140) **근소 돌파**. 0.9200 도달 최초 ep70 — matched-ep50 시점엔 0.9171 로 미달, 우위는 80ep 연장 구간에서(§11 정직 주석: best 도달 wall-clock 은 v9 가 더 소요). **per-slice paired 검증**(`v9_mamba_unleashed/eval_paired_v9.py`, 전체 7334슬라이스, v8 CSV 조인): vs v8-SS2D **5지표 전부 승, win-rate 54~56%**(Wilcoxon p≤4e-13 — 유의하나 근소) / vs GRU 78~82% 완승. 로그기반 3-way 곡선·표 `analyze_v9_unleashed.py` → `results/eval/v9_unleashed/`. radapt 는 07-30 자동 launch 가 NVML 다운으로 좌초(supervisor 50회 소진, ckpt 0개) → **08-05 재기동**(scratch, MAX_RETRY=200) → 08-07 정전대비 clean-stop(ep20 경계, 손실 0) → **08-18 true-resume 재개**(ETA ~08-25).
+
+### paper/ (논문 트랙, 2026-08~) — 커밋 prefix "paper:"
+- `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1 (MDPI 공학형, 스코프 v8+v9 unleashed, 외부검토 08-18 반영 P0 8건·P1 8건). `references.bib` 73항목 서지 전건 확정(⚠ 0건). 프로젝트 여정 서사는 `project_story_v1_to_v9.md`.
+- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig4_per_slice.py` → `paper/figs/`.
+- 논문·보고 지표는 표준 지표만(SSIM 주지표 + PSNR/NMSE/L1) — composite 사용 금지 (08-07 전면 결정, `docs/eval_metric_redesign.md` ⚠ 참조).
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
 
@@ -184,7 +189,10 @@ v9_mamba_unleashed/runs/
 └── smoke_bs.txt (=8)
 v9_mamba_radapt/runs/
 ├── run_ss2d_v9_radapt_autoresume.sh   # radapt supervisor
-└── smoke_bs.txt                       # ss2d/ 로그는 radapt 시작 후 생성
+├── post_reboot_rearm.sh               # ★ 재부팅/컨테이너 재시작 후 원-커맨드 재개 (절차: RESUME_AFTER_OUTAGE.md)
+├── clean_stop_pre_outage.sh · snapshot_pre_outage.sh   # 정전대비 clean-stop/스냅샷 (08-07 사용, pre_outage_report 참고)
+├── ss2d/                              # 학습 로그
+└── smoke_bs.txt
 ```
 - ckpt/state 는 v7/v8 의 `runs/` 서브폴더와 달리 **`./logs/<RUN_NAME>/`** 아래에 쌓인다: `ss2d_v9_last.pt`(매 ep, full-state resume), `ss2d_v9_epoch_N.pt`(매 5ep), `ss2d_v9_best.pt`(best composite). RUN_NAME = `PureETER_SS2D_V9_unleashed_R4_brain384` / `..._radapt_multiAR_brain384`.
 - 완료 sentinel = **`logs/<RUN_NAME>/DONE` 파일**(v8 의 stale-log grep 버그 대체). 체인 드라이버가 unleashed 의 DONE 을 확인한 뒤에야 radapt 를 시작한다.
@@ -293,6 +301,7 @@ bash v9_mamba_radapt/runs/run_ss2d_v9_radapt_autoresume.sh      # radapt
 - conda 환경: **`base`** (`/opt/conda`) — `mri_env` 라는 이름의 conda env 는 이 머신에 **존재하지 않는다**. 학습은 그냥 `python ...` (activate 불필요).
 - GPU: **TITAN RTX 24GB × 2** — v7_titan/v8_eter_pure/v9_mamba 는 정책상 **GPU0 단독** 사용, GPU1 은 교수님 작업 회피용으로 항상 비워둠.
 - 주요 의존성: PyTorch 2.3.1, mamba_ssm 2.2.2(SS2D용 CUDA 커널), einops, wandb
+- git 인증: **SSH** (`git@github.com` remote, `~/.ssh/id_ed25519`) — 2026-08-20 PAT 만료로 전환. push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
 
 **역사적 환경** (v1~v6_x 가 실제로 학습된 옛 머신 — 이 저장소엔 해당 ckpt/로그 없음):
 - conda 환경: `mri_env`
