@@ -1,24 +1,24 @@
 """
-v7_titan 4-way 공정 비교 시각화: GT / U-Net / ETER-ViT / SS2D-ViT (384×384).
-(VarNet 은 동일-파이프라인 16-coil·384 에서 sens 추정 발산이 잦아 제외 — load/run 함수는 보존.)
+v9 강화 SS2D 4-way 공정 비교 시각화: GT / U-Net / v8-SS2D / v9-SS2D (384×384).
+
+`visualize_v8_pure_compare.py` 클론 — v8 no-DC 통제비교의 승자(SS2D)와 그 강화판
+(v9 unleashed: 게이팅 복원 · 3-블록 잔차 스택 · 병목 해제 · ds=3 coarse scan)을 비교한다
+(docs/v9_mamba_unleashed_and_radapt.md, ssim_m: v9 0.9145 > v8 SS2D 0.9140).
 
 핵심 = **단일 파이프라인 공정 비교**:
   - 모든 모델이 같은 슬라이스, 같은 R4/cf0.08 mask, 같은 GT(384 RSS),
     같은 brain_mask(Otsu×0.4+largest CC)로 평가된다.
-  - U-Net / VarNet 도 별도 fastmri SliceDataset 이 아니라, ViT 와 동일한
+  - U-Net 도 별도 fastmri SliceDataset 이 아니라, GRU/SS2D 와 동일
     FastMRI_H5_Dataloader 의 masked 측정값에서 입력을 유도한다 → mask/GT 완전 일치.
   - 지표: brain-mask 안에서 masked SSIM/PSNR. recon 은 per-slice LS scale 로 GT 에
-    정합(magnitude 단위 bias 제거; ViT 는 α≈1, U-Net/VarNet 은 자기 scale → GT scale).
+    정합(magnitude 단위 bias 제거).
 
-⚠ 베이스라인 캐비엇:
-  - U-Net / VarNet = fastmri **brain leaderboard** 사전학습 가중치.
-  - 우리 파이프라인은 16-coil, image-domain crop→384 이므로 fastmri 원 학습분포
-    (전 coil, native 해상도)와 domain shift 가 있다. 따라서 U-Net/VarNet 은
-    "동일 측정값에 대한 참고 베이스라인" 이며 절대 점수의 직접 우열보다 시각 경향 참고용.
+⚠ 베이스라인 캐비엇: U-Net = fastmri brain leaderboard 사전학습 가중치 — 참고용
+  (v7_titan 비교 스크립트와 동일 caveat, docs/v8_eter_pure_rnn_vs_ss2d.md 참고).
 
-Layout (slice 당 2행×4열):
-  Row 0: GT | U-Net | ETER v7_titan | SS2D v7_titan   (recon)
-  Row 1: (blank) | U-Net err | ETER err | SS2D err     (masked |err|)
+Layout (슬라이스당 2행×4열):
+  Row 0: GT | U-Net | v8-SS2D | v9-SS2D   (recon)
+  Row 1: (blank) | U-Net err | v8-SS2D err | v9-SS2D err   (masked |err|)
 """
 
 import os
@@ -34,15 +34,16 @@ import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 from skimage.metrics import structural_similarity as compare_ssim
 
-import fastmri
-from fastmri.models import VarNet, Unet
+from fastmri.models import Unet
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(_HERE, 'configs'))
 sys.path.append(os.path.join(_HERE, 'dataloaders'))
 sys.path.append(os.path.join(_HERE, 'models', 'hybrid_eternet'))
 sys.path.append(os.path.join(_HERE, 'models', 'mamba_eternet'))
-sys.path.append(os.path.join(_HERE, 'v7_titan', 'configs'))
+sys.path.append(os.path.join(_HERE, 'models', 'pure_eternet'))
+sys.path.append(os.path.join(_HERE, 'v8_eter_pure', 'configs'))
+sys.path.append(os.path.join(_HERE, 'v9_mamba_unleashed', 'configs'))
 
 from dataloader_h5_v5 import FastMRI_H5_Dataloader
 
@@ -92,7 +93,7 @@ def masked_psnr(recon, gt, mask):
 
 
 def masked_ssim(recon, gt, mask):
-    """v7_titan run_val 과 동일 방식: full SSIM map → mask 안 평균, data_range=mask 안 max-min."""
+    """v8 run_val 과 동일 방식: full SSIM map → mask 안 평균, data_range=mask 안 max-min."""
     m = mask > 0.5
     if not m.any():
         return 0.0
@@ -115,44 +116,37 @@ def _load_state(model, ckpt_path, device, weights_only=False):
     return model.to(device).eval()
 
 
-def load_ss2d_v7titan(ckpt, device):
-    import myConfig_choh_SS2D_model_v7_titan as c
-    from u_choh_model_ETER_ViT import choh_ViT
-    from u_choh_model_SS2D_ViT_v4 import choh_Decoder_SS2D_ViT
-    enc = choh_ViT(image_size=c.IMAGE_SIZE, patch_size=c.PATCH_SIZE, num_classes=1000,
-                   dim=c.NUM_VIT_ENCODER_HIDDEN, depth=c.NUM_VIT_ENCODER_LAYER,
-                   heads=c.NUM_VIT_ENCODER_HEAD, mlp_dim=c.NUM_VIT_ENCODER_MLP_SIZE,
-                   channels=c.INPUT_CHANNELS, dropout=0.1, emb_dropout=0.1)
-    m = choh_Decoder_SS2D_ViT(
-        encoder=enc,
-        ss2d_d_inner=c.NUM_SS2D_D_INNER, ss2d_d_state=c.NUM_SS2D_D_STATE, ss2d_out_ch=c.NUM_SS2D_OUT_CH,
-        decoder_dim=c.NUM_VIT_DECODER_DIM, decoder_depth=c.NUM_VIT_DECODER_DEPTH,
-        decoder_heads=c.NUM_VIT_DECODER_HEAD, decoder_dim_head=c.NUM_VIT_DECODER_DIM_HEAD,
-        decoder_dim_mlp_hidden=c.NUM_VIT_DECODER_DIM_MLP_HIDDEN,
-        decoder_out_ch_up_tail=c.NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH,
-        decoder_out_feat_size_final_linear=c.NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT,
-        dropout=c.DROPOUT, dc_k_scale_ratio=c.DC_K_SCALE_RATIO, dc_init_alpha=c.DC_INIT_ALPHA,
+def load_pure_gru(ckpt, device):
+    import myConfig_pure_eter_v8 as c
+    from u_pure_eternet_gru import PureETER_GRU
+    m = PureETER_GRU(
+        dim=c.IMAGE_SIZE[0], n_coil=c.N_COIL,
+        n_hidden_1=c.N_HIDDEN_LRNN_1, n_hidden_2=c.N_HIDDEN_LRNN_2,
+        unet_depth=c.UNET_DEPTH, unet_wf=c.UNET_WF, use_dc=False,
     )
     return _load_state(m, ckpt, device)
 
 
-def load_eter_v7titan(ckpt, device):
-    import myConfig_choh_ETER_model_v7_titan as c
-    from u_choh_model_ETER_ViT import choh_ViT
-    from u_choh_model_ETER_ViT_v7_titan import choh_Decoder3_ETER_v7_titan
-    enc = choh_ViT(image_size=c.IMAGE_SIZE, patch_size=c.PATCH_SIZE, num_classes=1000,
-                   dim=c.NUM_VIT_ENCODER_HIDDEN, depth=c.NUM_VIT_ENCODER_LAYER,
-                   heads=c.NUM_VIT_ENCODER_HEAD, mlp_dim=c.NUM_VIT_ENCODER_MLP_SIZE,
-                   channels=c.INPUT_CHANNELS, dropout=0.1, emb_dropout=0.1)
-    m = choh_Decoder3_ETER_v7_titan(
-        encoder=enc,
-        eter_n_hori_hidden=c.NUM_ETER_HORI_HIDDEN, eter_n_vert_hidden=c.NUM_ETER_VERT_HIDDEN,
-        decoder_dim=c.NUM_VIT_DECODER_DIM, decoder_depth=c.NUM_VIT_DECODER_DEPTH,
-        decoder_heads=c.NUM_VIT_DECODER_HEAD, decoder_dim_head=c.NUM_VIT_DECODER_DIM_HEAD,
-        decoder_dim_mlp_hidden=c.NUM_VIT_DECODER_DIM_MLP_HIDDEN,
-        decoder_out_ch_up_tail=c.NUM_VIT_DECODER_FINAL_LINEAR_OUT_CH,
-        decoder_out_feat_size_final_linear=c.NUM_VIT_DECODER_FINAL_LINEAR_OUT_FEAT,
-        dropout=c.DROPOUT, unet_depth=c.ETER_UNET_DEPTH, unet_wf=c.ETER_UNET_WF,
+def load_pure_ss2d(ckpt, device):
+    import myConfig_pure_eter_v8 as c
+    from u_pure_eternet_ss2d import PureETER_SS2D
+    m = PureETER_SS2D(
+        n_coil=c.N_COIL, n_hidden_2=c.N_HIDDEN_LRNN_2,
+        unet_depth=c.UNET_DEPTH, unet_wf=c.UNET_WF,
+        ss2d_d_inner=c.SS2D_D_INNER, ss2d_d_state=c.SS2D_D_STATE, use_dc=False,
+    )
+    return _load_state(m, ckpt, device)
+
+
+def load_pure_ss2d_v9(ckpt, device):
+    import myConfig_ss2d_v9 as c
+    from u_pure_eternet_ss2d_v9 import PureETER_SS2D_V9
+    m = PureETER_SS2D_V9(
+        n_coil=c.N_COIL, out_ch=c.SS2D_OUT_CH,
+        unet_depth=c.UNET_DEPTH, unet_wf=c.UNET_WF,
+        ss2d_d_inner=c.SS2D_D_INNER, ss2d_d_state=c.SS2D_D_STATE,
+        ss2d_n_blocks=c.SS2D_N_BLOCKS, ss2d_dropout=c.SS2D_DROPOUT,
+        ss2d_use_checkpoint=False, ss2d_downsample=c.SS2D_DOWNSAMPLE,
     )
     return _load_state(m, ckpt, device)
 
@@ -162,30 +156,18 @@ def load_unet(ckpt, device):
     return _load_state(m, ckpt, device, weights_only=True)
 
 
-def load_varnet(ckpt, device):
-    m = VarNet(num_cascades=12, sens_chans=8, sens_pools=4, chans=18, pools=4)
-    return _load_state(m, ckpt, device, weights_only=True)
-
-
 # ──────────────────────────────────────────────
 #  모델별 추론 (모두 동일 H5 sample 에서 입력 유도)
 # ──────────────────────────────────────────────
 
 def run_ss2d(model, sample, device):
+    """GRU/SS2D pure arm 공용 — forward(x_img, x_ksp, mask, sens) 시그니처 동일."""
     d  = sample['data'].unsqueeze(0).float().to(device)
     di = sample['data_img'].unsqueeze(0).float().to(device)
     mk = sample['mask'].unsqueeze(0).float().to(device)
     se = sample['sens'].unsqueeze(0).float().to(device)
     with torch.no_grad(), torch.amp.autocast('cuda'):
         out = model(di, d, mk, se)
-    return out.squeeze().float().cpu().numpy()
-
-
-def run_eter(model, sample, device):
-    d  = sample['data'].unsqueeze(0).float().to(device)
-    di = sample['data_img'].unsqueeze(0).float().to(device)
-    with torch.no_grad(), torch.amp.autocast('cuda'):
-        out = model(di, d)
     return out.squeeze().float().cpu().numpy()
 
 
@@ -201,26 +183,6 @@ def run_unet(model, sample, device):
     with torch.no_grad():
         out = model(x).squeeze()
     return (out * std + mean).float().cpu().numpy()
-
-
-def run_varnet(model, sample, device):
-    """masked k-space → fastmri (1,coils,H,W,2) + mask(1,1,1,W,1) → VarNet RSS recon."""
-    d = sample['data'].numpy()                      # (32,H,W) packed masked ksp *1e4
-    ksp_c = unpack_complex(d)                        # (16,H,W) complex masked k-space
-    # VarNet 은 NormUnet 으로 scale-불변 + 출력은 LS 정합 → 수치 안정 위해 unit-max 정규화
-    # (true ortho scale ~O(1e-4) 는 sens 추정 발산 유발; 일부 슬라이스 nan/inf 원인)
-    ksp_c = ksp_c / (float(np.abs(ksp_c).max()) + 1e-12)
-    H, W = ksp_c.shape[-2:]
-    mk = torch.stack([torch.from_numpy(np.ascontiguousarray(ksp_c.real)),
-                      torch.from_numpy(np.ascontiguousarray(ksp_c.imag))], dim=-1)  # (16,H,W,2)
-    mk = mk.unsqueeze(0).float().to(device)         # (1,16,H,W,2)
-    mask_1d = sample['mask'].numpy()[0, 0, :]       # (W,) undersample pattern (마지막 축)
-    # fastmri VarNet 은 mask 를 boolean 으로 기대 (내부 torch.where) → bool tensor 로 주입
-    mask_vn = torch.from_numpy(mask_1d > 0.5).view(1, 1, 1, W, 1).to(device)
-    n_low = int(round(W * CENTER_FRACTION))
-    with torch.no_grad():
-        out = model(mk, mask_vn, num_low_frequencies=n_low)   # (1,H,W)
-    return out.squeeze().float().cpu().numpy()
 
 
 # ──────────────────────────────────────────────
@@ -253,13 +215,12 @@ def resolve_slice_spec(spec_path, h5):
 
 
 def main():
-    p = argparse.ArgumentParser(description='v7_titan 5-way 공정 비교 (GT/U-Net/VarNet/ETER/SS2D)')
+    p = argparse.ArgumentParser(description='v8 pure ETER-Net 4-way 공정 비교 (GT/U-Net/GRU/SS2D, no-DC)')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
-    p.add_argument('--ss2d-ckpt', default='logs/SS2D_ViT_R4_brain384_v7_titan/ss2d_vit_best.pt')
-    p.add_argument('--eter-ckpt', default='logs/ETER_ViT_R4_brain384_v7_titan/eter_vit_best.pt')
+    p.add_argument('--ss2d-ckpt', default='logs/PureETER_SS2D_noDC_R4_brain384_v8/pure_ss2d_best.pt')
+    p.add_argument('--v9-ckpt', default='logs/PureETER_SS2D_V9_unleashed_R4_brain384/ss2d_v9_best.pt')
     p.add_argument('--unet-ckpt', default='models/pretrained/brain_leaderboard_state_dict.pt')
-    p.add_argument('--varnet-ckpt', default='models/pretrained/varnet_brain_leaderboard_state_dict.pt')
-    p.add_argument('--out-dir', default='results/vis/v7_titan_compare')
+    p.add_argument('--out-dir', default='results/vis/v9_unleashed_compare')
     p.add_argument('--num-samples', type=int, default=12)
     p.add_argument('--slice-spec', default=None,
                    help='(파일명,슬라이스) 스펙 JSON — 트랙 간 동일 해부 비교용 '
@@ -269,14 +230,14 @@ def main():
     p.add_argument('--err-vmax-frac', type=float, default=0.10,
                    help='masked 에러맵 vmax (정규화 [0,1] 단위). 기본 0.10')
     p.add_argument('--no-scale-match', action='store_true',
-                   help='LS scale 정합 비활성화 (기본 활성). ViT 는 α≈1, U-Net/VarNet 은 GT scale 정합 필요')
+                   help='LS scale 정합 비활성화 (기본 활성)')
     args = p.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     scale_match = not args.no_scale_match
 
     print('=' * 64)
-    print(' v7_titan 5-way 비교: GT / U-Net / VarNet / ETER-ViT / SS2D-ViT  (384×384)')
+    print(' v9 강화 SS2D 4-way 비교: GT / U-Net / v8-SS2D / v9-SS2D  (384×384)')
     print(f'  device={device}, scale_match={scale_match}')
     print('=' * 64)
 
@@ -291,8 +252,6 @@ def main():
         indices = [int(x) for x in args.slice_indices.split(',') if x.strip() != '']
         indices = [i for i in indices if 0 <= i < total]
     else:
-        # 0 부터 마지막 슬라이스까지 등간격 (요청 사양). edge 슬라이스(idx 0 등)는 거의-빈 brain 이라
-        # VarNet sens 추정이 발산할 수 있음 — 각 패널 제목의 실제 지표로 정직하게 표기됨.
         indices = np.linspace(0, total - 1, args.num_samples, dtype=int).tolist()
     print(f'\n총 val 슬라이스: {total}  →  선택 {len(indices)}개: {indices}')
 
@@ -311,12 +270,10 @@ def main():
         brain_cache[idx] = s['brain_mask'].squeeze().numpy().astype(np.float32)
 
     # 2) 모델 outer-loop (한 번에 GPU 위 모델 1개) → recon/metric 캐시
-    # VarNet 은 동일-파이프라인(16-coil·image-domain crop→384)에서 sens 추정 발산이 잦아
-    # 본 비교에서 제외 (load_varnet/run_varnet 함수는 보존 — 재활성화 시 아래에 한 줄 추가).
     model_specs = [
-        ('U-Net',         args.unet_ckpt,   load_unet,          run_unet),
-        ('ETER v7_titan', args.eter_ckpt,   load_eter_v7titan,  run_eter),
-        ('SS2D v7_titan', args.ss2d_ckpt,   load_ss2d_v7titan,  run_ss2d),
+        ('U-Net',           args.unet_ckpt, load_unet,     run_unet),
+        ('v8-SS2D',         args.ss2d_ckpt, load_pure_ss2d, run_ss2d),
+        ('v9-SS2D',         args.v9_ckpt,   load_pure_ss2d_v9, run_ss2d),
     ]
     recon_cache = {idx: {} for idx in indices}
     metric_cache = {idx: {} for idx in indices}
@@ -339,7 +296,6 @@ def main():
             except Exception as e:
                 tqdm.write(f'  [ERROR] {name} idx={idx}: {e}')
                 rec = np.zeros_like(gt_cache[idx])
-            # 일부 edge 슬라이스(거의 빈 brain)에서 VarNet sens 추정이 발산 → nan/inf 정리
             rec = np.nan_to_num(rec.astype(np.float32), nan=0.0, posinf=0.0, neginf=0.0)
             gt = gt_cache[idx]
             brain = brain_cache[idx]
@@ -357,8 +313,7 @@ def main():
     hot_bad = plt.get_cmap('hot').copy()
     hot_bad.set_bad(color='black')   # masked(뇌 밖) 영역 = 검정 (recon 행과 배경 통일)
     err_max = args.err_vmax_frac
-    title_color = {'U-Net': 'tab:orange', 'VarNet': 'tab:purple',
-                   'ETER v7_titan': 'tab:green', 'SS2D v7_titan': 'tab:blue'}
+    title_color = {'U-Net': 'tab:orange', 'v8-SS2D': 'tab:blue', 'v9-SS2D': 'tab:green'}
 
     def masked_err(recon_n, gt_n, mask):
         return np.where(mask > 0.5, np.abs(recon_n - gt_n), np.nan)
@@ -371,13 +326,12 @@ def main():
         gt_n = gt / gt_max
 
         fig, axes = plt.subplots(2, 4, figsize=(21, 11))
-        # Row 0 col 0: GT
         axes[0, 0].imshow(gt_n, cmap='gray', vmin=0.0, vmax=1.0)
         axes[0, 0].set_title('GT (Ground Truth)', fontsize=13, fontweight='bold')
         axes[0, 0].axis('off')
         axes[1, 0].set_visible(False)
 
-        for col, name in enumerate(['U-Net', 'ETER v7_titan', 'SS2D v7_titan'], start=1):
+        for col, name in enumerate(['U-Net', 'v8-SS2D', 'v9-SS2D'], start=1):
             if name not in recon_cache[idx]:
                 axes[0, col].axis('off'); axes[1, col].axis('off')
                 axes[0, col].set_title(f'{name}\n(N/A)', fontsize=11)
@@ -396,7 +350,7 @@ def main():
 
         sm_note = ' · per-slice LS scale-aligned' if scale_match else ''
         fig.suptitle(
-            f'Sample #{idx}  —  v7_titan 4-way (384, R{ACCEL}, brain-masked metric{sm_note})\n'
+            f'Sample #{idx}  —  v9 강화 SS2D 4-way (384, R{ACCEL}, no-DC, brain-masked metric{sm_note})\n'
             f'U-Net = fastmri brain leaderboard, 16-coil→384 (domain shift, 참고 베이스라인)',
             fontsize=13, fontweight='bold', y=0.99)
         plt.tight_layout()
@@ -406,9 +360,9 @@ def main():
         rows.append((idx, {n: metric_cache[idx][n] for n in present if n in metric_cache[idx]}))
 
     # 4) 요약
-    lines = ['========== v7_titan 5-way 비교 요약 ==========',
+    lines = ['========== v9 강화 SS2D 4-way 비교 요약 ==========',
              f'슬라이스 {len(indices)}개: {indices}',
-             f'scale_match={scale_match}, brain-masked metric, 384×384, R{ACCEL}',
+             f'scale_match={scale_match}, brain-masked metric, 384×384, R{ACCEL}, no-DC',
              '',
              f'{"모델":>16s} | {"masked PSNR(dB)":>18s} | {"masked SSIM":>16s}',
              f'{"-"*16} | {"-"*18} | {"-"*16}']
@@ -424,9 +378,9 @@ def main():
         '[해석 / 주의]',
         '- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
         '  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.',
-        '- ETER/SS2D v7_titan = 본 학습 모델. near-tie (학습 full-val 0.9084/0.9083 과 정합).',
-        '  각 PNG 패널 제목에 슬라이스별 실제 지표 표기.',
-        '- VarNet 은 동일-파이프라인(16-coil·384)에서 sens 추정 발산이 잦아 본 4-way 비교에서 제외.',
+        '- v8-SS2D / v9-SS2D = 순수 ETER-Net(ViT 없음) no-DC. aggregate 는 v9 근소 우위',
+        '  (전체 val masked SSIM 0.9145 vs 0.9140, docs/v9_mamba_unleashed_and_radapt.md). 각 PNG 패널 제목에',
+        '  슬라이스별 실제 지표 표기 — sulci/혈관 detail 은 육안으로 직접 비교할 것.',
     ]
     if failed:
         lines.append('')
