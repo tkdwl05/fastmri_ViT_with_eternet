@@ -1342,9 +1342,16 @@ DH-Mamba TCSVT 2025, MMR-Mamba MedIA 2024, MambaRoll TMI 2024, HiFi-Mamba 2025).
 | v9 시각화 | 미작성 | `results/vis/v9*` 없음 |
 | 논문 영어 전환·투고 | 초안 v1 단계 | `paper/draft_ko_v1.md`, 투고처 후보 평가 완료 |
 
-E2E-VarNet 평가에는 알려진 이슈가 있다 — sensitivity 추정이 k-space ortho 스케일(~1e-4)에서
-발산해서 unit-max 정규화로 완화해 뒀다. 잔여 non-finite 슬라이스는 제외하지 않고 개수를 보고할
-예정이다.
+> **갱신 (2026-08-20)**: 공식 fastMRI 추론 규약(`fastmri_examples/varnet/`)과 대조하며 두 가지를
+> 바로잡았다. ① 기존의 "sensitivity 추정이 k-space ortho 스케일(~1e-4)에서 발산한다"는 진단은
+> 틀렸다 — VarNet 은 정규화·선형 DC·RSS 구조라 양의 스칼라에 homogeneous 이고 스케일은 지표에
+> 영향이 없다. ② 실제 원인은 **데이터로더의 16채널 zero-pad** 였다. 코일이 16개 미만인 볼륨
+> (464개 중 197개 = 슬라이스 3,122/7,334 = 42.6%)에서 all-zero 채널이 감도추정 U-Net 의 채널별
+> 정규화에서 std=0 → NaN 을 만들고 전 코일로 전파해 슬라이스 전체가 무효가 된다. 실측 코일만
+> 넘기도록 고쳤다(4코일 볼륨 실측: 수정 전 NaN 100% → 수정 후 정상). ③ 또한 공식 README 가
+> leaderboard 가중치를 "train+val 합본"으로 학습했다고 명시하므로 **본 검증셋 전체가 기준선의
+> 학습 데이터**다 — 기준선은 참고선으로만 쓴다. ④ VarNet 자기 프로토콜(전체 코일·native 해상도·
+> 공식 crop) 행을 추가했다(`v8_eter_pure/native_protocol.py`).
 
 ## 4.3 문서화 공백 (알려진 것)
 

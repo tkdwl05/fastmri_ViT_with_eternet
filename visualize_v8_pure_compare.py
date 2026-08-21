@@ -175,6 +175,31 @@ def run_unet(model, sample, device):
 #  Main
 # ──────────────────────────────────────────────
 
+
+def resolve_slice_spec(spec_path, h5):
+    """(파일명, 슬라이스번호) 스펙 → 현재 dataset 인덱스.
+
+    dataset 인덱스는 안정적인 식별자가 아니다 — val 폴더에 파일이 추가되면 같은 인덱스가 다른
+    해부를 가리킨다(v7_titan viz 7270 vs v8 viz 7334 어긋남의 원인). 트랙 간 비교 그림은 반드시
+    이 스펙으로 슬라이스를 고정한다.
+    """
+    import json
+    with open(spec_path) as f:
+        spec = json.load(f)
+    pos = {(os.path.basename(fp), s): i for i, (fp, s, _) in enumerate(h5.samples)}
+    indices, missing = [], []
+    for item in spec['slices']:
+        key = (item['file'], int(item['slice']))
+        if key in pos:
+            indices.append(pos[key])
+        else:
+            missing.append(key)
+    if missing:
+        print(f'  [WARN] 스펙 {len(missing)}개 슬라이스가 현재 dataset 에 없음: {missing[:3]}...')
+    print(f"  슬라이스 스펙 '{spec.get('name', spec_path)}' → 인덱스 {indices}")
+    return indices
+
+
 def main():
     p = argparse.ArgumentParser(description='v8 pure ETER-Net 4-way 공정 비교 (GT/U-Net/GRU/SS2D, no-DC)')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
@@ -183,6 +208,9 @@ def main():
     p.add_argument('--unet-ckpt', default='models/pretrained/brain_leaderboard_state_dict.pt')
     p.add_argument('--out-dir', default='results/vis/v8_pure_eternet_compare')
     p.add_argument('--num-samples', type=int, default=12)
+    p.add_argument('--slice-spec', default=None,
+                   help='(파일명,슬라이스) 스펙 JSON — 트랙 간 동일 해부 비교용 '
+                        '(예: visualize_slices_canonical.json). --slice-indices 보다 우선')
     p.add_argument('--slice-indices', default=None,
                    help='쉼표구분 인덱스 직접 지정 (예: 0,660,...). 미지정 시 linspace(0,len-1,num_samples)')
     p.add_argument('--err-vmax-frac', type=float, default=0.10,
@@ -204,7 +232,9 @@ def main():
                                random_mask=False, augment=False)
     total = len(h5)
 
-    if args.slice_indices:
+    if args.slice_spec:
+        indices = resolve_slice_spec(args.slice_spec, h5)
+    elif args.slice_indices:
         indices = [int(x) for x in args.slice_indices.split(',') if x.strip() != '']
         indices = [i for i in indices if 0 <= i < total]
     else:

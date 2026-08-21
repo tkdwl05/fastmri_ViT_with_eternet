@@ -68,6 +68,20 @@ results/eval/v8_r_sweep/*
 results/eval/v8_r_sweep_norm/*
 !results/eval/v8_r_sweep_norm/r_generalization_table.md
 
+# 기준선(U-Net/E2E-VarNet) 평가 요약만 공유 (per-slice CSV 는 계속 무시, 2026-08-21)
+!results/eval/baselines_384_sample300/
+results/eval/baselines_384_sample300/*
+!results/eval/baselines_384_sample300/baseline_summary.md
+!results/eval/baselines_384/
+results/eval/baselines_384/*
+!results/eval/baselines_384/baseline_summary.md
+
+# v9 4-way 비교 시각화 (v8 과 동일 정책: PNG + 요약 txt 만)
+!results/vis/v9_unleashed_compare/
+results/vis/v9_unleashed_compare/*
+!results/vis/v9_unleashed_compare/*.png
+!results/vis/v9_unleashed_compare/metrics_summary.txt
+
 # 논문 그림 (paper/figs/) 은 GitHub 공유 — *.png / *.pdf 전역 무시의 예외 (2026-08-18)
 !paper/figs/*.png
 !paper/figs/*.pdf

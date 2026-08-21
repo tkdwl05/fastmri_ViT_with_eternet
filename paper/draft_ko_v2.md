@@ -262,13 +262,27 @@ PyTorch 2.3 + mamba_ssm 2.2(CUDA selective-scan 커널). 코드는 게재 시 Gi
 
 ### 3.7 기준선 (baselines)
 
-fastMRI **brain leaderboard 사전학습 U-Net·E2E-VarNet [11]** 을 동일 검증 파이프라인(같은
-슬라이스·R4 마스크·GT·brain mask)에서 추론 평가해 참고 기준선으로 제시한다. 두 모델의 출력
-스케일은 자체 정규화 기준이므로 지표 계산 전 per-slice 최소제곱 스케일 정합을 적용한다(우리
-모델은 α≈1). 단 leaderboard 가중치의 원 학습분포(전체 코일·native 해상도)와 본 전처리
-(16코일·384² 재-FFT) 사이에 domain shift 가 있으므로 절대 우열 판정이 아닌 **참고선**으로
-표기한다. (VarNet 의 감도 추정이 k-space ortho 스케일에서 발산하는 문제는 unit-max 정규화로
-완화했으며, 잔여 non-finite 슬라이스는 제외하지 않고 개수를 보고한다.)
+fastMRI **brain leaderboard 사전학습 U-Net·E2E-VarNet [11]** 을 두 가지 프로토콜로 추론 평가해
+참고 기준선으로 제시한다. (i) **동일 파이프라인** — 우리 모델과 완전히 같은 측정값(같은 슬라이스·
+R4 마스크·16코일·384² 재-FFT·GT·brain mask)을 입력한다. (ii) **네이티브 프로토콜** — fastMRI 공식
+추론 규약[19]을 그대로 따라 전체 코일·native 해상도 k-space 를 쓰고 ismrmrd 헤더의 reconSpace
+크기로 중앙 crop 한다(취득 구간 밖 마스크 0, 감도맵 ACS 폭은 마스크에서 자동 검출). (i)은 입력
+동일성을, (ii)는 leaderboard 가중치의 학습 조건 근접성을 각각 확보하며, 둘의 차이가 곧 전처리
+domain shift(16코일 절단·해상도/FOV)의 크기다. 두 모델의 출력 스케일은 자체 정규화 기준이므로
+지표 계산 전 per-slice 최소제곱 스케일 정합을 적용한다(우리 모델은 α≈1).
+
+**두 가지 캐비엇을 명시한다.** 첫째, **본 검증셋 전체가 두 기준선의 학습 데이터에 포함돼 있다** —
+공식 저장소는 leaderboard 모델에 대해 "The leaderboard model was trained where the `train` split
+included both the `train` and `val` splits from the public data" 라고 명시한다[19]. 따라서 기준선
+수치는 낙관적으로 편향되며, `train` 만으로 학습한 본 모델들과의 우열 판정은 성립하지 않는다.
+둘째, 사전학습 가중치는 R4·R8 혼합 학습본이고 원 학습분포가 본 전처리와 다르다. 이 두 이유로
+기준선은 **절대 우열이 아닌 참고선**으로만 읽어야 한다.
+
+(구현 주의: 데이터로더가 코일을 16채널로 zero-pad 하므로 16코일 미만 볼륨—본 검증셋 464개 중
+197개, 슬라이스 3,122/7,334—을 VarNet 에 그대로 넣으면 감도추정 U-Net 의 채널별 정규화에서
+std=0 → NaN 이 발생해 슬라이스 전체가 무효가 된다. 실측 코일만 전달해 회피했다. VarNet 은
+정규화·선형 DC·RSS 로 구성돼 양의 스칼라에 대해 positively homogeneous 이므로 입력 스케일
+선택은 지표에 영향을 주지 않는다.)
 
 ### 3.8 통계 분석
 
@@ -352,10 +366,13 @@ Table S1(5개 contrast 전부에서 모든 지표 우위 비율 ≥68.7%).
 
 ### 4.4 기준선 비교 — U-Net / E2E-VarNet **[결과 삽입 예정]**
 
-§3.7 프로토콜로 전체 val 7,334 슬라이스에서 사전학습 U-Net·E2E-VarNet [11]을 추론 평가한 결과
-(표준 4지표 mean±std + 본 모델들과의 우위 슬라이스 비율)를 **Table 4** 로 여기에 삽입한다.
-**[스크립트 준비 완료: `v8_eter_pure/eval_paired_baselines.py` — radapt 학습(GPU 점유, ~08-25
-완주 예상) 종료 후 실행.]**
+§3.7 의 두 프로토콜(동일 파이프라인 / 네이티브)로 사전학습 U-Net·E2E-VarNet [11]을 추론 평가한
+결과(표준 4지표 mean±std + 본 모델들과의 우위 슬라이스 비율)를 **Table 4** 로 여기에 삽입한다.
+해석은 §3.7 의 두 캐비엇 — **검증셋이 기준선의 학습 데이터에 포함**, 전처리 domain shift — 아래에서
+"참고선"으로 한정한다.
+**[스크립트 준비 완료: `v8_eter_pure/eval_paired_baselines.py` + `native_protocol.py`. 2026-08-20
+층화 표본(299 슬라이스, contrast × 코일수) CPU 예비 실행 중 — 전체 7,334 슬라이스 GPU 풀런은
+radapt 완주(~08-25) 후.]**
 
 ### 4.5 효율 비교 (Table 5)
 
@@ -542,7 +559,7 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 | Fig.3 4-way 정성 비교 + 배경 ringing | `results/vis/v8_pure_eternet_compare/compare_*.png` | ✅ (슬라이스 선별 필요) |
 | Fig.4 per-slice 우위 비율/차이 분포 | `paper/figs/fig4_per_slice_distribution.{png,pdf}` — 생성 스크립트 `paper/make_fig4_per_slice.py` (입력 `results/eval/v9_unleashed/per_slice_paired_v9.csv`) | ✅ 2026-08-18 (2행×4지표 paired-Δ 히스토그램 + win-rate, 양수=치환/강화 우위 규약) |
 | Tab.1·2·2b·3·S1 (결과 표 일체) | **자동 생성**: `paper/make_tables.py` → `paper/tables/*.{md,tex}` — per-slice CSV 단일 원천, median(IQR)·클러스터 부트스트랩 CI·볼륨 Wilcoxon 내장, seed 고정으로 초안 수치 자가검증(ALL PASS). `.tex` 는 영어 전환용(MDPI 는 Word 도 허용 — 선택 사용) | ✅ 2026-08-20 |
-| Tab.4 기준선(U-Net/E2E-VarNet) | `v8_eter_pure/eval_paired_baselines.py` → `results/eval/baselines_384/` | ⏳ 스크립트 준비, GPU 대기(radapt 완주 ~08-25 후) |
+| Tab.4 기준선(U-Net/E2E-VarNet) | `v8_eter_pure/eval_paired_baselines.py` + `v8_eter_pure/native_protocol.py` → `results/eval/baselines_384{,_sample300}/` | ⏳ 08-20 CPU 층화 표본(299) 실행 중 · 전체 GPU 풀런은 radapt 완주 후. 08-20 수정: zero-coil→NaN 회피(검증셋 42.6% 무효화 방지) + 네이티브 프로토콜 행 추가 |
 | (참고) matched-epoch 표 | `results/eval/*/matched_epoch_table*.md` | ✅ (본문 서술로만 사용) |
 
 ## 부록 B. 교수님 상의 포인트 (초안 논외, 회의용)
@@ -635,7 +652,7 @@ AXT1 에서는 역전된다(48.2%) — §4.3 의 "유의하나 근소·불균일
 | 10 | 초록 압축 | ✅ 강화판 세부 한 구절로 압축 + keywords 에 parameter efficiency |
 
 **GPU 큐 (권장 순서 — radapt 완주 ~08-25 후, 2차 검산 08-18 합의)**:
-① **추론-only 일괄**(합쳐 하루 안쪽): Table 4 기준선 → 추론 ms/slice·peak VRAM(Table 5 완성) →
+① **추론-only 일괄**(합쳐 하루 안쪽): Table 4 기준선(08-20 CPU 층화 표본 299로 선행 확인 → GPU 전량 재실행) → 추론 ms/slice·peak VRAM(Table 5 완성) →
 320-crop 표준 프로토콜 보충표 → ringing 마스크-외부 잔차 정량 + Fig.3 오류맵/N 명시 →
 ② **U-Net-only 학습**(~50ep, 며칠 — 과학적으로 가장 중요한 잔여 항목: 치환 이득의 분모) →
 ③ 교수님 결정 후 **멀티시드 축약판**(25ep×3시드 순위 안정성).

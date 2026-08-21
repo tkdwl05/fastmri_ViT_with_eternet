@@ -1,0 +1,81 @@
+{
+  "name": "canonical-12 (v7_titan 2026-06-16 기준)",
+  "why": "슬라이스는 dataset 인덱스가 아니라 (파일명, 슬라이스번호)로 고정한다. v7_titan viz(2026-06-16)는 val 7270 슬라이스 상태에서 linspace(0,7269,12)를 썼고, 그 뒤 file_brain_AXT2_200_2000306/308/310/311.h5 4개(각 16슬라이스=64)가 합류해 총 7334가 되면서 같은 인덱스가 다른 해부를 가리키게 됐다. v8 viz(2026-07-07)의 linspace(0,7333,12)가 v7_titan과 어긋난 이유가 이것이다.",
+  "source": "results/vis/v7_titan_compare/metrics_summary.txt 의 [0,660,...,7269] 를 (파일,슬라이스)로 환원",
+  "resolved_indices_7334": [
+    0,
+    660,
+    1321,
+    1982,
+    2643,
+    3368,
+    4028,
+    4689,
+    5350,
+    6011,
+    6672,
+    7333
+  ],
+  "slices": [
+    {
+      "file": "file_brain_AXFLAIR_200_6002471.h5",
+      "slice": 0,
+      "v7_titan_index_7270": 0
+    },
+    {
+      "file": "file_brain_AXT1POST_201_6002788.h5",
+      "slice": 0,
+      "v7_titan_index_7270": 660
+    },
+    {
+      "file": "file_brain_AXT1POST_207_2070230.h5",
+      "slice": 5,
+      "v7_titan_index_7270": 1321
+    },
+    {
+      "file": "file_brain_AXT1POST_210_6001630.h5",
+      "slice": 0,
+      "v7_titan_index_7270": 1982
+    },
+    {
+      "file": "file_brain_AXT1_202_2020038.h5",
+      "slice": 1,
+      "v7_titan_index_7270": 2643
+    },
+    {
+      "file": "file_brain_AXT2_200_2000556.h5",
+      "slice": 6,
+      "v7_titan_index_7270": 3304
+    },
+    {
+      "file": "file_brain_AXT2_201_2010327.h5",
+      "slice": 10,
+      "v7_titan_index_7270": 3964
+    },
+    {
+      "file": "file_brain_AXT2_203_2030309.h5",
+      "slice": 7,
+      "v7_titan_index_7270": 4625
+    },
+    {
+      "file": "file_brain_AXT2_207_2070122.h5",
+      "slice": 4,
+      "v7_titan_index_7270": 5286
+    },
+    {
+      "file": "file_brain_AXT2_208_2080349.h5",
+      "slice": 13,
+      "v7_titan_index_7270": 5947
+    },
+    {
+      "file": "file_brain_AXT2_209_6001104.h5",
+      "slice": 4,
+      "v7_titan_index_7270": 6608
+    },
+    {
+      "file": "file_brain_AXT2_210_6001922.h5",
+      "slice": 15,
+      "v7_titan_index_7270": 7269
+    }
+  ]
+}
