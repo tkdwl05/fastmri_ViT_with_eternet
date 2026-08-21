@@ -397,7 +397,7 @@ def main():
         sm_note = ' · per-slice LS scale-aligned' if scale_match else ''
         fig.suptitle(
             f'Sample #{idx}  —  v7_titan 4-way (384, R{ACCEL}, brain-masked metric{sm_note})\n'
-            f'U-Net = fastmri brain leaderboard, 16-coil→384 (domain shift, 참고 베이스라인)',
+            f'U-Net = fastmri brain leaderboard, 16-coil→384 (domain shift, reference baseline)',
             fontsize=13, fontweight='bold', y=0.99)
         plt.tight_layout()
         plt.savefig(os.path.join(args.out_dir, f'compare_{idx:04d}.png'), dpi=140, bbox_inches='tight')

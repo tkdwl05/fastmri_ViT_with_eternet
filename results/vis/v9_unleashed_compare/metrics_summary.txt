@@ -1,16 +1,16 @@
-========== v8 Pure ETER-Net 4-way 비교 요약 ==========
+========== v9 강화 SS2D 4-way 비교 요약 ==========
 슬라이스 12개: [0, 660, 1321, 1982, 2643, 3368, 4028, 4689, 5350, 6011, 6672, 7333]
 scale_match=True, brain-masked metric, 384×384, R4, no-DC
 
               모델 |    masked PSNR(dB) |      masked SSIM
 ---------------- | ------------------ | ----------------
            U-Net |  31.57±2.30  (med 31.81) | 0.9036±0.0578 (med 0.9196)  [n=12]
-     GRU (no-DC) |  34.05±2.05  (med 34.04) | 0.9221±0.0363 (med 0.9306)  [n=12]
-    SS2D (no-DC) |  34.27±2.14  (med 34.24) | 0.9243±0.0364 (med 0.9326)  [n=12]
+         v8-SS2D |  34.27±2.14  (med 34.24) | 0.9243±0.0364 (med 0.9326)  [n=12]
+         v9-SS2D |  34.24±2.14  (med 34.21) | 0.9250±0.0342 (med 0.9333)  [n=12]
 
 [해석 / 주의]
 - U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384
   → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.
-- GRU/SS2D = 교수님 순수 ETER-Net(ViT 없음) no-DC arm. aggregate 는 SS2D 완승
-  (composite 0.9200 vs 0.9182, docs/v8_eter_pure_rnn_vs_ss2d.md). 각 PNG 패널 제목에
+- v8-SS2D / v9-SS2D = 순수 ETER-Net(ViT 없음) no-DC. aggregate 는 v9 근소 우위
+  (전체 val masked SSIM 0.9145 vs 0.9140, docs/v9_mamba_unleashed_and_radapt.md). 각 PNG 패널 제목에
   슬라이스별 실제 지표 표기 — sulci/혈관 detail 은 육안으로 직접 비교할 것.

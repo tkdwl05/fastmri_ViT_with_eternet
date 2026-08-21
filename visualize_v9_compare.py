@@ -215,7 +215,7 @@ def resolve_slice_spec(spec_path, h5):
 
 
 def main():
-    p = argparse.ArgumentParser(description='v8 pure ETER-Net 4-way 공정 비교 (GT/U-Net/GRU/SS2D, no-DC)')
+    p = argparse.ArgumentParser(description='v9 강화 SS2D 4-way 공정 비교 (GT/U-Net/v8-SS2D/v9-SS2D)')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--ss2d-ckpt', default='logs/PureETER_SS2D_noDC_R4_brain384_v8/pure_ss2d_best.pt')
     p.add_argument('--v9-ckpt', default='logs/PureETER_SS2D_V9_unleashed_R4_brain384/ss2d_v9_best.pt')
@@ -350,8 +350,8 @@ def main():
 
         sm_note = ' · per-slice LS scale-aligned' if scale_match else ''
         fig.suptitle(
-            f'Sample #{idx}  —  v9 강화 SS2D 4-way (384, R{ACCEL}, no-DC, brain-masked metric{sm_note})\n'
-            f'U-Net = fastmri brain leaderboard, 16-coil→384 (domain shift, 참고 베이스라인)',
+            f'Sample #{idx}  —  v9 Enhanced SS2D 4-way (384, R{ACCEL}, no-DC, brain-masked metric{sm_note})\n'
+            f'U-Net = fastmri brain leaderboard, 16-coil→384 (domain shift, reference baseline)',
             fontsize=13, fontweight='bold', y=0.99)
         plt.tight_layout()
         plt.savefig(os.path.join(args.out_dir, f'compare_{idx:04d}.png'), dpi=140, bbox_inches='tight')
