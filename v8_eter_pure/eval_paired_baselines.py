@@ -38,11 +38,13 @@ from fastmri.models import VarNet, Unet
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_HERE)
+sys.path.append(_HERE)
 sys.path.append(os.path.join(_HERE, 'configs'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'dataloaders'))
 
 import myConfig_pure_eter_v8 as C
 from dataloader_h5_v5 import FastMRI_H5_Dataloader
+import native_protocol as NP
 
 METRICS = ['ssim', 'psnr', 'nmse', 'l1', 'composite']
 LOWER_IS_BETTER = {'nmse', 'l1'}
@@ -116,13 +118,28 @@ def run_unet(model, s, device):
 
 
 def run_varnet(model, s, device):
-    """masked k-space(unit-max 정규화) + bool mask + n_low → VarNet RSS. (visualize_v7_titan_compare 동일)"""
+    """masked k-space + bool mask + n_low → VarNet RSS. (fastmri 공식 추론 규약 대조 완료)
+
+    ⚠ zero-coil 채널 제거가 필수다. 데이터로더는 코일을 16채널로 zero-pad 하는데
+    (val 464 파일 중 197개 = 슬라이스 3122/7334 = 42.6% 가 16코일 미만), VarNet 의
+    SensitivityModel 은 코일마다 NormUnet 을 개별로 태우므로 all-zero 채널에서
+    std=0 → (x-0)/0 = NaN 이 되고, divide_root_sum_of_squares 가 이를 전 코일로
+    전파해 슬라이스 전체가 NaN 이 된다. 실측 확인: 4코일 원본 finite / 16채널
+    zero-pad 입력 sens NaN 100%.
+
+    unit-max 정규화는 안전장치로 유지하되 지표에는 영향이 없다 — VarNet 은
+    NormUnet(mean/std 정규화 후 복원) + 선형 DC + RSS 구조라 양의 스칼라에 대해
+    positively homogeneous: VarNet(a·k) = a·VarNet(k). 이후 per-slice LS scale
+    정합까지 거치므로 스케일 선택은 결과를 바꾸지 않는다.
+    """
     ksp_c = unpack_complex(s['data'])                        # (16,H,W) complex masked k-space
-    ksp_c = ksp_c / (float(np.abs(ksp_c).max()) + 1e-12)     # sens 추정 발산(ortho ~1e-4 스케일) 완화
+    keep = np.abs(ksp_c).reshape(ksp_c.shape[0], -1).sum(1) > 0
+    ksp_c = ksp_c[keep]                                      # zero-pad 채널 제거 (NaN 방지)
+    ksp_c = ksp_c / (float(np.abs(ksp_c).max()) + 1e-12)     # no-op (위 homogeneity) — 안전장치
     H, W = ksp_c.shape[-2:]
     mk = torch.stack([torch.from_numpy(np.ascontiguousarray(ksp_c.real)),
                       torch.from_numpy(np.ascontiguousarray(ksp_c.imag))], dim=-1)
-    mk = mk.unsqueeze(0).float().to(device)                  # (1,16,H,W,2)
+    mk = mk.unsqueeze(0).float().to(device)                  # (1,C_keep,H,W,2)
     mask_arr = s['mask']
     mask_1d = mask_arr.reshape(-1, mask_arr.shape[-1])[0]    # (W,) undersample pattern
     mask_vn = torch.from_numpy(mask_1d > 0.5).view(1, 1, 1, W, 1).to(device)
@@ -168,6 +185,33 @@ def pair_table(title, a_name, a_vals, b_name, b_vals, total):
     return lines
 
 
+def stratified_indices(ds, n, seed=0):
+    """(contrast, 코일수 구간) 층화 표본 — 각 층에서 슬라이스 수에 비례 배분, 결정론적."""
+    import h5py as _h5
+    meta = {}
+    strata = {}
+    for i, (fp, si, _) in enumerate(ds.samples):
+        if fp not in meta:
+            with _h5.File(fp, 'r') as f:
+                acq = f.attrs['acquisition']
+                acq = acq.decode() if isinstance(acq, bytes) else str(acq)
+                meta[fp] = (acq, int(f['kspace'].shape[1]))
+        acq, coils = meta[fp]
+        bucket = '<16' if coils < 16 else ('16' if coils == 16 else '>16')
+        strata.setdefault((acq, bucket), []).append(i)
+
+    total = len(ds.samples)
+    rng = np.random.default_rng(seed)
+    picked = []
+    for key in sorted(strata):
+        idxs = strata[key]
+        k = max(1, int(round(n * len(idxs) / total)))
+        k = min(k, len(idxs))
+        picked += list(rng.choice(idxs, size=k, replace=False))
+    picked = sorted(int(i) for i in picked)
+    return picked, meta
+
+
 def main():
     p = argparse.ArgumentParser(description='기준선(U-Net/VarNet leaderboard) per-slice 평가 + v9 CSV 조인')
     p.add_argument('--unet-ckpt', default='models/pretrained/brain_leaderboard_state_dict.pt')
@@ -175,17 +219,26 @@ def main():
     p.add_argument('--v9-csv', default='results/eval/v9_unleashed/per_slice_paired_v9.csv')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--out-dir', default='results/eval/baselines_384')
-    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 전체 val set')
+    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 전체 val set (앞에서부터)')
+    p.add_argument('--sample-n', type=int, default=-1,
+                   help='층화 표본 크기 (contrast × 코일수 구간). -1 = 미사용')
+    p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--no-native', action='store_true',
+                   help='네이티브 프로토콜(전체 코일·native 해상도·공식 crop) 행 생략')
     p.add_argument('--num-workers', type=int, default=4)
+    p.add_argument('--torch-threads', type=int, default=0, help='>0 이면 torch CPU 스레드 제한')
     args = p.parse_args()
 
+    if args.torch_threads > 0:
+        torch.set_num_threads(args.torch_threads)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    do_native = not args.no_native
     print('=' * 64)
     print(' 기준선 per-slice 평가 — U-Net / E2E-VarNet (leaderboard 사전학습)')
-    print(f'  device={device}')
+    print(f'  device={device}  native-protocol={do_native}  threads={torch.get_num_threads()}')
     print('=' * 64)
     if not torch.cuda.is_available():
-        print('  [WARN] CUDA 없음 — CPU 진행 (VarNet 12-cascade 는 매우 느림; 스모크 용도)')
+        print('  [WARN] CUDA 없음 — CPU 진행 (VarNet 12-cascade 는 매우 느림)')
 
     print('\nv9 조인 CSV 로드 중...')
     v9 = load_v9_csv(args.v9_csv)
@@ -202,29 +255,43 @@ def main():
     ds = FastMRI_H5_Dataloader(args.data_path, num_files=None, target_size=C.IMAGE_SIZE[0],
                                acceleration=ACCEL, center_fraction=CENTER_FRACTION,
                                random_mask=False, augment=False)
-    total = len(ds)
-    if args.max_samples > 0:
-        total = min(total, args.max_samples)
-    print(f'\n평가 대상: {total} / {len(ds)} 슬라이스\n')
 
-    loader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=args.num_workers)
+    meta = {}
+    if args.sample_n > 0:
+        indices, meta = stratified_indices(ds, args.sample_n, args.seed)
+        print(f'\n층화 표본: {len(indices)} / {len(ds)} 슬라이스 (contrast × 코일수, seed={args.seed})')
+    else:
+        indices = list(range(len(ds) if args.max_samples <= 0 else min(len(ds), args.max_samples)))
+        print(f'\n평가 대상: {len(indices)} / {len(ds)} 슬라이스')
+
+    subset = torch.utils.data.Subset(ds, indices)
+    loader = DataLoader(subset, batch_size=1, shuffle=False, num_workers=args.num_workers)
 
     os.makedirs(args.out_dir, exist_ok=True)
     csv_path = os.path.join(args.out_dir, 'per_slice_baselines.csv')
     summary_path = os.path.join(args.out_dir, 'baseline_summary.md')
 
-    vals = {m: {k: [] for k in METRICS} for m in ('unet', 'varnet', 'gru', 'ss2d', 'v9')}
-    ours_vs_varnet = {m: {k: [] for k in METRICS} for m in ('ss2d', 'v9')}
+    ARMS = ['unet', 'varnet', 'varnet_natframe', 'unet_native', 'varnet_native', 'gru', 'ss2d', 'v9']
+    fieldnames = ['idx', 'file', 'slice_idx', 'acquisition', 'coils']
+    for _m in ARMS:
+        fieldnames += [f'{_m}_{k}' for k in METRICS]
+    fieldnames += ['native_error']
+    csv_f = open(csv_path, 'w', newline='')          # 중단돼도 부분 결과가 남도록 슬라이스마다 flush
+    csv_w = csv.DictWriter(csv_f, fieldnames=fieldnames, extrasaction='ignore')
+    csv_w.writeheader()
+    vals = {m: {k: [] for k in METRICS} for m in ARMS}
+    # 네이티브 VarNet 이 finite 인 슬라이스만 모은 우리 모델 값 (paired 비교용)
+    paired_nat = {m: {k: [] for k in METRICS} for m in ('ss2d', 'v9', 'varnet_native')}
     rows = []
     unmatched = 0
     varnet_nonfinite = 0
+    varnet_nat_nonfinite = 0
 
-    it = iter(loader)
-    for idx in tqdm(range(total), desc='baseline eval', unit='slice'):
-        batch = next(it)
+    for pos, batch in enumerate(tqdm(loader, total=len(indices), desc='baseline eval', unit='slice')):
+        idx = indices[pos]
         s = {k: v[0].numpy() for k, v in batch.items() if isinstance(v, torch.Tensor)}
-        gt = s['label'].squeeze().astype(np.float32)          # (H,W)
-        brain = s['brain_mask'].squeeze().astype(np.float32)  # (H,W)
+        gt = s['label'].squeeze().astype(np.float32)          # (384,384)
+        brain = s['brain_mask'].squeeze().astype(np.float32)
 
         file_path, slice_idx, _ = ds.samples[idx]
         key = (os.path.basename(file_path), slice_idx)
@@ -233,63 +300,121 @@ def main():
             unmatched += 1
             continue
 
-        row = {'idx': idx, 'file': key[0], 'slice_idx': slice_idx}
+        acq, coils = meta.get(file_path, ('', -1))
+        row = {'idx': idx, 'file': key[0], 'slice_idx': slice_idx, 'acquisition': acq, 'coils': coils}
+        per_slice = {}
 
+        # ── (1) 우리 파이프라인 (16코일 절단 · 384 재-FFT · 384 프레임 지표)
         u_out = run_unet(unet, s, device)
-        um = slice_metrics_np(ls_scale(u_out, gt, brain), gt, brain)
+        per_slice['unet'] = slice_metrics_np(ls_scale(u_out, gt, brain), gt, brain)
 
         v_out = run_varnet(varnet, s, device)
-        v_finite = bool(np.isfinite(v_out).all())
-        if v_finite:
-            vm = slice_metrics_np(ls_scale(v_out, gt, brain), gt, brain)
+        if np.isfinite(v_out).all():
+            per_slice['varnet'] = slice_metrics_np(ls_scale(v_out, gt, brain), gt, brain)
         else:
             varnet_nonfinite += 1
-            vm = None
 
-        for k in METRICS:
-            row[f'unet_{k}'] = um[k]
-            row[f'varnet_{k}'] = vm[k] if vm else ''
-            for arm in ('gru', 'ss2d', 'v9'):
-                row[f'{arm}_{k}'] = v9row[f'{arm}_{k}']
-                vals[arm][k].append(v9row[f'{arm}_{k}'])
-            vals['unet'][k].append(um[k])
-            if vm:
-                vals['varnet'][k].append(vm[k])
-                for arm in ('ss2d', 'v9'):
-                    ours_vs_varnet[arm][k].append(v9row[f'{arm}_{k}'])
+        # ── (2) 같은 재구성을 native recon 프레임으로 crop 한 지표 (프레임 효과 분리용)
+        # ── (3) 네이티브 프로토콜: 전체 코일 · native k-space · 공식 crop
+        if do_native:
+            try:
+                vn_out, vn_gt, vn_mask = NP.run_varnet_native(varnet, file_path, slice_idx, device,
+                                                              CENTER_FRACTION, ACCEL)
+                if np.isfinite(vn_out).all():
+                    per_slice['varnet_native'] = slice_metrics_np(
+                        ls_scale(vn_out, vn_gt, vn_mask), vn_gt, vn_mask)
+                else:
+                    varnet_nat_nonfinite += 1
+
+                un_out, un_gt, un_mask = NP.run_unet_native(unet, file_path, slice_idx, device,
+                                                            CENTER_FRACTION, ACCEL)
+                per_slice['unet_native'] = slice_metrics_np(
+                    ls_scale(un_out, un_gt, un_mask), un_gt, un_mask)
+
+                if 'varnet' in per_slice:
+                    shp = vn_gt.shape
+                    v_c = NP.center_crop_np(v_out, shp)
+                    g_c = NP.center_crop_np(gt, shp)
+                    m_c = NP.center_crop_np(brain, shp)
+                    per_slice['varnet_natframe'] = slice_metrics_np(ls_scale(v_c, g_c, m_c), g_c, m_c)
+            except Exception as e:                     # 개별 슬라이스 실패는 건너뛰고 기록
+                row['native_error'] = repr(e)[:120]
+
+        # ── 우리 3모델 (v9 CSV 재사용, 384 프레임)
+        for arm in ('gru', 'ss2d', 'v9'):
+            per_slice[arm] = {k: v9row[f'{arm}_{k}'] for k in METRICS}
+
+        for arm in ARMS:
+            m = per_slice.get(arm)
+            for k in METRICS:
+                row[f'{arm}_{k}'] = m[k] if m else ''
+            if m:
+                for k in METRICS:
+                    vals[arm][k].append(m[k])
+        if 'varnet_native' in per_slice:
+            for arm in ('ss2d', 'v9'):
+                for k in METRICS:
+                    paired_nat[arm][k].append(per_slice[arm][k])
+            for k in METRICS:
+                paired_nat['varnet_native'][k].append(per_slice['varnet_native'][k])
         rows.append(row)
+        csv_w.writerow(row)
+        csv_f.flush()
 
+    csv_f.close()
     matched = len(rows)
-    fieldnames = ['idx', 'file', 'slice_idx']
-    for m in ('unet', 'varnet', 'gru', 'ss2d', 'v9'):
-        fieldnames += [f'{m}_{k}' for k in METRICS]
-    with open(csv_path, 'w', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=fieldnames)
-        w.writeheader()
-        w.writerows(rows)
 
-    n_varnet = len(vals['varnet']['ssim'])
+    n_nat = len(vals['varnet_native']['ssim'])
     lines = ['# 기준선 per-slice 비교 — U-Net / E2E-VarNet (leaderboard) vs GRU / v8-SS2D / v9', '',
-             f'- 평가 슬라이스: {total} / v9 CSV 조인 매칭: {matched} (미매칭 {unmatched})',
-             f'- VarNet non-finite 출력: **{varnet_nonfinite}** 슬라이스 (VarNet 통계·paired 에서만 제외, CSV 에는 빈칸)',
+             f'- 평가 슬라이스: {matched} (미매칭 {unmatched})'
+             + (f' · 층화 표본 n={args.sample_n} 요청, seed={args.seed}' if args.sample_n > 0 else ''),
+             f'- VarNet non-finite: 우리 파이프라인 {varnet_nonfinite} · 네이티브 {varnet_nat_nonfinite} 슬라이스',
              '- 기준선 출력은 per-slice LS scale 로 GT 정합 후 지표 계산 (우리 3모델은 α≈1, v9 CSV 재사용)',
-             '- ⚠ leaderboard 가중치는 전체 코일·native 해상도 학습 → 16-coil·384 전처리와 domain shift.',
-             '  절대 우열이 아닌 "동일 측정값에 대한 참고 기준선" (visualize_v7_titan_compare.py 캐비엇 동일)', '',
-             '## 전체 평균 (matched 슬라이스; varnet 은 finite 만)', '',
-             '| 모델 | ' + ' | '.join(METRICS) + ' |',
-             '|---|' + '---|' * len(METRICS)]
-    for m in ('unet', 'varnet', 'gru', 'ss2d', 'v9'):
+             '',
+             '## 행 정의',
+             '',
+             '| 행 | 입력 | 프레임 | 비고 |',
+             '|---|---|---|---|',
+             '| `unet` / `varnet` | 우리 파이프라인(16코일 절단 · 384² 재-FFT) | 384² | 우리 모델과 **완전히 동일한 측정값** |',
+             '| `varnet_natframe` | 위와 같은 재구성 | native recon crop | 프레임 효과만 분리 (`varnet` 과의 차이 = 프레임) |',
+             '| `unet_native` / `varnet_native` | **공식 규약**(전체 코일 · native k-space · 헤더 crop) | native recon | leaderboard 가중치의 학습 조건에 가장 가까움 |',
+             '| `gru` / `ss2d` / `v9` | 우리 파이프라인 | 384² | v9 per-slice CSV |',
+             '',
+             '- ⚠ **leaderboard 가중치는 train+val 합본으로 학습**(fastMRI 공식 README: "The leaderboard',
+             '  model was trained where the `train` split included both the `train` and `val` splits from',
+             '  the public data") — 즉 **본 검증셋 전체가 두 기준선의 학습 데이터**다. 기준선 수치는',
+             '  낙관적으로 편향돼 있으며, 우리 모델(train 만 학습)과의 직접 우열 판정은 성립하지 않는다.',
+             '',
+             '## 전체 평균', '',
+             '| 모델 | n | ' + ' | '.join(METRICS) + ' |',
+             '|---|---|' + '---|' * len(METRICS)]
+    for m in ARMS:
         mv = vals[m]
         if len(mv['ssim']) == 0:
             continue
-        lines.append(f'| {m} | ' + ' | '.join(f'{np.mean(mv[k]):.4f}' for k in METRICS) + ' |')
+        lines.append(f'| {m} | {len(mv["ssim"])} | '
+                     + ' | '.join(f'{np.mean(mv[k]):.4f}' for k in METRICS) + ' |')
     lines.append('')
+
+    n_varnet = len(vals['varnet']['ssim'])
     if n_varnet:
-        lines += pair_table(f'v9 vs VarNet (finite {n_varnet})', 'VarNet', vals['varnet'],
-                            'v9', ours_vs_varnet['v9'], n_varnet) + ['']
-        lines += pair_table(f'v8-SS2D vs VarNet (finite {n_varnet})', 'VarNet', vals['varnet'],
-                            'v8-SS2D', ours_vs_varnet['ss2d'], n_varnet) + ['']
-    lines += pair_table('v9 vs U-Net', 'U-Net', vals['unet'], 'v9', vals['v9'], matched)
+        ours = {arm: {k: [] for k in METRICS} for arm in ('ss2d', 'v9')}
+        for r in rows:
+            if r.get('varnet_ssim') != '':
+                for arm in ('ss2d', 'v9'):
+                    for k in METRICS:
+                        ours[arm][k].append(r[f'{arm}_{k}'])
+        lines += pair_table(f'v9 vs VarNet — 우리 파이프라인 (n={n_varnet})', 'VarNet', vals['varnet'],
+                            'v9', ours['v9'], n_varnet) + ['']
+        lines += pair_table(f'v8-SS2D vs VarNet — 우리 파이프라인 (n={n_varnet})', 'VarNet', vals['varnet'],
+                            'v8-SS2D', ours['ss2d'], n_varnet) + ['']
+    if n_nat:
+        lines += pair_table(f'v9 vs VarNet — 네이티브 프로토콜 (n={n_nat})', 'VarNet_native',
+                            paired_nat['varnet_native'], 'v9', paired_nat['v9'], n_nat) + ['']
+        lines += pair_table(f'v8-SS2D vs VarNet — 네이티브 프로토콜 (n={n_nat})', 'VarNet_native',
+                            paired_nat['varnet_native'], 'v8-SS2D', paired_nat['ss2d'], n_nat) + ['']
+    lines += pair_table(f'v9 vs U-Net — 우리 파이프라인 (n={matched})', 'U-Net', vals['unet'],
+                        'v9', vals['v9'], matched)
     lines += ['', '(우위 슬라이스 비율 = proportion of slices favoring, probabilistic index — '
               'nmse/l1 은 낮을수록 승리. 논문 표기는 p<0.001 관례, 원값은 본 파일 보존)']
 
