@@ -67,6 +67,9 @@ R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
 
+> **⚠ 루트의 `README.md`·`PROJECT_SUMMARY.md` 는 2026-04 시점(옛 저장소명 `ViT_based_MRIrecon`, 루트
+> `main_train.py` 시절) 문서로 심하게 낡음** — 현행 구조·수치의 근거로 쓰지 말 것. 정본은 이 파일과 docs/.
+
 ## 모델 구조
 
 ### 코드 레이아웃 (models/ · dataloaders/)
@@ -139,7 +142,7 @@ NaN 재발 방지): α clamp[0,1] + GradScaler init_scale 8192 + NaN-skip. 교�
 - `configs/myConfig_choh_SS2D_model_v6_3.py`
 - `configs/myConfig_choh_ETER_model_v6_3.py`
 
-버전 reference 로 보존: `..._v4.py` ~ `..._v6_2.py` (각 모델). `..._v6_4.py` 는 config 만 있고
+버전 reference 로 보존: SS2D 는 `..._v4.py`~, ETER 는 `..._v5.py`~ (**ETER v4 config 는 저장소에 없음** — 2026-08-27 확인). `..._v6_4.py` 는 config 만 있고
 `main_train_*_v6_4.py` 는 미작성(v6_3 성공으로 보류, `docs/tier2_sharpness_plan.md`).
 
 ### v7_titan (384×384) — 완료·역사
@@ -155,6 +158,12 @@ v8 처럼 env var 로 분기하지 않고 **변형별 config 파일이 따로** 
 - `v9_mamba_radapt/configs/myConfig_ss2d_v9_radapt.py` — 동일 백본 + R 일반화(`MASK_CONDITION=True`·`AR_CHOICES=(2,3,4,5,6,8)`·`VAL_ACCELERATION=4`) + DC 안정화(`DC_ALPHA_MIN/MAX=0/1`·`GRADSCALER_INIT_SCALE=8192`)
 
 ## 실행 로그 / 체인 스크립트 위치
+
+> **⚠ git 가시성 (2026-08-27 확인)**: `.gitignore` 가 `*.sh`·`*.log`·`logs/` 를 전역 무시하므로, 아래
+> 기술된 supervisor/체인 스크립트와 학습 로그는 **학습 머신에만 존재하고 git 에는 없다**
+> (예외적으로 추적 중인 .sh 는 `v9_mamba_radapt/runs/{clean_stop_pre_outage,snapshot_pre_outage}.sh` 2개뿐).
+> 새 clone 에는 `v7_titan/runs/` 폴더 자체가 없고, v8/v9 `runs/` 엔 `smoke_bs.txt` 등 일부만 있다.
+> 진입점 스크립트를 저장소에 보존하려면 학습 머신에서 `git add -f` 필요(미결정).
 
 ### 루트 트랙 — `runs/` 폴더는 이 머신에 없음
 루트 트랙의 학습 ckpt/로그는 옛 8GB 머신에만 있어(§프로젝트 개요) 이 저장소에는 `runs/` 폴더
@@ -309,11 +318,18 @@ bash v9_mamba_radapt/runs/run_ss2d_v9_radapt_autoresume.sh      # radapt
 
 ## 환경
 
-**이 저장소가 있는 현재 머신** (v7 / v7_titan / v8_eter_pure / v9_mamba 가 실제로 도는 곳):
+저장소는 **두 머신에 clone** 되어 있다. platform 이 **darwin(macOS)이면 아래 "보조 Mac"** 쪽이다.
+
+**학습 머신 (Linux)** — v7 / v7_titan / v8_eter_pure / v9_mamba 가 실제로 도는 곳:
 - conda 환경: **`base`** (`/opt/conda`) — `mri_env` 라는 이름의 conda env 는 이 머신에 **존재하지 않는다**. 학습은 그냥 `python ...` (activate 불필요).
 - GPU: **TITAN RTX 24GB × 2** — v7_titan/v8_eter_pure/v9_mamba 는 정책상 **GPU0 단독** 사용, GPU1 은 교수님 작업 회피용으로 항상 비워둠.
 - 주요 의존성: PyTorch 2.3.1, mamba_ssm 2.2.2(SS2D용 CUDA 커널), einops, wandb
 - git 인증: **SSH** (`git@github.com` remote, `~/.ssh/id_ed25519`) — 2026-08-20 PAT 만료로 전환. push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
+
+**보조 Mac (darwin, `~/Desktop/fastmri_ViT_with_eternet`)** — 문서·논문·발표덱 작업용 clone:
+- GPU·fastMRI 데이터·ckpt·학습 로그 없음 → **학습/평가/시각화 스크립트 실행 불가**. 이 파일의 "실행" 명령들은 학습 머신 전용.
+- git 인증: HTTPS remote(정상 동작) — 학습 머신의 SSH 전환과 무관.
+- 로컬 전용 자산: `results/vis/{root_track,_slides_assets_v6,_slides_assets_v8}/`(전역 `*.png` ignore), `발표 자료/`·`중간보고서_2026-08.txt`·`RNN_LSTM_Mamba.ipynb`(gitignore 등록, 비공유 결정 2026-08-27).
 
 **역사적 환경** (v1~v6_x 가 실제로 학습된 옛 머신 — 이 저장소엔 해당 ckpt/로그 없음):
 - conda 환경: `mri_env`
