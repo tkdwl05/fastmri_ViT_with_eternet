@@ -1,3 +1,4 @@
+<!-- 정본: AGENTS.md. CLAUDE.md 는 이 파일의 심링크 (2026-08-27, 멀티에이전트 러너 구성 — scripts/run.sh 참고). 지시 수정은 반드시 이 파일에서. -->
 # ViT-based MRI Reconstruction
 
 ## 프로젝트 개요
