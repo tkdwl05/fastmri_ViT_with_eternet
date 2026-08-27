@@ -33,6 +33,11 @@ inspect_h5.py
 download_models.py
 download_repos.py
 
+# 로컬 전용 — 저장소 비공유 결정 (2026-08-27)
+발표 자료/
+중간보고서_2026-08.txt
+RNN_LSTM_Mamba.ipynb
+
 # v7_titan 비교 시각화 결과만 GitHub 공유 (results/, *.png 는 계속 무시)
 !results/
 results/*
