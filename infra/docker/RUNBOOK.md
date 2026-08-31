@@ -177,6 +177,16 @@ bash 10_host_preflight.sh
 읽기 전용. 호스트 GPU 상태, 툴킷 버전, cgroup 드라이버를 점검하고, 기존 컨테이너에서
 마운트·포트를 추출해 `container.env` 를 만든다. 값이 마음에 안 들면 그 파일을 직접 고친다.
 
+> ⚠ **08-31 실사고**: 자동탐색 grep 의 `gpu0` 패턴이 우리 운영 컨테이너가 아니라
+> **GPU01**(choh 이미지, `/home/choh` 바인드, shm 64MB — 교수님 쪽)을 잡아,
+> `/home/snorlax/shared` 가 빠진 MOUNTS 와 GPU01 의 ssh 포트(22203)가
+> `container.env` 로 들어갔다 → 그걸로 만든 새 컨테이너에서는 **repo 가 통째로
+> 안 보인다** (도커는 `-v` 로 명시한 호스트 경로만 보여준다). 이후 preflight 에
+> 검증 게이트(추출 MOUNTS 에 `/home/snorlax/shared` 필수)와 30_host_run 의
+> 동일 게이트를 넣어 재발을 막았고, `container.env` 는 §1.3 실측값으로 수기
+> 정정했다. 마운트는 기존 컨테이너에 추가할 수 없으므로, 잘못 만든 컨테이너는
+> `docker rm` 하고 다시 `bash 30_host_run.sh` 로 만들어야 한다.
+
 ### [3] 이미지 빌드 — **호스트에서**
 
 ```bash
@@ -199,6 +209,11 @@ bash 30_host_run.sh            # YES 입력 게이트 있음
 docker exec -it mri_gpu0 bash
 bash infra/docker/40_restore_state.sh
 ```
+08-31 부터 Claude Code CLI 는 이미지에 미리 설치돼 있다(npm 전역, `/usr/bin/claude`
+— 첫 mri:v1 컨테이너에서 수동 설치해야 했던 것 반영). 40_restore 가 `/root/.local`
+(구 컨테이너 CLI 본체)을 복원하면 `PATH` 상 그쪽이 우선한다. 로그인·프로젝트
+메모리는 `claude_state.tgz` 복원으로 돌아온다 — restore 없이 claude 를 새로 켜면
+빈 메모리로 시작하니 반드시 [5]를 먼저 돌릴 것.
 
 ### [6] 검증 — **새 컨테이너 안에서**
 

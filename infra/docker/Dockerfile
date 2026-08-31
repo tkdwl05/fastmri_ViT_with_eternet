@@ -59,6 +59,20 @@ RUN pip install --upgrade pip==24.0 \
 # 함수(fft/coil combine/mask)만 쓴다. 의존성을 끌어오면 torch 를 재설치할 위험.
 
 # ---------------------------------------------------------------------------
+# Claude Code CLI — 새 컨테이너에서 별도 설치 없이 바로 쓰도록 이미지에 굽는다
+#   (08-31: 첫 mri:v1 컨테이너에서 claude 가 없어 수동 설치해야 했던 것 반영).
+#   · npm 전역 설치 → /usr/bin/claude 로 잡혀 PATH 문제 없음
+#   · PATH 맨 앞의 /root/.local/bin: 40_restore_state.sh 가 구 컨테이너의 CLI 본체
+#     (/root/.local, 855M)를 복원하면 그 버전이 npm 판보다 우선하도록. 네이티브
+#     인스톨러(claude.ai/install.sh)로 재설치할 때도 같은 경로라 바로 잡힌다.
+#   · 로그인·프로젝트 메모리는 이미지가 아니라 claude_state.tgz(.claude,
+#     .claude.json) 복원으로 승계된다 (비밀정보는 이미지에 굽지 않는 원칙 유지).
+# ---------------------------------------------------------------------------
+ENV PATH="/root/.local/bin:${PATH}"
+RUN npm install -g @anthropic-ai/claude-code \
+    && claude --version
+
+# ---------------------------------------------------------------------------
 # sshd 준비 (기존 컨테이너에서 sshd 가 떠 있었으므로 동등하게 유지)
 #   ※ root 로그인 키/비밀번호는 이미지에 넣지 않는다. 필요하면 컨테이너 안에서
 #     /root/.ssh/authorized_keys 를 채우거나 passwd 로 설정할 것.

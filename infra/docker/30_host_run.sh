@@ -29,6 +29,13 @@ echo "  shm/mem    : ${SHM_SIZE} / ${MEM_LIMIT}"
 echo
 
 docker image inspect "${IMAGE}" >/dev/null 2>&1 || { echo "✗ 이미지 ${IMAGE} 없음 — 20_host_build.sh 먼저"; exit 1; }
+# repo/ckpt 가 있는 NVMe 마운트 없이는 컨테이너 안에서 repo 가 통째로 안 보인다
+# (08-31 GPU01 오추출 사고 재발 방지 게이트).
+echo "${MOUNTS}" | grep -q '/home/snorlax/shared' || {
+  echo "✗ MOUNTS 에 /home/snorlax/shared 가 없다 — container.env 를 고칠 것:"
+  echo "  MOUNTS=\"-v /home/snorlax/shared:/home/snorlax/shared -v /mnt/sda:/mnt/sda \""
+  exit 1
+}
 if docker inspect "${NEW_CTN}" >/dev/null 2>&1; then
   echo "✗ '${NEW_CTN}' 이름이 이미 존재. docker rm ${NEW_CTN} 후 재실행하거나 NEW_CTN= 을 바꿀 것."; exit 1
 fi
@@ -44,18 +51,24 @@ else
 fi
 
 # 학습 프로세스 확인 ---------------------------------------------------------
-RUNNING_PY=$(docker top "${OLD_CTN}" 2>/dev/null | grep -cE '[p]ython' || true)
-if [ "${RUNNING_PY:-0}" -gt 0 ]; then
-  echo "  ⚠ 옛 컨테이너에서 python 프로세스 ${RUNNING_PY}개 실행 중 — stop 시 함께 종료됨."
-  echo "    (v9 트레이너는 true-resume 이라 손실은 마지막 epoch 저장 이후 구간뿐)"
+if [ -n "${OLD_CTN}" ]; then
+  RUNNING_PY=$(docker top "${OLD_CTN}" 2>/dev/null | grep -cE '[p]ython' || true)
+  if [ "${RUNNING_PY:-0}" -gt 0 ]; then
+    echo "  ⚠ 옛 컨테이너에서 python 프로세스 ${RUNNING_PY}개 실행 중 — stop 시 함께 종료됨."
+    echo "    (v9 트레이너는 true-resume 이라 손실은 마지막 epoch 저장 이후 구간뿐)"
+  fi
+else
+  echo "  ⓘ OLD_CTN 비어 있음 — 옛 컨테이너 정지 단계는 건너뛴다."
 fi
 
 echo
 read -r -p "  진행하려면 YES 입력: " ans
 [ "$ans" = "YES" ] || { echo "  취소됨. 아무것도 바뀌지 않았다."; exit 0; }
 
-echo "── 기존 컨테이너 정지 (삭제 아님)"
-docker stop "${OLD_CTN}" || true
+if [ -n "${OLD_CTN}" ]; then
+  echo "── 기존 컨테이너 정지 (삭제 아님)"
+  docker stop "${OLD_CTN}" || true
+fi
 
 echo "── 새 컨테이너 기동"
 # 네트워크 모드에 따라 인자 구성 — host 모드에서는 --hostname/-p 를 쓸 수 없다.

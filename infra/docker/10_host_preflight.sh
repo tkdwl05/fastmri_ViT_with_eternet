@@ -46,7 +46,9 @@ echo
 echo "════════ [C] 기존 컨테이너 설정 추출 ════════"
 OLD_CTN="${OLD_CTN:-}"
 if [ -z "$OLD_CTN" ]; then
-  OLD_CTN=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -iE 'snorlax|work0|gpu0' | head -1)
+  # 'gpu0' 패턴은 교수님 컨테이너 'GPU01' 까지 매칭하는 사고가 있었다(08-31,
+  # /home/snorlax/shared 없는 MOUNTS 를 추출해 새 컨테이너에서 repo 가 안 보임).
+  OLD_CTN=$(docker ps -a --format '{{.Names}}' 2>/dev/null | grep -iE 'snorlax|work0|mri_gpu0' | grep -ivE '^gpu01$' | head -1)
 fi
 if [ -z "$OLD_CTN" ] || ! docker inspect "$OLD_CTN" >/dev/null 2>&1; then
   echo "  ⚠ 기존 컨테이너를 자동으로 못 찾음. 아래에서 골라 OLD_CTN= 로 다시 실행:"
@@ -63,6 +65,16 @@ OLD_SHM=$(docker inspect -f '{{.HostConfig.ShmSize}}' "$OLD_CTN")
 OLD_MEM=$(docker inspect -f '{{.HostConfig.Memory}}' "$OLD_CTN")
 OLD_IMAGE=$(docker inspect -f '{{.Config.Image}}' "$OLD_CTN")
 OLD_NETMODE=$(docker inspect -f '{{.HostConfig.NetworkMode}}' "$OLD_CTN")
+
+# 추출 검증 게이트: 운영 컨테이너라면 반드시 /home/snorlax/shared 바인드가 있다.
+# 없다면 엉뚱한 컨테이너(예: GPU01)를 잡은 것 — 그 MOUNTS 로 새 컨테이너를 만들면
+# repo 가 통째로 안 보인다.
+if ! echo "$OLD_MOUNTS" | grep -q '/home/snorlax/shared'; then
+  echo "  ✗ '$OLD_CTN' 의 바인드에 /home/snorlax/shared 가 없다 — 운영 컨테이너가 아니다."
+  echo "    아래 목록에서 올바른 컨테이너를 골라 OLD_CTN= 로 다시 실행할 것:"
+  docker ps -a --format '    {{.Names}}\t{{.Image}}\t{{.Status}}' 2>/dev/null
+  exit 1
+fi
 
 echo "  이미지 : $OLD_IMAGE"
 echo "  마운트 : ${OLD_MOUNTS:-(없음)}"
