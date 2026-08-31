@@ -85,3 +85,7 @@ results/vis/v9_unleashed_compare/*
 # 논문 그림 (paper/figs/) 은 GitHub 공유 — *.png / *.pdf 전역 무시의 예외 (2026-08-18)
 !paper/figs/*.png
 !paper/figs/*.pdf
+
+# infra/docker 재구성 세트 + radapt 재개 스크립트 — *.sh 전역 무시의 예외 (2026-08-31)
+!infra/docker/*.sh
+!v9_mamba_radapt/runs/post_reboot_rearm.sh

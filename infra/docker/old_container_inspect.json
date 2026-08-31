@@ -1,0 +1,322 @@
+[
+    {
+        "Id": "b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe",
+        "Created": "2026-08-24T00:18:38.878399589Z",
+        "Path": "/opt/nvidia/nvidia_entrypoint.sh",
+        "Args": [
+            "bash",
+            "-c",
+            "mkdir -p /run/sshd && /usr/sbin/sshd -D"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 491469,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-08-24T00:18:39.022403019Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:9c221b621305d2adcce8092456ef6cee6d48531f7fbccd899f05284b2cd8f2db",
+        "ResolvConfPath": "/var/lib/docker/containers/b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe/hostname",
+        "HostsPath": "/var/lib/docker/containers/b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe/hosts",
+        "LogPath": "/var/lib/docker/containers/b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe/b1e0c19a92f107e0006f0649cf326f6dfba74875c3d3fb6fa6caa665d6d355fe-json.log",
+        "Name": "/GPU01",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/home/choh:/home/choh",
+                "/mnt/sda:/mnt/sda"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "bridge",
+            "PortBindings": {
+                "22/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "22203"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                34,
+                155
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "nvidia",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": [
+                {
+                    "Driver": "",
+                    "Count": 0,
+                    "DeviceIDs": [
+                        "0",
+                        "1"
+                    ],
+                    "Capabilities": [
+                        [
+                            "gpu"
+                        ]
+                    ],
+                    "Options": {}
+                }
+            ],
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/asound",
+                "/proc/acpi",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/sys/firmware",
+                "/sys/devices/virtual/powercap"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/0c5fea917c20efade1f96fc1ee7d5ccbeaac8baed20b44194926e2bcc908404c-init/diff:/var/lib/docker/overlay2/769509c7784e2a5c77a3817eaf3da971c7d8ae5847d1cde256baa3d6a626957c/diff:/var/lib/docker/overlay2/4a0f057e1faacf497bf1115e9f0f1dac57df66486916ca0d8f7a5e5122f7e84b/diff:/var/lib/docker/overlay2/5dabc7393e0798d0f077938f9008c1e07ca21f18f04e7f6d3e2c900b61c605b2/diff:/var/lib/docker/overlay2/6b3442786c35f63a83933cf2cb6286b1f27fdfeab003c570f145957a1c68eaf7/diff:/var/lib/docker/overlay2/ac291040839b1fdbcda8f82112cfc803c90018274d4d2ad362d399e7b1649b46/diff:/var/lib/docker/overlay2/f66acaf4e9aeb8c4fc80ffae166e0b8801972e884a12b0ff3c0719ce4485305c/diff:/var/lib/docker/overlay2/408b4d96e9b0b468f785cf590e30d2f11c2907a6c58485bf0daa7dfcb9ac8561/diff:/var/lib/docker/overlay2/12c51164691992d7400584b8c6e8de88eb4a3c92f10d32c915cfde92a8f60fd9/diff:/var/lib/docker/overlay2/1edb92885a28cc09ee5780ba23755e8fac202910344875549028f3afd1040b48/diff:/var/lib/docker/overlay2/9051efe3f68b647f9a749aee793eab46cc589c3f0b22dfa70f70ba8fb4dbb6be/diff:/var/lib/docker/overlay2/691937e14c7a33affbb241d1ccd12fa44b77e8f990f5fe0bd6f79099ac42e2d3/diff:/var/lib/docker/overlay2/7946bcaca3fcc13af3ca8bfc8e31ba550942bc093fcdf5dd04ef65f422ec73f3/diff:/var/lib/docker/overlay2/8b0857e46ed32f20b1bf89a1371f5b6982701dec37fe2cdac9df541dd652a069/diff:/var/lib/docker/overlay2/343e63363ce30b1acdebb65279af00b64c54512686b09a88b2dd89ba8bd03fb5/diff:/var/lib/docker/overlay2/0c7d148b311febe0a65d8a3e7c6881b581f95de1f9112591bf7dac35639d23dd/diff:/var/lib/docker/overlay2/c24d2ac42d1c0883a55e13eeab2ab93fea3da427548a0cbf5f4179b0e9f5d5b9/diff:/var/lib/docker/overlay2/4067fae14f8d8869739cfa4ab3b7aa80c2d1cd13dee67d06635849582c790da4/diff",
+                "MergedDir": "/var/lib/docker/overlay2/0c5fea917c20efade1f96fc1ee7d5ccbeaac8baed20b44194926e2bcc908404c/merged",
+                "UpperDir": "/var/lib/docker/overlay2/0c5fea917c20efade1f96fc1ee7d5ccbeaac8baed20b44194926e2bcc908404c/diff",
+                "WorkDir": "/var/lib/docker/overlay2/0c5fea917c20efade1f96fc1ee7d5ccbeaac8baed20b44194926e2bcc908404c/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/home/choh",
+                "Destination": "/home/choh",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/mnt/sda",
+                "Destination": "/mnt/sda",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "volume",
+                "Name": "5507d746aa00ea78ab03a0cbecc749f24347fa17e64e0f3740c66db04322e8c9",
+                "Source": "/var/lib/docker/volumes/5507d746aa00ea78ab03a0cbecc749f24347fa17e64e0f3740c66db04322e8c9/_data",
+                "Destination": "/tmp/.X11-unix",
+                "Driver": "local",
+                "Mode": "",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "b1e0c19a92f1",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "22/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "DISPLAY=:1",
+                "NVIDIA_VISIBLE_DEVICES=0,1",
+                "PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/opt/conda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NVARCH=x86_64",
+                "NVIDIA_REQUIRE_CUDA=cuda>=12.1 brand=tesla,driver>=470,driver<471 brand=unknown,driver>=470,driver<471 brand=nvidia,driver>=470,driver<471 brand=nvidiartx,driver>=470,driver<471 brand=geforce,driver>=470,driver<471 brand=geforcertx,driver>=470,driver<471 brand=quadro,driver>=470,driver<471 brand=quadrortx,driver>=470,driver<471 brand=titan,driver>=470,driver<471 brand=titanrtx,driver>=470,driver<471 brand=tesla,driver>=525,driver<526 brand=unknown,driver>=525,driver<526 brand=nvidia,driver>=525,driver<526 brand=nvidiartx,driver>=525,driver<526 brand=geforce,driver>=525,driver<526 brand=geforcertx,driver>=525,driver<526 brand=quadro,driver>=525,driver<526 brand=quadrortx,driver>=525,driver<526 brand=titan,driver>=525,driver<526 brand=titanrtx,driver>=525,driver<526",
+                "NV_CUDA_CUDART_VERSION=12.1.105-1",
+                "NV_CUDA_COMPAT_PACKAGE=cuda-compat-12-1",
+                "CUDA_VERSION=12.1.1",
+                "LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+                "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+                "NV_CUDA_LIB_VERSION=12.1.1-1",
+                "NV_NVTX_VERSION=12.1.105-1",
+                "NV_LIBNPP_VERSION=12.1.0.40-1",
+                "NV_LIBNPP_PACKAGE=libnpp-12-1=12.1.0.40-1",
+                "NV_LIBCUSPARSE_VERSION=12.1.0.106-1",
+                "NV_LIBCUBLAS_PACKAGE_NAME=libcublas-12-1",
+                "NV_LIBCUBLAS_VERSION=12.1.3.1-1",
+                "NV_LIBCUBLAS_PACKAGE=libcublas-12-1=12.1.3.1-1",
+                "NV_LIBNCCL_PACKAGE_NAME=libnccl2",
+                "NV_LIBNCCL_PACKAGE_VERSION=2.17.1-1",
+                "NCCL_VERSION=2.17.1-1",
+                "NV_LIBNCCL_PACKAGE=libnccl2=2.17.1-1+cuda12.1",
+                "NVIDIA_PRODUCT_NAME=CUDA",
+                "NV_CUDA_CUDART_DEV_VERSION=12.1.105-1",
+                "NV_NVML_DEV_VERSION=12.1.105-1",
+                "NV_LIBCUSPARSE_DEV_VERSION=12.1.0.106-1",
+                "NV_LIBNPP_DEV_VERSION=12.1.0.40-1",
+                "NV_LIBNPP_DEV_PACKAGE=libnpp-dev-12-1=12.1.0.40-1",
+                "NV_LIBCUBLAS_DEV_VERSION=12.1.3.1-1",
+                "NV_LIBCUBLAS_DEV_PACKAGE_NAME=libcublas-dev-12-1",
+                "NV_LIBCUBLAS_DEV_PACKAGE=libcublas-dev-12-1=12.1.3.1-1",
+                "NV_CUDA_NSIGHT_COMPUTE_VERSION=12.1.1-1",
+                "NV_CUDA_NSIGHT_COMPUTE_DEV_PACKAGE=cuda-nsight-compute-12-1=12.1.1-1",
+                "NV_NVPROF_VERSION=12.1.105-1",
+                "NV_NVPROF_DEV_PACKAGE=cuda-nvprof-12-1=12.1.105-1",
+                "NV_LIBNCCL_DEV_PACKAGE_NAME=libnccl-dev",
+                "NV_LIBNCCL_DEV_PACKAGE_VERSION=2.17.1-1",
+                "NV_LIBNCCL_DEV_PACKAGE=libnccl-dev=2.17.1-1+cuda12.1",
+                "LIBRARY_PATH=/usr/local/cuda/lib64/stubs",
+                "NV_CUDNN_VERSION=8.9.0.131",
+                "NV_CUDNN_PACKAGE_NAME=libcudnn8",
+                "NV_CUDNN_PACKAGE=libcudnn8=8.9.0.131-1+cuda12.1",
+                "NV_CUDNN_PACKAGE_DEV=libcudnn8-dev=8.9.0.131-1+cuda12.1",
+                "PYTORCH_VERSION=2.3.1"
+            ],
+            "Cmd": [
+                "bash",
+                "-c",
+                "mkdir -p /run/sshd && /usr/sbin/sshd -D"
+            ],
+            "Image": "choh/torch_2_3_1:latest",
+            "Volumes": {
+                "/mnt/sda": {},
+                "/tmp/.X11-unix": {}
+            },
+            "WorkingDir": "/workspace",
+            "Entrypoint": [
+                "/opt/nvidia/nvidia_entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "com.nvidia.cudnn.version": "8.9.0.131",
+                "com.nvidia.volumes.needed": "nvidia_driver",
+                "maintainer": "NVIDIA CORPORATION <cudatools@nvidia.com>",
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.version": "22.04"
+            }
+        },
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "29f7a4d781c24dd41bcbd5a47c71a9434c0d7349f93f1c115bf4df8876d832f7",
+            "SandboxKey": "/var/run/docker/netns/29f7a4d781c2",
+            "Ports": {
+                "22/tcp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "22203"
+                    },
+                    {
+                        "HostIp": "::",
+                        "HostPort": "22203"
+                    }
+                ]
+            },
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "a7d18a1a9fa5395dfda7fbfe2f8226c98bcd1033e70a211d2c4363214c06e024",
+            "Gateway": "172.17.0.1",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "172.17.0.6",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "MacAddress": "02:42:ac:11:00:06",
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "MacAddress": "02:42:ac:11:00:06",
+                    "DriverOpts": null,
+                    "NetworkID": "d9a72519f96ecbc03434abcb707a34d2f5b415b6b4802ca52b428873ace429ed",
+                    "EndpointID": "a7d18a1a9fa5395dfda7fbfe2f8226c98bcd1033e70a211d2c4363214c06e024",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.6",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        }
+    }
+]
