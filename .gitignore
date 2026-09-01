@@ -89,3 +89,6 @@ results/vis/v9_unleashed_compare/*
 # infra/docker 재구성 세트 + radapt 재개 스크립트 — *.sh 전역 무시의 예외 (2026-08-31)
 !infra/docker/*.sh
 !v9_mamba_radapt/runs/post_reboot_rearm.sh
+
+# 외부 최전선 모델 클론 (Table 4 참조행용, 로컬 전용 — 2026-09-01)
+external/

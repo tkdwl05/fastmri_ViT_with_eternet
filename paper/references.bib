@@ -15,7 +15,7 @@
 
 @article{hammernik2023physics,
   author  = {Hammernik, Kerstin and K{\"u}stner, Thomas and Yaman, Burhaneddin and Huang, Zhengnan and Rueckert, Daniel and Knoll, Florian and Ak{\c{c}}akaya, Mehmet},
-  title   = {Physics-Driven Deep Learning for Computational Magnetic Resonance Imaging},
+  title   = {Physics-Driven Deep Learning for Computational Magnetic Resonance Imaging: Combining physics and machine learning for improved medical imaging},
   journal = {IEEE Signal Processing Magazine},
   volume  = {40},
   number  = {1},
@@ -26,7 +26,7 @@
 
 @article{knoll2020deeplearning,
   author  = {Knoll, Florian and Hammernik, Kerstin and Zhang, Chi and Moeller, Steen and Pock, Thomas and Sodickson, Daniel K. and Ak{\c{c}}akaya, Mehmet},
-  title   = {Deep-Learning Methods for Parallel {MR} Image Reconstruction},
+  title   = {Deep-Learning Methods for Parallel Magnetic Resonance Imaging Reconstruction: A Survey of the Current Approaches, Trends, and Issues},
   journal = {IEEE Signal Processing Magazine},
   volume  = {37},
   number  = {1},
@@ -74,7 +74,8 @@
   volume  = {42},
   number  = {5},
   pages   = {952--962},
-  year    = {1999}
+  year    = {1999},
+  doi     = {10.1002/(SICI)1522-2594(199911)42:5<952::AID-MRM16>3.0.CO;2-S}
 }
 
 @article{griswold2002grappa,
@@ -278,8 +279,9 @@
   author    = {Bangun, Arya and Cao, Zhuo and Quercia, Alessio and Scharr, Hanno and Pfaehler, Elisabeth},
   title     = {{MRI} Reconstruction with Regularized {3D} Diffusion Model ({R3DM})},
   booktitle = {IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)},
+  pages     = {700--710},
   year      = {2025},
-  url       = {https://openaccess.thecvf.com/content/WACV2025/papers/Bangun_MRI_Reconstruction_with_Regularized_3D_Diffusion_Model_R3DM_WACV_2025_paper.pdf}
+  doi       = {10.1109/WACV61041.2025.00078}
 }
 
 @article{colddiffusion2024,
@@ -294,9 +296,10 @@
 @inproceedings{mayo2025physics,
   author    = {Mayo, Perla and Pirkl, Carolin M. and Achim, Alin and Menze, Bjoern and Golbabaee, Mohammad},
   title     = {Physics informed guided diffusion for accelerated multi-parametric {MRI} reconstruction},
-  booktitle = {Medical Image Computing and Computer Assisted Intervention (MICCAI 2025)},
+  booktitle = {Medical Image Computing and Computer Assisted Intervention (MICCAI 2025), LNCS},
+  pages     = {429--439},
   year      = {2025},
-  url       = {https://papers.miccai.org/miccai-2025/paper/0264_paper.pdf}
+  doi       = {10.1007/978-3-032-05325-1_41}
 }
 
 % ===== Transformer / Mamba =====
@@ -327,16 +330,18 @@
   journal = {IEEE Transactions on Medical Imaging},
   volume  = {43},
   number  = {1},
+  pages   = {582--593},
   year    = {2024},
-  url     = {https://pmc.ncbi.nlm.nih.gov/articles/PMC10764001/}
+  doi     = {10.1109/TMI.2023.3314747}
 }
 
 @inproceedings{li2025lmo,
   author    = {Li, Wei and Jiang, Jiawei and Wu, Jie and Yu, Kaihao and Zheng, Jianwei},
   title     = {{LMO}: Linear Mamba Operator for {MRI} Reconstruction},
   booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages     = {5112--5122},
   year      = {2025},
-  url       = {https://openaccess.thecvf.com/content/CVPR2025/papers/Li_LMO_Linear_Mamba_Operator_for_MRI_Reconstruction_CVPR_2025_paper.pdf}
+  doi       = {10.1109/CVPR52734.2025.00482}
 }
 
 @misc{somamba2026,
@@ -430,11 +435,14 @@
   doi     = {10.1137/23M1568739}
 }
 
-@inproceedings{krainovic2024robustness,
-  title     = {Robustness of Deep Learning for Accelerated {MRI}},
+@inproceedings{lin2024robustness,
+  author    = {Lin, Kang and Heckel, Reinhard},
+  title     = {Robustness of Deep Learning for Accelerated {MRI}: Benefits of Diverse Training Data},
   booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
   year      = {2024},
-  url       = {https://dl.acm.org/doi/10.5555/3692070.3693280}
+  eprint    = {2312.10271},
+  archivePrefix = {arXiv},
+  note      = {구 키 krainovic2024robustness 는 저자 오표기라 교체(2026-09-01, arXiv 대조: Lin \& Heckel). draft 미인용 스페어 항목}
 }
 
 @misc{trigger2026hallucinations,
@@ -547,14 +555,22 @@
 % ===== 국문 문헌 =====
 
 @article{jksr2023ai,
+  author  = {Kang, Junghwa and Nam, Yoonho},
   title   = {{MRI} 신호획득과 영상재구성에서의 인공지능 적용},
+  volume  = {83},
+  number  = {6},
+  pages   = {1229},
   journal = {대한영상의학회지 (Journal of the Korean Society of Radiology)},
   year    = {2022},
   doi     = {10.3348/jksr.2022.0156}
 }
 
 @article{jksr2025msk,
+  author  = {Yoo, Hye Jin},
   title   = {근골격 자기공명영상에서의 딥러닝 기반 영상 재구성 기법},
+  volume  = {86},
+  number  = {5},
+  pages   = {567},
   journal = {대한영상의학회지 (Journal of the Korean Society of Radiology)},
   year    = {2025},
   doi     = {10.3348/jksr.2025.0015}
@@ -564,6 +580,17 @@
 % ===== 프로젝트 직접 계보·추가 문헌 (draft_ko_v2 작성 시 병합, 2026-08-18) =====
 % 원칙: 서지 미확정 필드는 기재하지 않고 note 로 표시 (투고 전 Crossref 확정)
 % ============================================================================
+
+@article{eo2020dota,
+  author  = {Eo, Taejoon and Shin, Hyungseob and Jun, Yohan and Kim, Taeseong and Hwang, Dosik},
+  title   = {Accelerating {Cartesian} {MRI} by domain-transform manifold learning in phase-encoding direction},
+  journal = {Medical Image Analysis},
+  volume  = {63},
+  pages   = {101689},
+  year    = {2020},
+  doi     = {10.1016/j.media.2020.101689},
+  note    = {DOTA-MRI — AUTOMAP 파라미터 O(N²)→O(N). Crossref 전항목 확정(2026-09-01)}
+}
 
 % --- ETER-Net 계열 (본 논문의 직접 계보) ---
 
@@ -589,6 +616,17 @@
   year    = {2022},
   doi     = {10.3390/s22197277},
   note    = {Crossref 확정(2026-08-18)}
+}
+
+@article{oh2024dualinput,
+  author  = {Oh, Changheun and Chung, Jun-Young and Han, Yeji},
+  title   = {Domain transformation learning for {MR} image reconstruction from dual domain input},
+  journal = {Computers in Biology and Medicine},
+  volume  = {170},
+  pages   = {108098},
+  year    = {2024},
+  doi     = {10.1016/j.compbiomed.2024.108098},
+  note    = {★ 교수님 dual-input ETER-net — v8 백본 cat(seq, aliased) 의 직접 전신, 랜덤/불규칙 궤적·R∈{4,8}. Crossref 전항목 확정(2026-09-01)}
 }
 
 @article{oh2025vitbirnn,
@@ -635,23 +673,25 @@
   archivePrefix = {arXiv}
 }
 
-@misc{dhmamba2025,
-  author        = {Meng, Yucong and Yang, Zhiwei and Song, Zhijian and Shi, Yonghong},
-  title         = {{DH-Mamba}: Exploring Dual-domain Hierarchical State Space Models for {MRI} Reconstruction},
-  year          = {2025},
-  eprint        = {2501.08163},
-  archivePrefix = {arXiv},
-  url           = {https://arxiv.org/abs/2501.08163},
-  note          = {v1 제목: DM-Mamba — 동일 논문 통합 확정(외부 검토 2026-08-18). IEEE TCSVT 게재 — 권호 확정 ✎}
+@article{dhmamba2025,
+  author  = {Meng, Yucong and Yang, Zhiwei and Fu, Kexue and Song, Zhijian and Shi, Yonghong},
+  title   = {{DH-Mamba}: Exploring Dual-Domain Hierarchical State Space Models for {MRI} Reconstruction},
+  journal = {IEEE Transactions on Circuits and Systems for Video Technology},
+  volume  = {36},
+  number  = {3},
+  pages   = {3290--3305},
+  year    = {2026},
+  doi     = {10.1109/TCSVT.2025.3614828},
+  note    = {arXiv:2501.08163 (v1 제목: DM-Mamba — 동일 논문 통합, 외부 검토 2026-08-18). 권호 Crossref 확정(2026-09-01); 저자 5인(Fu 추가)}
 }
 
-@misc{kabas2024mambaroll,
-  author        = {Kabas, Bilal and others},
-  title         = {Physics-Driven Autoregressive State Space Models for Medical Image Reconstruction},
-  year          = {2024},
-  eprint        = {2412.09331},
-  archivePrefix = {arXiv},
-  note          = {MambaRoll — 실재 확정(외부 검토 2026-08-18). 저널판(IEEE TMI) 권호 확정 ✎}
+@article{kabas2024mambaroll,
+  author  = {Kabas, Bilal and Arslan, Fuat and Nezhad, Valiyeh A. and Oguz, Kader K. and Ozturk, Saban and Saritas, Emine U. and Cukur, Tolga},
+  title   = {Physics-Driven Autoregressive State Space Models for Medical Image Reconstruction},
+  journal = {IEEE Transactions on Medical Imaging},
+  year    = {2026},
+  doi     = {10.1109/TMI.2026.3716153},
+  note    = {MambaRoll. arXiv:2412.09331. IEEE TMI early access — DOI·전체 저자 Crossref 확정(2026-09-01), ✎ 권호/페이지는 배정 시 갱신}
 }
 
 @inproceedings{meng2026cam,

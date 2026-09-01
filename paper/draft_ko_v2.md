@@ -3,9 +3,8 @@
 > **상태**: 투고 구조 한국어 초안 v2 (2026-08-18 작성).
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
-> **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 학습 재개 완료(08-18, ETA ~08-25) — 완주 후 포함 여부 결정(부록 B-3).
-> **미완 요소**: §4.4 기준선 결과(GPU 대기), 저자·소속·펀딩, 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). 서지는 08-18 전건 확정(잔여 ✎: [33][34] 저널 권호만). **외부 검토 반영 현황은 부록 D.**
-> 영어 전환은 내용(교수님 검토) 확정 후.
+> **스코프**: v8 통제비교 + v9 unleashed. radapt(R 일반화)는 08-31 재개, ep49+/80 진행 중(ETA ~09-04) — 완주 후 포함 여부 결정(부록 B-3).
+> **미완 요소**: §4.4 기준선 결과(GPU 대기), 저자·소속·펀딩, 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). 서지는 08-18 전건 확정 + 09-01 계보 2건 추가([50][51] Crossref 확정)(잔여 ✎: [34] TMI 권호 배정 대기만 — [33] 은 09-01 확정). **외부 검토 반영 현황은 부록 D.**
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:
 A Controlled Single-Variable Comparison for Direct k-Space-to-Image MRI Reconstruction*
@@ -73,14 +72,14 @@ SENSE [4], GRAPPA [5] — 은 임상 표준이 되었으나 가속률이 커지�
 (데이터 일관성, DC)을 매 반복에 끼워 넣는다 — Variational Network [8], Deep Cascade CNN [9],
 MoDL [10]이 원형이고, 코일 감도까지 종단 학습하는 E2E-VarNet [11]이 fastMRI 챌린지를
 거치며 사실상의 표준 baseline 으로 자리잡았다 [20,21]. 둘째, **직접 도메인 변환(direct mapping) 계열**은 센서(k-space) 도메인에서 이미지
-도메인으로의 변환 자체를 신경망이 학습한다 — AUTOMAP [17]이 완전연결층으로 이를 처음 보였고,
-ETER-Net [1]은 그 자리를 양방향 RNN 으로 대체해 파라미터를 크게 줄였으며, k-space CNN 을
+도메인으로의 변환 자체를 신경망이 학습한다 — AUTOMAP [17]이 완전연결층으로 이를 처음 보였고, DOTA-MRI [50]는 x-방향 1D IFT 를 해석적으로
+선행해 그 파라미터 벽을 낮췄으며, ETER-Net [1]은 그 자리를 양방향 RNN 으로 대체해 파라미터를 크게 줄였으며, k-space CNN 을
 경유하는 교차 도메인 KIKI-net [18]도 같은 문제의식을 공유한다. 이 밖에 score 기반 생성모델
 (diffusion) 계열 [25,26]이 최근 세 번째 축으로 부상했다. 공정한 비교의 기반으로는 대규모 raw
 k-space 공개 데이터셋 fastMRI [19]와 그 챌린지 [20,21]가 표준 벤치마크로 자리잡았다.
 
 **[문단 ④ — 남은 문제: 도메인 변환 자리의 시퀀스 모델]**
-본 연구는 두 번째 계열, 그중에서도 ETER-Net 계열 [1,2,3]의 심장부인 **도메인 변환 시퀀스 모델**
+본 연구는 두 번째 계열, 그중에서도 ETER-Net 계열 [1,2,51,3]의 심장부인 **도메인 변환 시퀀스 모델**
 에 주목한다. ETER-Net 의 bi-RNN(GRU)은 k-space 행/열을 순차로 읽어 이미지 특징으로 변환하는데,
 flatten-reshape 구조 탓에 파라미터가 비대해지고(본 세팅 668M), 순차 의존으로 병렬화가 제한된다.
 한편 선택적 상태공간모델 Mamba [30]는 입력 의존 상태 전이로 장거리 의존을 **선형 복잡도**로
@@ -117,12 +116,14 @@ vs 0.9083 의 사실상 동률(dead-heat)로 끝났으나, 이 비교는 DC 유�
 ### 2.1 직접 도메인 변환 (direct k-space-to-image) 계열
 
 AUTOMAP [17]은 센서→이미지 매핑을 완전연결층으로 통째로 학습할 수 있음을 보였으나 해상도 제곱에
-비례하는 파라미터가 실용의 벽이었다. ETER-Net [1]은 이 변환을 수평/수직 양방향 RNN 두 개로
+비례하는 파라미터가 실용의 벽이었다. DOTA-MRI [50]는 주파수-인코딩 방향 1D IFT 를 해석적으로
+선행하고 phase-encoding 방향 1D 전역 변환만 학습해 이 벽을 O(N²)→O(N)으로 낮췄다. ETER-Net [1]은 이 변환을 수평/수직 양방향 RNN 두 개로
 분해해 파라미터를 낮추고 CNN(U-Net)에 de-aliasing 을 맡기는 구조로, R=4 에서 SSIM 0.931 을
-보고했으며 **명시적 DC 블록이 없다**. 이후 radial 등 non-Cartesian 궤적으로 확장되었고 [2],
+보고했으며 **명시적 DC 블록이 없다**. 이후 radial 등 non-Cartesian 궤적으로 확장되었고 [2], folded image 를 보조 입력으로 더해
+랜덤·불규칙 궤적과 R∈{4,8}에서 안정성을 높인 dual-input ETER-net [51]으로 이어졌으며,
 최근에는 ViT 인코더와의 하이브리드 [3]가 제안되어 BiRNN 의 k-space 순차 처리가 고가속·랜덤
 샘플링 강건성의 핵심임이 보고되었다. k-space 도메인 CNN 을 포함하는 교차 도메인 계열로는
-KIKI-net [18]이 있다. **본 연구의 위치**: [1,3]의 골격을 유지한 채 도메인 변환 모듈만 교체하는
+KIKI-net [18]이 있다. **본 연구의 위치**: [1,51,3]의 골격을 유지한 채 도메인 변환 모듈만 교체하는
 직접 후속(ablation) 연구다.
 
 ### 2.2 Unrolled 최적화 + DC 계열
@@ -155,7 +156,7 @@ k-space↔이미지 도메인 사이의 이동은 여전히 명시적 (i)FFT 가
 
 | 계열 | 대표 문헌 | 시퀀스/전역 모듈의 자리 | DC | 본 연구와의 관계 |
 |---|---|---|---|---|
-| 직접 도메인 변환 | AUTOMAP [17], **ETER-Net [1–3]**, KIKI-net [18] | **k-space→image 변환 그 자체** | 없음(원 논문 기준) | 본 연구의 골격 — 변환 모듈의 세대 교체를 검증 |
+| 직접 도메인 변환 | AUTOMAP [17], DOTA-MRI [50], **ETER-Net 계열 [1,2,51,3]**, KIKI-net [18] | **k-space→image 변환 그 자체** | 없음(원 논문 기준) | 본 연구의 골격 — 변환 모듈의 세대 교체를 검증 |
 | Unrolled + DC | [8–11,13–16] | 반복 내부의 작은 정규화 unit | 매 반복 interleave | 구조가 달라 직접 비교 대상 아님 (§5-3) |
 | Mamba-MRI | [32–40] | 이미지/이중 도메인 prior, unrolled 백본 | 대부분 있음 | SSM 을 쓰지만 **자리가 다름** |
 | **본 연구** | — | **도메인 변환 자리의 RNN↔SSM 1:1 치환** | 없음 (통제) | 우리가 아는 한 문헌에 없는 통제 비교를 채움 |
@@ -400,7 +401,7 @@ ms/slice·VRAM 은 radapt 완주 후 측정해 채운다(✎부록 D P1-3).
 
 **(2) 파라미터 효율의 해석.** 668M 의 GRU 를 31M 모델이 이긴다(21×↓). 도메인 변환 자리 RNN 의
 flatten-reshape 구조가 비효율의 근원이며, SSM 은 같은 자리를 선형 복잡도·저용량으로 대체한다.
-이는 AUTOMAP [17]→ETER-Net [1]이 밟았던 "같은 기능, 더 효율적인 모듈로" 궤적의 다음 단계로 읽을
+이는 AUTOMAP [17]→DOTA-MRI [50]→ETER-Net [1]이 밟았던 "같은 기능, 더 효율적인 모듈로" 궤적의 다음 단계로 읽을
 수 있다.
 
 **(3) DC 축을 주 비교에서 제외한 근거.** (a) 원 논문 [1]에 DC 가 없고, (b) 문헌의 DC 는 unrolled
@@ -441,7 +442,7 @@ SSM 이 RNN 을 일관되게 상회함을 실증한다 — 이는 해당 우려�
 
 **(7) Novelty 포지셔닝 (솔직한 자기 평가).** Mamba-MRI 아키텍처 자체는 이미 성숙 분야다
 [32–40]. 본 논문의 가치는 새 아키텍처가 아니라 (a) 도메인 변환 자리에서의 1:1 통제 치환 실험,
-(b) no-DC 조건의 DC 무관성 실증, (c) ETER-Net 계열 [1–3]의 직접 후속이라는 점이다. 투고 시 이
+(b) no-DC 조건의 DC 무관성 실증, (c) ETER-Net 계열 [1–3,51]의 직접 후속이라는 점이다. 투고 시 이
 프레임을 유지해야 리뷰 방어가 가능하다.
 
 ## 6. 결론 (Conclusions)
@@ -509,6 +510,10 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 21. Muckley et al. (2021). Results of the 2020 fastMRI challenge. *IEEE TMI* 40(9):2306–2317. `muckley2021results`
 49. Knoll et al. (2020). fastMRI: a publicly available raw k-space and DICOM dataset of knee images for accelerated MR image reconstruction using machine learning. *Radiology: AI* 2(1):e190007. `knoll2020fastmri` — 데이터 사용 요건상 [19]와 병행 인용 (Acknowledgments 참조)
 
+**계보 보강 (2026-09-01 추가 — Crossref 확정)**
+50. Eo, Shin, Jun, Kim & Hwang (2020). Accelerating Cartesian MRI by domain-transform manifold learning in phase-encoding direction (DOTA-MRI). *Med. Image Anal.* 63:101689. doi:10.1016/j.media.2020.101689. `eo2020dota`
+51. Oh, Chung & Han (2024). Domain transformation learning for MR image reconstruction from dual domain input (dual-input ETER-net). *Comput. Biol. Med.* 170:108098. doi:10.1016/j.compbiomed.2024.108098. `oh2024dualinput` — ★ v8 백본 dual-input(cat(seq출력, aliased)) 의 직접 전신 + 랜덤/불규칙 궤적·R∈{4,8} (radapt 위치설정: 부록 B-3)
+
 **리뷰**
 22. Heckel et al. (2024). Deep learning for accelerated and robust MRI reconstruction. *MAGMA* 37:335–368. `heckel2024deep`
 23. Hammernik et al. (2023). Physics-driven deep learning for computational MRI. *IEEE SPM* 40(1):98–114. `hammernik2023physics`
@@ -527,8 +532,8 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 30. Gu & Dao (2023). Mamba: linear-time sequence modeling with selective state spaces. arXiv:2312.00752. `gu2023mamba`
 31. Liu et al. (2024). VMamba: visual state space model. *NeurIPS*. `liu2024vmamba`
 32. Korkmaz & Patel (2025). MambaRecon: MRI reconstruction with structured state space models. *WACV*. arXiv:2409.12401. `korkmaz2025mambarecon`
-33. Meng et al. (2025). DH-Mamba: exploring dual-domain hierarchical state space models for MRI reconstruction. arXiv:2501.08163 (v1 제목: DM-Mamba — 동일 논문으로 통합 확정, 외부 검토 08-18); IEEE TCSVT 게재. `dhmamba2025` (권호 확정 ✎)
-34. Kabas et al. (2024). Physics-driven autoregressive state space models for medical image reconstruction (MambaRoll). arXiv:2412.09331. `kabas2024mambaroll` (저널판 권호 확정 ✎)
+33. Meng et al. (2026). DH-Mamba: exploring dual-domain hierarchical state space models for MRI reconstruction. *IEEE TCSVT* 36(3):3290–3305. doi:10.1109/TCSVT.2025.3614828 (arXiv:2501.08163, v1 제목 DM-Mamba). `dhmamba2025`
+34. Kabas et al. (2026). Physics-driven autoregressive state space models for medical image reconstruction (MambaRoll). *IEEE TMI* (early access). doi:10.1109/TMI.2026.3716153 (arXiv:2412.09331). `kabas2024mambaroll` (✎ 권호/페이지 배정 시 갱신)
 35. Meng, Yang, Fu, Song & Shi (2026). Image content matters: an image content aware state space model for accelerated MRI reconstruction (CAM). *Proc. AAAI* 40(10):8025–8033. doi:10.1609/aaai.v40i10.37748. `meng2026cam`
 36. Chen et al. (2025). HiFi-Mamba: dual-stream W-Laplacian enhanced Mamba for high-fidelity MRI reconstruction. arXiv:2508.09179. `chen2025hifimamba`
 37. Li et al. (2025). LMO: linear Mamba operator for MRI reconstruction. *CVPR*. `li2025lmo`
@@ -558,13 +563,13 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
 | Fig.2 학습 곡선 (GRU vs SS2D vs 강화판, SSIM/PSNR) | `results/eval/v9_unleashed/curves_v9_vs_v8.png` | ✅ (논문용 재도색 권장) |
 | Fig.3 4-way 정성 비교 + 배경 ringing | `results/vis/v8_pure_eternet_compare/compare_*.png` | ✅ (슬라이스 선별 필요) |
 | Fig.4 per-slice 우위 비율/차이 분포 | `paper/figs/fig4_per_slice_distribution.{png,pdf}` — 생성 스크립트 `paper/make_fig4_per_slice.py` (입력 `results/eval/v9_unleashed/per_slice_paired_v9.csv`) | ✅ 2026-08-18 (2행×4지표 paired-Δ 히스토그램 + win-rate, 양수=치환/강화 우위 규약) |
-| Tab.1·2·2b·3·S1 (결과 표 일체) | **자동 생성**: `paper/make_tables.py` → `paper/tables/*.{md,tex}` — per-slice CSV 단일 원천, median(IQR)·클러스터 부트스트랩 CI·볼륨 Wilcoxon 내장, seed 고정으로 초안 수치 자가검증(ALL PASS). `.tex` 는 영어 전환용(MDPI 는 Word 도 허용 — 선택 사용) | ✅ 2026-08-20 |
+| Tab.1·2·2b·3·S1 (결과 표 일체) | **자동 생성**: `paper/make_tables.py` → `paper/tables/*.{md,tex}` — per-slice CSV 단일 원천, median(IQR)·클러스터 부트스트랩 CI·볼륨 Wilcoxon 내장, seed 고정으로 초안 수치 자가검증(ALL PASS). `.tex` 는 LaTeX 투고용(MDPI 는 Word 도 허용 — 선택 사용) | ✅ 2026-08-20 |
 | Tab.4 기준선(U-Net/E2E-VarNet) | `v8_eter_pure/eval_paired_baselines.py` + `v8_eter_pure/native_protocol.py` → `results/eval/baselines_384{,_sample300}/` | ⏳ 08-20 CPU 층화 표본(299) 실행 중 · 전체 GPU 풀런은 radapt 완주 후. 08-20 수정: zero-coil→NaN 회피(검증셋 42.6% 무효화 방지) + 네이티브 프로토콜 행 추가 |
 | (참고) matched-epoch 표 | `results/eval/*/matched_epoch_table*.md` | ✅ (본문 서술로만 사용) |
 
 ## 부록 B. 교수님 상의 포인트 (초안 논외, 회의용)
 
-1. **[3] (교수님 ViT-BiRNN, *J. Imaging* 2025)과의 관계 설정** — 본 논문을 [1,3]의 직접 후속
+1. **[3] (교수님 ViT-BiRNN, *J. Imaging* 2025)과의 관계 설정** — 본 논문을 [1,51,3]의 직접 후속
    (도메인 변환 모듈의 세대 교체)으로 프레이밍하는 안. 저자 구성·기여 서술에 영향.
 2. **투고처** — 자료집 §6 + v1 부록 B 평가 종합 (2026-08-18 갱신):
 
@@ -585,7 +590,9 @@ ETER-Net 골격의 도메인 변환 자리에서 bi-GRU 를 SS2D 로 치환하�
    학습)를 전면 배치.
 3. **radapt(R 일반화) 포함 여부** — 08-18 학습 재개, **~08-25 완주 예상**. 포함 시
    "치환+강화+일반화" 3막 구성으로 기여가 두터워지나 투고 지연. 미포함 시 본 초안 그대로 + 후속
-   논문 분리. (Bioengineering SI 마감 11-30 이면 포함 여유 있음.) **외부 검토 의견(08-18)**:
+   논문 분리. (Bioengineering SI 마감 11-30 이면 포함 여유 있음.) **포함 시 위치설정(09-01 추가)**: 교수님
+   dual-input ETER-net [51]이 folded-image 보조 입력으로 랜덤/불규칙 궤적·R∈{4,8}을 다룬 같은
+   질문의 RNN-시대 해법이므로, radapt(mask-conditioning+multi-AR+DC)를 그 SSM-시대 직접 후속으로 서술. **외부 검토 의견(08-18)**:
    결과가 깨끗하면 결과 절 한 절로 압축 포함 권장 — "단일 가속률" 한계를 스스로 해소하는 이득이
    지연 비용보다 큼; 애매하면 미련 없이 후속 논문 분리.
 4. **DC 서술 수위** — §5-(3)의 "문헌 비표준 + 학습 불안정" 근거를 본문에 둘지 부록으로 뺄지.
@@ -632,7 +639,7 @@ AXT1 에서는 역전된다(48.2%) — §4.3 의 "유의하나 근소·불균일
 | 6 | wall-clock 산식 | ✅ 재산출 — ckpt 간격 중앙값 기준 GRU 2.41 / SS2D 3.07 / 강화판 2.84 h/ep(Table 5). **기존 문서값(2.78/2.51)은 측정 기준 불일치로 폐기**. 부수 발견: v8↔강화판 사이 실행환경 개선(컨테이너/데이터로더)이 있어 wall-clock 직접 비교에 confound — Table 5 각주 명시 |
 | 7 | 지표 정의 | ✅ §3.5 수식 수준 정의 + ×10⁶ 스케일 명시(코드 `eval_paired_v9.py` 대조) |
 | 8 | 깨진 링크 2곳 | ✅ 수정 |
-| 9 | ⚠ 서지 | ✅ **전건 확정** — 검토 5건 + Crossref/arXiv 직접 조회 8건+권호 보완([1] 48(1):193–203, [2] Sensors 22(19):7277, [3] 2025 확정·단독저자, [15] PMB 67(12), [16] MRM 86(4), [35] **AAAI 2026** 40(10):8025–8033, [36] arXiv:2508.09179, [39][40] **Med.Image.Anal. 저널판**(99:103334 / 102:103549), [47] 15(3):238–245). 잔여 ✎: [33] TCSVT·[34] 저널판 권호만 |
+| 9 | ⚠ 서지 | ✅ **전건 확정** — 검토 5건 + Crossref/arXiv 직접 조회 8건+권호 보완([1] 48(1):193–203, [2] Sensors 22(19):7277, [3] 2025 확정·단독저자, [15] PMB 67(12), [16] MRM 86(4), [35] **AAAI 2026** 40(10):8025–8033, [36] arXiv:2508.09179, [39][40] **Med.Image.Anal. 저널판**(99:103334 / 102:103549), [47] 15(3):238–245). 잔여 ✎ 해소(09-01): [33] TCSVT 36(3):3290–3305 확정·[34] TMI early-access DOI 확정(권호 배정 대기) |
 | 10 | fastMRI 인용/문구 | ✅ [49] 병행 인용 + Acknowledgments 신설(✎공식 문구 원문 대조 1건 잔여) |
 | 11 | Informed Consent | ✅ 추가 |
 
@@ -665,4 +672,5 @@ AXT1 에서는 역전된다(48.2%) — §4.3 의 "유의하나 근소·불균일
 서론 5문단 체계·Related Works 확장·문제 정식화·평가 신뢰성 고찰·MDPI 후반부 항목·참고문헌
 48편 병합[`paper/references.bib`]) → v2.1(2026-08-18, 외부 검토 보고서 반영 — 부록 D: 볼륨 단위
 통계·클러스터 CI·표 슬라이스 단위 통일·h/ep 재측정(환경 confound 발견)·효율 프레임 전환·지표
-정의 정밀화·contrast 보충표·서지 5건 확정).*
+정의 정밀화·contrast 보충표·서지 5건 확정) → v2.2(2026-09-01, 계보 서지 보강 — DOTA-MRI [50]·dual-input
+ETER-net [51] 추가·본문 반영(§1③·§2.1·§2.4·§5-(2)·부록 B), Crossref 확정; 같은 날 서지 전건 재검증 74항목 — IEEE SPM 2편 부제 복원·JKSR 2편 저자 보강·SENSE/ReconFormer/WACV/MICCAI/CVPR DOI 보강·[33][34] 권호 확정·lin2024robustness 저자 오표기 키 교정).*
