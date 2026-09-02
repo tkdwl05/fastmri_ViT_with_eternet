@@ -1,8 +1,8 @@
-# v8 3번째 팔 설계 초안 — 도메인 변환 슬롯의 Axial-Attention (교수님 상의용)
+# v8 3번째 팔 설계 초안 — 도메인 변환 슬롯의 Transformer (구현=axial attention)
 
 작성 2026-09-01. 목적: v8 통제비교(GRU vs SS2D)를 **RNN vs SSM vs Attention 삼자 통제비교**로
 확장할지 결정하기 위한 설계·비용 자료. **결정(2026-09-02, 내부): 이번 논문 포함으로 진행** — 교수님 보고 항목은 유지.
-**구현 완료(2026-09-02)**: `models/attn_eternet/axial_v10.py` + `models/pure_eternet/u_pure_eternet_axial.py` + 트레이너 `SEQ_MODEL=axial` 분기. CPU 스모크 PASS — **total 31.16M / axial 스택 0.104M** (SS2D arm 31.2M/스택 ~0.1M 와 정확히 동급 = §3 (a) 통제판 실현). forward (1,32,384,384)→(1,1,384,384) finite, 시드 재현 PASS. 학습은 GPU 큐(`v8_fairness_followup_plan.md`).
+**구현 완료(2026-09-02)**: `models/attn_eternet/transformer_v10.py` + `models/pure_eternet/u_pure_eternet_transformer.py` + 트레이너 `SEQ_MODEL=transformer` 분기. **명칭(사용자 지시 09-02): 팔 이름은 'Transformer', axial 은 구현 세부로만 표기.** CPU 스모크 PASS — **total 31.16M / axial 스택 0.104M** (SS2D arm 31.2M/스택 ~0.1M 와 정확히 동급 = §3 (a) 통제판 실현). forward (1,32,384,384)→(1,1,384,384) finite, 시드 재현 PASS. 학습은 GPU 큐(`v8_fairness_followup_plan.md`).
 
 ## 1. 근거 — 이 슬롯은 Transformer 쪽도 비어 있다 (2026-09-01 문헌 재확인)
 
@@ -31,15 +31,15 @@
 - positional encoding: 2D sin-cos 고정형 (학습형은 파라미터 변수 추가라 통제 흐림).
 - k-space 다이내믹레인지: v8 입력 스케일 그대로 (특수처리 없는 '순정 attention' 이 실험 목적 —
   kViT/DH-Mamba 는 특수처리가 필요했다는 것이 우리 서사의 일부).
-- 신규 파일만: `models/attn_eternet/axial_v10.py` + `models/pure_eternet/u_pure_eternet_axial.py`
-  (원본 무수정 관례). config 는 v8 config 재사용 + `SEQ_MODEL=axial` 분기.
+- 신규 파일만: `models/attn_eternet/transformer_v10.py` + `models/pure_eternet/u_pure_eternet_transformer.py`
+  (원본 무수정 관례). config 는 v8 config 재사용 + `SEQ_MODEL=transformer` 분기.
 
 ## 3. 파라미터 매칭 2안
 
 | 안 | d_model | N층(행+열 쌍) | 스택 params | 비고 |
 |---|---|---|---|---|
 | **(a) 통제판 (구현·기본값)** | **64** | **2** | **0.104M 실측** (v8 SS2D 스택 ~0.1M 동급) | 주 비교용 — total 31.16M ≈ SS2D arm 31.2M |
-| (b) 용량판 | 192 | 3 | ~3M (v9 스택급) | (a) 열세 시 용량 탓인지 분리용 (선택, env AXIAL_* override) |
+| (b) 용량판 | 192 | 3 | ~3M (v9 스택급) | (a) 열세 시 용량 탓인지 분리용 (선택, env TRANSFORMER_* override) |
 
 ## 4. 연산·비용
 
@@ -52,7 +52,7 @@
 ## 5. 판정 기준
 
 - 1차: per-slice paired 5지표 win-rate + 볼륨 Wilcoxon (v8 체계 그대로, 3-way).
-- 예상 시나리오: SS2D ≥ axial ≳ GRU (근거 §1). axial 이 GRU 도 못 이기면 "순차 재귀 귀납편향이
+- 예상 시나리오: SS2D ≥ Transformer ≳ GRU (근거 §1). Transformer 가 GRU 도 못 이기면 "순차 재귀 귀납편향이
   k-space 라인 구조에 필수" 라는 더 강한 결론.
 - 서사 배치: 본 논문 §4 확장 또는 후속 논문("the sequence-model zoo in the domain-transform
   slot") 분리 — 마감(Bioengineering SI 11-30)과 멀티시드 우선순위에 따라 교수님 결정.

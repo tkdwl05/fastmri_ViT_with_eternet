@@ -3,7 +3,7 @@
 > **상태**: 투고 구조 한국어 초안 v2 (2026-08-18 작성).
 > **기반**: `draft_ko_v1.md`(2026-08-07, 내용 원본) + 『MRI Reconstruction 논문 투고 준비 자료집』(2026-08-18, IMRaD 설계·문헌·저널 분석) + `references.bib`(병합본, 73항목).
 > **구조**: MDPI 공학형(Sensors / Bioengineering SI 겨냥 — 자료집 §5·§6, 부록 B-2) — Related Works 독립 절, 아키텍처·ablation 중심.
-> **스코프**: v8 통제비교 + v9 unleashed + **radapt 3막(2026-09-02 편입 결정 — R-sweep 검증 후 최종, 부록 B-3)** + **axial 3번째 팔(09-02 결정·구현 완료 — 학습 대기, `docs/axial_transformer_arm_design.md`)**. radapt 는 ep56+/80 진행 중(ETA ~09-04).
+> **스코프**: v8 통제비교 + v9 unleashed + **radapt 3막(2026-09-02 편입 결정 — R-sweep 검증 후 최종, 부록 B-3)** + **Transformer 3번째 팔(09-02 결정·구현 완료 — 학습 대기, 구현=axial attention, `docs/axial_transformer_arm_design.md`)**. radapt 는 ep56+/80 진행 중(ETA ~09-04).
 > **미완 요소**: §4.4 기준선 결과(GPU 대기), 저자·소속·펀딩, 외부 검토(08-18) 항목 중 GPU 필요분(U-Net-only 기준·추론 속도/VRAM 측정·표준 프로토콜 보충표·ringing 정량화 — radapt 완주 후 일괄) + 멀티시드(교수님 결정, 부록 B-5). 서지는 08-18 전건 확정 + 09-01 계보 2건 추가([50][51] Crossref 확정)(잔여 ✎: [34] TMI 권호 배정 대기만 — [33] 은 09-01 확정). **외부 검토 반영 현황은 부록 D.**
 
 **제목 (영문 가제)**: *Replacing the RNN with a Selective State-Space Model in ETER-Net:

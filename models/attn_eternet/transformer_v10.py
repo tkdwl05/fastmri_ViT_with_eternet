@@ -1,5 +1,8 @@
 """
-Axial-Attention 스택 — 도메인 변환 슬롯의 3번째 팔(attention) 모듈 (2026-09-02).
+Transformer 스택 — 도메인 변환 슬롯의 3번째 팔 모듈 (2026-09-02).
+
+구현 방식 = axial attention(행/열 축별 MHSA) — 팔 명칭은 'Transformer'(사용자 지시 09-02),
+axial 은 구현 세부를 가리키는 말로만 사용.
 
 설계 근거: docs/axial_transformer_arm_design.md.
 GRU(수평/수직 양방향)·SS2D(4방향 스캔)와 **같은 축(행/열)** 을 attention 으로 훑는
@@ -65,7 +68,7 @@ class _AxialPair(nn.Module):
         return x
 
 
-class AxialAttentionStack(nn.Module):
+class TransformerStack(nn.Module):
     def __init__(self, *, c_in: int = 32, out_ch: int = 20,
                  d_model: int = 64, n_pairs: int = 2, n_heads: int = 4,
                  ffn_ratio: int = 2, dropout: float = 0.0):

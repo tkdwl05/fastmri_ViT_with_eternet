@@ -83,7 +83,7 @@
 |---|---|---|---|
 | 1 | **E1 멀티시드** seeds 0,1,2 × {ss2d,gru} × 25ep | ~17일 (5.7일마다 중간판정) | ▶ 09-02 자동 launch |
 | 2 | **pixel-GRU 50ep seed0** (④팔 — 메커니즘 분리) | ~4일 (h/ep 실측 후 갱신) | 구현 완료 |
-| 3 | axial 50ep seed0 (③팔) | ~5.6일 | 구현 완료 |
+| 3 | Transformer 50ep seed0 (③팔, 구현=axial attention) | ~5.6일 | 구현 완료 |
 | 4 | E3 최소-GRU 50ep | ~4일 | 확정 |
 | 5 | E2 LR 스윕 | ~2일 | 확정 |
 | 6 | **radapt 재개** (잔여 ~23ep) | ~2.6일 | true-resume 대기 |
