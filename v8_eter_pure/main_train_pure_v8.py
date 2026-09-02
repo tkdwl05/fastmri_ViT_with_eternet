@@ -2,7 +2,7 @@
 v8 Pure ETER-Net 2×2 ablation — 단일 파라미터화 trainer.
 
 환경변수로 4런 구동 (everything else identical):
-  SEQ_MODEL = gru | ss2d | axial  (시퀀스 모델 축; axial 은 3번째 팔, 2026-09-02)
+  SEQ_MODEL = gru | ss2d | axial | pixelgru  (3·4번째 팔은 2026-09-02 추가 — 공정성 실험)
   USE_DC    = 0  | 1         (DC 축; DCBlock + complex head)
   SMOKE_BS, ACCUM_STEPS, SANITY_NUM_EPOCHS, SANITY_VAL_EVERY_N_EPOCHS 도 override 가능.
 
@@ -32,6 +32,8 @@ sys.path.append(os.path.join(_PROJECT_ROOT, 'dataloaders'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'pure_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'hybrid_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'mamba_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'rnn_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'attn_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'tools'))
 
 from myConfig_pure_eter_v8 import *           # noqa: F401,F403  (공유 하이퍼파라미터)
@@ -42,7 +44,8 @@ from check_recon_env import check_env_for_model
 
 # ── 런 선택 (4런: SEQ_MODEL × USE_DC) ──
 SEQ_MODEL = os.environ.get('SEQ_MODEL', 'gru').lower()
-assert SEQ_MODEL in ('gru', 'ss2d', 'axial'), f"SEQ_MODEL must be gru|ss2d|axial, got {SEQ_MODEL}"
+assert SEQ_MODEL in ('gru', 'ss2d', 'axial', 'pixelgru'), \
+    f"SEQ_MODEL must be gru|ss2d|axial|pixelgru, got {SEQ_MODEL}"
 USE_DC    = os.environ.get('USE_DC', '0') == '1'
 
 # ── override ──
@@ -116,6 +119,15 @@ def build_model(device):
             axial_d_model=int(os.environ.get('AXIAL_D_MODEL', AXIAL_D_MODEL)),
             axial_n_pairs=int(os.environ.get('AXIAL_N_PAIRS', AXIAL_N_PAIRS)),
             axial_n_heads=int(os.environ.get('AXIAL_N_HEADS', AXIAL_N_HEADS)),
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'pixelgru':
+        # 4번째 팔: 가중치 공유 재귀 (2026-09-02, 공정성 — 메커니즘 vs 파라미터화 분리)
+        from u_pure_eternet_pixelgru import PureETER_PIXELGRU
+        model = PureETER_PIXELGRU(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            pixelgru_hidden=int(os.environ.get('PIXELGRU_HIDDEN', PIXELGRU_HIDDEN)),
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
     else:

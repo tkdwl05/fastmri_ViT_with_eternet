@@ -87,3 +87,6 @@ def ckpt_prefix(seq_model: str) -> str:
 AXIAL_D_MODEL = 64
 AXIAL_N_PAIRS = 2
 AXIAL_N_HEADS = 4
+
+# ── 4번째 팔: pixel-scan 가중치 공유 bi-GRU (2026-09-02, 공정성 실험) ──
+PIXELGRU_HIDDEN = 64            # 스택 ~0.115M = SS2D/axial 스택 동급 예산

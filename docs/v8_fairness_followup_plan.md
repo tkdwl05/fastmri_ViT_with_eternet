@@ -52,7 +52,22 @@
   해석 매트릭스: H1 ≈ H10 → "668M 은 과잉용량" 실증 / H1 ≪ H10 → "GRU 는 그 용량이 실제로 필요"
   — 어느 쪽이든 §5 에 정보.
 
-## 결정 (2026-09-02, 사용자)
+## 추가 결정 (2026-09-02 오후, 사용자) — ★공정성 최우선 재편
+
+- **radapt 를 epoch 경계(ckpt 저장 직후)에서 무손실 정지**하고(ep57 예정, `clean_stop` 재사용,
+  손실 ~0) 공정성 실험부터 실행. radapt 잔여 ~23ep(≈2.6일)는 공정성 스위트 후 true-resume
+  (`post_reboot_rearm.sh` — 검증된 재개 경로).
+- **E1 멀티시드 즉시 launch** (seeds 0,1,2 × {ss2d,gru} × 25ep) — 정지→launch 자동 체인 무장.
+- **④번째 팔 pixel-GRU 구현 완료**: 가중치 공유 재귀(행→열 pixel-scan bi-GRU, stem 없음) —
+  메커니즘 vs 파라미터화 confound 분리. `models/rnn_eternet/pixelgru_v10.py` +
+  `u_pure_eternet_pixelgru.py` + `SEQ_MODEL=pixelgru`. CPU 스모크 PASS:
+  **total 31.17M / 스택 0.115M** (SS2D 0.1M·axial 0.104M 동급 — flatten-GRU 에선 불가능했던
+  예산 매칭이 가중치 공유로 성립함 자체가 §5 논점). 해석: ≈SS2D → 파라미터화 탓(재귀 무죄) /
+  <SS2D → 선택적 상태전이 메커니즘 이득 실재.
+- 초안 클레임 스코프 잠금(⓪): §5-(4)·§6 의 "SSM>RNN" 일반화 표현을 "SS2D 치환 > 원 bi-GRU
+  설계"로 한정 + §5-(6)에 메커니즘/파라미터화 confound 한계 항목 신설.
+
+## 결정 (2026-09-02 오전, 사용자)
 
 - **E2·E3 실행 확정** (보류 아님 — 투고 전 수행).
 - **GPU1 사용 안 함** — 전 큐 GPU0 단독 순차.
@@ -62,14 +77,18 @@
 
 ## GPU 큐 통합 (radapt ~09-04 완주 후)
 
-| 순서 | 작업 | 비용 | 근거 문서 |
-|---|---|---|---|
-| 1 | 추론-only 일괄 (Table 4+PromptMR+/DDS·ms/VRAM·320-crop·ringing) | 1~2일 | `frontier_baselines_plan.md` |
-| 2 | U-Net-only 학습 | 4~5일 | 부록 D P0-2 |
-| 3 | **E1 멀티시드** | 2-arm ~17일 / 3-arm(axial 포함) ~25.5일 | 본 문서 |
-| 4 | **axial 50ep seed0** (본표용) | ~5.6일 | `axial_transformer_arm_design.md` |
-| 5 | E3 최소-GRU 50ep (확정) | ~4일 | 본 문서 |
-| 6 | E2 LR 스윕 (확정) | ~2일 | 본 문서 |
+**09-02 오후 재편 — 공정성 최우선 (radapt ep57 정지 후):**
 
-합계(모두 GPU0 순차): E1 2-arm 기준 ~35일(→10월 중순) / E1 3-arm 기준 ~43일(→10월 하순).
+| 순서 | 작업 | 비용 | 상태 |
+|---|---|---|---|
+| 1 | **E1 멀티시드** seeds 0,1,2 × {ss2d,gru} × 25ep | ~17일 (5.7일마다 중간판정) | ▶ 09-02 자동 launch |
+| 2 | **pixel-GRU 50ep seed0** (④팔 — 메커니즘 분리) | ~4일 (h/ep 실측 후 갱신) | 구현 완료 |
+| 3 | axial 50ep seed0 (③팔) | ~5.6일 | 구현 완료 |
+| 4 | E3 최소-GRU 50ep | ~4일 | 확정 |
+| 5 | E2 LR 스윕 | ~2일 | 확정 |
+| 6 | **radapt 재개** (잔여 ~23ep) | ~2.6일 | true-resume 대기 |
+| 7 | 추론-only 일괄 (Table 4·PromptMR+/DDS·ms/VRAM·R-sweep·ringing) | 1~2일 | 준비 완료 |
+| 8 | U-Net-only 학습 | 4~5일 | 부록 D P0-2 |
+
+합계(모두 GPU0 순차) ≈ **40일 → 10월 중순 종료**(공정성 스위트 ~33일 + radapt/평가 ~7일).
 SI 마감 11-30 대비 집필 병행 필요. (구 상의 항목 (a)(b)는 09-02 결정으로 종결 — 위 '결정' 절.)
