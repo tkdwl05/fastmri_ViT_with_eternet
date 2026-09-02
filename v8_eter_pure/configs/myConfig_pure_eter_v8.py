@@ -81,3 +81,9 @@ def path_folder(seq_model: str, use_dc: bool) -> str:
 
 def ckpt_prefix(seq_model: str) -> str:
     return f"pure_{seq_model.lower()}"     # → pure_gru_best.pt / pure_ss2d_last.pt 등
+
+# ── 3번째 팔: axial attention (2026-09-02, docs/axial_transformer_arm_design.md) ──
+# 통제판: 스택 예산을 v8 SS2D 스택(~0.1M)과 동급으로. env AXIAL_* 로 override 가능.
+AXIAL_D_MODEL = 64
+AXIAL_N_PAIRS = 2
+AXIAL_N_HEADS = 4

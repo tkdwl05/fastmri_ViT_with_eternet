@@ -2,7 +2,7 @@
 v8 Pure ETER-Net 2×2 ablation — 단일 파라미터화 trainer.
 
 환경변수로 4런 구동 (everything else identical):
-  SEQ_MODEL = gru | ss2d     (시퀀스 모델 축)
+  SEQ_MODEL = gru | ss2d | axial  (시퀀스 모델 축; axial 은 3번째 팔, 2026-09-02)
   USE_DC    = 0  | 1         (DC 축; DCBlock + complex head)
   SMOKE_BS, ACCUM_STEPS, SANITY_NUM_EPOCHS, SANITY_VAL_EVERY_N_EPOCHS 도 override 가능.
 
@@ -42,7 +42,7 @@ from check_recon_env import check_env_for_model
 
 # ── 런 선택 (4런: SEQ_MODEL × USE_DC) ──
 SEQ_MODEL = os.environ.get('SEQ_MODEL', 'gru').lower()
-assert SEQ_MODEL in ('gru', 'ss2d'), f"SEQ_MODEL must be gru|ss2d, got {SEQ_MODEL}"
+assert SEQ_MODEL in ('gru', 'ss2d', 'axial'), f"SEQ_MODEL must be gru|ss2d|axial, got {SEQ_MODEL}"
 USE_DC    = os.environ.get('USE_DC', '0') == '1'
 
 # ── override ──
@@ -105,6 +105,17 @@ def build_model(device):
             dim=IMAGE_SIZE[0], n_coil=N_COIL,
             n_hidden_1=N_HIDDEN_LRNN_1, n_hidden_2=N_HIDDEN_LRNN_2,
             unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'axial':
+        # 3번째 팔 (2026-09-02, docs/axial_transformer_arm_design.md) — 신규 파일만 추가
+        from u_pure_eternet_axial import PureETER_AXIAL
+        model = PureETER_AXIAL(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            axial_d_model=int(os.environ.get('AXIAL_D_MODEL', AXIAL_D_MODEL)),
+            axial_n_pairs=int(os.environ.get('AXIAL_N_PAIRS', AXIAL_N_PAIRS)),
+            axial_n_heads=int(os.environ.get('AXIAL_N_HEADS', AXIAL_N_HEADS)),
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
     else:
