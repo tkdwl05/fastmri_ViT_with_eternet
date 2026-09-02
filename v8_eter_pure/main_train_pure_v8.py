@@ -52,8 +52,19 @@ BATCH_SIZE         = int(os.environ.get('SMOKE_BS', BATCH_SIZE))
 ACCUM_STEPS        = int(os.environ.get('ACCUM_STEPS', ACCUM_STEPS))
 NUM_VAL_FILES      = None
 
+# ── 시드 (멀티시드 공정성 실험용, 2026-09-01. SEED 미설정 시 기존 런과 동작 동일) ──
+_SEED_ENV = os.environ.get('SEED')
+if _SEED_ENV is not None:
+    SEED = int(_SEED_ENV)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)          # CPU+CUDA 가중치 초기화·dropout 고정
+    print(f"[seed] SEED={SEED} — weights/shuffle/aug/mask-offset 고정 "
+          f"(fp16 atomics 로 비트단위 재현은 아님)")
+
 _TAG        = 'DC' if USE_DC else 'noDC'
-_RUN_NAME   = f"PureETER_{SEQ_MODEL.upper()}_{_TAG}_R4_brain384_v8"
+_RUN_SUFFIX = os.environ.get('RUN_SUFFIX', f"_s{_SEED_ENV}" if _SEED_ENV is not None else '')
+_RUN_NAME   = f"PureETER_{SEQ_MODEL.upper()}_{_TAG}_R4_brain384_v8{_RUN_SUFFIX}"
 PATH_FOLDER = os.path.join(_PROJECT_ROOT, 'logs', _RUN_NAME)
 os.makedirs(PATH_FOLDER, exist_ok=True)
 PREFIX      = f"pure_{SEQ_MODEL}"
@@ -192,6 +203,22 @@ def main():
                                  num_workers=NUM_WORKERS_TRAIN, pin_memory=True)
     if NUM_WORKERS_TRAIN > 0:
         _train_loader_kwargs.update(persistent_workers=True, prefetch_factor=PREFETCH_FACTOR)
+    if _SEED_ENV is not None:
+        # dataset rng(마스크 offset·flip) 시드 + 워커별 독립 스트림 + 셔플 순서 고정.
+        # (기존 무시드 경로와의 차이는 이 블록뿐 — persistent_workers fork 시 16워커가
+        #  동일 rng 상태를 복제하던 문제도 worker_init_fn 재시드로 함께 해소)
+        choh_data_train.rng = np.random.default_rng(SEED + 1)
+
+        def _worker_init_fn(worker_id):
+            ws = torch.initial_seed() % 2**32      # torch 가 워커마다 다른 base seed 부여
+            info = torch.utils.data.get_worker_info()
+            info.dataset.rng = np.random.default_rng(ws)
+            np.random.seed(ws)
+            random.seed(ws)
+
+        _g = torch.Generator()
+        _g.manual_seed(SEED)
+        _train_loader_kwargs.update(worker_init_fn=_worker_init_fn, generator=_g)
     trainloader = DataLoader(choh_data_train, **_train_loader_kwargs)
     print(f"Train Dataloader 준비 완료! ({len(choh_data_train)} 샘플)")
     choh_data_val = FastMRI_H5_Dataloader(
