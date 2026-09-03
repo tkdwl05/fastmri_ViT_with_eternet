@@ -15,6 +15,8 @@ wandb/
 
 # Run logs
 *.log
+# 완주 런 tqdm 로그 gzip 보관본(2026-09-03) — 로그와 동일하게 비추적
+*.log.gz
 
 # Images and documents
 *.png
@@ -86,9 +88,11 @@ results/vis/v9_unleashed_compare/*
 !paper/figs/*.png
 !paper/figs/*.pdf
 
-# infra/docker 재구성 세트 + radapt 재개 스크립트 — *.sh 전역 무시의 예외 (2026-08-31)
+# infra/docker 재구성 세트 + radapt 재개/정지/스냅샷 스크립트 — *.sh 전역 무시의 예외 (2026-08-31, 09-03 정지·스냅샷 추가)
 !infra/docker/*.sh
 !v9_mamba_radapt/runs/post_reboot_rearm.sh
+!v9_mamba_radapt/runs/clean_stop_pre_outage.sh
+!v9_mamba_radapt/runs/snapshot_pre_outage.sh
 
 # 외부 최전선 모델 클론 (Table 4 참조행용, 로컬 전용 — 2026-09-01)
 external/

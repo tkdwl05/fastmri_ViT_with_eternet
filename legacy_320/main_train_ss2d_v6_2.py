@@ -1,6 +1,6 @@
 """
-SS2D-ViT 학습 스크립트 v6_1
-  - Config:     myConfig_choh_SS2D_model_v6_1
+SS2D-ViT 학습 스크립트 v6_2
+  - Config:     myConfig_choh_SS2D_model_v6_2
   - Dataloader: dataloader_h5_v5 (v6 와 동일)
   - Model:      u_choh_model_SS2D_ViT_v4 (v6 와 동일)
   - 변경점 (v6 대비):
@@ -27,14 +27,15 @@ import wandb
 from tqdm.auto import tqdm
 from skimage.metrics import structural_similarity as compare_ssim
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# 2026-09-03: 루트 → legacy_320/ 이동. current_dir 는 저장소 루트(상위 폴더)를 가리켜야 configs/·dataloaders/·models/ 를 찾는다.
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(current_dir, 'configs'))
 sys.path.append(os.path.join(current_dir, 'dataloaders'))
 sys.path.append(os.path.join(current_dir, 'models', 'hybrid_eternet'))
 sys.path.append(os.path.join(current_dir, 'models', 'mamba_eternet'))
 sys.path.append(os.path.join(current_dir, 'tools'))
 
-from myConfig_choh_SS2D_model_v6_1 import *
+from myConfig_choh_SS2D_model_v6_2 import *
 from u_choh_model_ETER_ViT import choh_ViT
 from u_choh_model_SS2D_ViT_v4 import choh_Decoder_SS2D_ViT
 from u_choh_SSIM import SSIM
@@ -114,7 +115,7 @@ def run_val(model, val_loader, criterion_l1, device):
 
 def main():
     print('====================================================')
-    print(' [SS2D-ViT v6_1] v6 best resume + gradient(edge) loss fine-tune')
+    print(' [SS2D-ViT v6_2] v6 best resume + gradient(edge) loss fine-tune')
     print('====================================================')
 
     if not torch.cuda.is_available():
@@ -122,7 +123,7 @@ def main():
     device = torch.device("cuda")
     print(f"Device: {device}")
     print(datetime.datetime.now(pytz.timezone('Asia/Seoul')))
-    if not check_env_for_model('ss2d', 'myConfig_choh_SS2D_model_v6_1', strict=True):
+    if not check_env_for_model('ss2d', 'myConfig_choh_SS2D_model_v6_2', strict=True):
         return
 
     # 1. 인코더
@@ -151,7 +152,7 @@ def main():
         dc_init_alpha=DC_INIT_ALPHA,
     ).to(device)
 
-    # 3. resume (v6 best → v6_1 시작점)
+    # 3. resume (v6 best → v6_2 시작점)
     if RESUME_CKPT and os.path.exists(RESUME_CKPT):
         state = torch.load(RESUME_CKPT, map_location=device)
         ss2d_decoder.load_state_dict(state)
@@ -205,9 +206,9 @@ def main():
     # 6. wandb
     wandb.init(
         project='ViT-MRI-Recon',
-        name=f'SS2D_v6_1_gradloss_BS{BATCH_SIZE}_LR{LEARNING_RATE_ADAM}_EP{NUM_EPOCHS}',
+        name=f'SS2D_v6_2_gradloss_BS{BATCH_SIZE}_LR{LEARNING_RATE_ADAM}_EP{NUM_EPOCHS}',
         config={
-            'model': 'SS2D-ViT-v6_1',
+            'model': 'SS2D-ViT-v6_2',
             'resume_from': RESUME_CKPT,
             'val_metric': 'skimage_ssim',
             'earlystop_metric': 'val_ssim',

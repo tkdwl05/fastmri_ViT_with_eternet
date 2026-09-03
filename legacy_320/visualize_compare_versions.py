@@ -29,7 +29,8 @@ from fastmri.data import SliceDataset
 from fastmri.data.subsample import create_mask_for_mask_type
 from fastmri.models import Unet
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# 2026-09-03: 루트 → legacy_320/ 이동. current_dir 는 저장소 루트(상위 폴더)를 가리켜야 configs/·dataloaders/·models/ 를 찾는다.
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(current_dir, 'configs'))
 sys.path.append(os.path.join(current_dir, 'dataloaders'))
 sys.path.append(os.path.join(current_dir, 'models', 'hybrid_eternet'))
