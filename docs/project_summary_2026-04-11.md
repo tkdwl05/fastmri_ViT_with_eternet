@@ -1,4 +1,4 @@
-# 프로젝트 세부 기술 요약 (TECHNICAL)
+# 프로젝트 세부 기술 요약 (TECHNICAL) — ⚠ 2026-04-11 시점 스냅샷(옛 8GB 머신·루트 320 트랙 기준, 역사 기록). 현행 구조는 `CLAUDE.md`·`docs/INDEX.md` 참조. (2026-09-03 루트 `PROJECT_SUMMARY.md` 에서 이동)
 
 최종 정리일: 2026-04-11 (2026-04-08 Codex 초안 → 2026-04-11 Claude Code 갱신)  
 대상: `/home/snorlax-dw/바탕화면/ViT_based_MRIrecon`

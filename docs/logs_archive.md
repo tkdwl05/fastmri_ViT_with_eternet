@@ -280,3 +280,38 @@ python visualize.py --model ss2d --ckpt logs/SS2D_ViT_R4_brain320_v6/ss2d_vit_be
 ```
 
 평가 시 위 표의 `val_ssim` 컬럼과 일치하는 SSIM 이 나와야 정상 (단, v6 시점 metric 만 직접 비교 가능; v4 의 best.pt 로 평가하면 v6 dataloader/SSIM 정의 하에서 새로 측정됨).
+
+---
+
+## 부록 — 루트 320 트랙 `results/` 그룹화 구조 (2026-06-01 스냅샷, 2026-09-03 CLAUDE.md 에서 이관)
+
+루트 트랙 결과가 저장소에서 빠지며(옛 8GB 머신 전용) 아래 폴더들은 현재 디스크에 없다. 2026-06-01 정리 당시의 구조만 기록으로 남긴다.
+
+**역사적 스냅샷 (2026-06-01, 루트 트랙 전용 — 아래 트리의 폴더들은 현재 디스크에 없음)**: 당시 루트 트랙
+`eval_*.csv`/`vis_*/` 를 카테고리별로 그룹화한 구조. 루트 트랙 결과가 저장소에서 빠지며 함께 제거됐다.
+```
+results/
+├── eval/                                  # 평가 CSV + summary
+│   ├── eval_full_v4/v5/v6/v6_1/...        # 현재 active (full 풀평가)
+│   ├── eval_tta_500 / eval_tta_smoke      # TTA 실험
+│   └── legacy/                            # 옛 sanity / 초기 baseline
+│       ├── eval_ss2d_v4_ss2d_vit_best.*   # 최초 SS2D v4 평가
+│       ├── eval_sanity_v5.*               # v5 sanity check
+│       └── eval_unet_pretrained.*         # U-Net baseline
+├── vis/                                   # 시각화 PNG
+│   ├── aligned/      ★ 최신 정합본 (use this)
+│   │   ├── vis_compare_v4_aligned/        # 단일 버전 모델 비교 (정합)
+│   │   └── vis_compare_versions_aligned/  # 버전 cross-comparison (정합)
+│   ├── per_version/                       # 단일 버전 비교 (옛 미정합)
+│   │   └── vis_compare_v4/v6/v6_1/
+│   ├── cross_versions/                    # 버전 cross (옛 미정합)
+│   │   └── vis_compare_versions/
+│   ├── vis_diagnostic_v6/                 # raw vs masked SSIM 진단
+│   └── legacy/                            # superseded / 옛 / partial run
+│       ├── vis_ss2d_v4_ss2d_vit_best/
+│       ├── vis_compare_v6_partial/
+│       └── vis_compare_versions_bak_middle50/
+└── smoke_test_320/                        # 그대로 유지 (smoke_test_320.py 가 직접 참조)
+```
+
+- (참고) `vis/aligned/` 정합 기준: slice `[1817, 2220, …, 5452]` 동일, err_vmax = `gt.max()*0.1` 절대 기준, H5 스케일 통일 (`visualize_compare*.py`·`visualize_diagnostic_v6.py` default 경로가 이 구조를 가리켰음).

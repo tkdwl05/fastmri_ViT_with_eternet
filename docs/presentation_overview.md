@@ -564,7 +564,7 @@ train script 만 작성하면 launch 가능).
 | `docs/tier2_sharpness_plan.md` | v6_2/v6_3/v6_4 가설 매트릭스 + 결정 트리 |
 | `docs/script_version_history.md` | 삭제된 .py 버전 진화 기록 |
 | `docs/cleanup_log.md` | 삭제 파일 대장 |
-| `PROJECT_SUMMARY.md` | 코드베이스 전체 기술 요약 |
+| `docs/project_summary_2026-04-11.md` (구 루트 `PROJECT_SUMMARY.md`) | 코드베이스 전체 기술 요약 (2026-04-11 스냅샷) |
 
 ### §9 (확장 트랙) 참고 문서
 

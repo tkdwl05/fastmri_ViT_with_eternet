@@ -247,7 +247,7 @@ d_inner256 · d_state32 · n_blocks3 · 게이팅 · out_ch64 · **ds=3** · fp1
   07-29 경고했던 리스크가 정확히 현실화.
 - **08-05 host docker restart 로 NVML 복구** 확인 후 radapt supervisor **단독 재기동**(scratch,
   `MAX_RETRY=200` env 오버라이드로 flake 자가복구 창 ~52분→~3.5h 확대). ETA 80ep×2.61 h/ep ≈ 8.7일 →
-  **~08-13/14 완주 예상**. 이전 실패 로그는 `v9_mamba_radapt/runs/ss2d/*.log.failed-20260730` 보존.
+  **~08-13/14 완주 예상**. 이전 실패 로그 `v9_mamba_radapt/runs/ss2d/*.log.failed-20260730` 는 2026-09-03 정리에서 삭제(NVML 좌초 사건 자체는 §이 절·`docs/cleanup_log.md`·memory 에 기록됨).
 
 ---
 
