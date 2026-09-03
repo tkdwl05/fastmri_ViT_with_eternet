@@ -2,7 +2,7 @@
 
 > **작성** 2026-08-12 · **범위** 2026-04-03 (저장소 초기 커밋) ~ 2026-08-12 (현재)
 > **대상 독자** 딥러닝은 알지만 이 프로젝트와 MRI 재구성 도메인은 처음인 사람
-> **관련 문서** 투고용 압축본은 [`paper/draft_ko_v1.md`](draft_ko_v1.md) (v8·v9 범위만).
+> **관련 문서** 투고용 압축본은 [`paper/draft_ko_v2.md`](draft_ko_v2.md) (v8·v9 범위만; v1 은 `archive/draft_ko_v1.md`).
 > 이 문서는 그 논문이 어떤 4개월의 시행착오 위에 서 있는지를 처음부터 설명하는 여정 기록이다.
 
 ---
@@ -1340,7 +1340,7 @@ DH-Mamba TCSVT 2025, MMR-Mamba MedIA 2024, MambaRoll TMI 2024, HiFi-Mamba 2025).
 | radapt R-sweep 평가 | 미실행 | 완주 후. `v8_eter_pure/eval_r_generalization_v8.py` 재사용 |
 | 기준선 U-Net / E2E-VarNet per-slice 평가 | 스크립트 준비 완료 | `v8_eter_pure/eval_paired_baselines.py`, CPU 2슬라이스 smoke 통과. GPU 풀런 ~2시간, radapt 뒤 대기 |
 | v9 시각화 | 미작성 | `results/vis/v9*` 없음 |
-| 논문 투고 | 초안 v1 단계 | `paper/draft_ko_v1.md`, 투고처 후보 평가 완료 |
+| 논문 투고 | 초안 v1 단계 | `paper/archive/draft_ko_v1.md`(현행은 `draft_ko_v2.md`), 투고처 후보 평가 완료 |
 
 > **갱신 (2026-08-20)**: 공식 fastMRI 추론 규약(`fastmri_examples/varnet/`)과 대조하며 두 가지를
 > 바로잡았다. ① 기존의 "sensitivity 추정이 k-space ortho 스케일(~1e-4)에서 발산한다"는 진단은
@@ -1457,7 +1457,7 @@ supervisor `*/runs/run_*_autoresume.sh`.
 `docs/logs_archive.md`(v4~v6 per-epoch 원본), `docs/version_evolution.md`(설정 ground-truth +
 비교 정책 §7), `docs/eval_metric_redesign.md`(마스크·손실 재설계), `docs/v8_eter_pure_rnn_vs_ss2d.md`,
 `docs/v9_mamba_unleashed_and_radapt.md`, `docs/presentation_overview.md`(v1~v6),
-`paper/draft_ko_v1.md`(논문 초안).
+`paper/archive/draft_ko_v1.md`(논문 초안 v1; 현행 `paper/draft_ko_v2.md`).
 
 ## D. 참고문헌
 
