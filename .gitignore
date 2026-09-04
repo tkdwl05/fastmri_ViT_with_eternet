@@ -87,6 +87,12 @@ results/eval/zero_filled/*
 results/vis/v9_unleashed_compare/*
 !results/vis/v9_unleashed_compare/*.png
 !results/vis/v9_unleashed_compare/metrics_summary.txt
+# 다중 모델 정성 비교 (visualize_multimodel_compare.py, 2026-09-04): 진단 PNG·지표 요약·per-slice json 만 (npz 재구성 캐시는 로컬)
+!results/vis/multimodel_compare/
+results/vis/multimodel_compare/*
+!results/vis/multimodel_compare/*.png
+!results/vis/multimodel_compare/metrics_summary.txt
+!results/vis/multimodel_compare/metrics_*.json
 
 # 논문 그림 (paper/figs/) 은 GitHub 공유 — *.png / *.pdf 전역 무시의 예외 (2026-08-18)
 !paper/figs/*.png

@@ -81,7 +81,7 @@ ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 하이브
 
 ### paper/ (논문 트랙, 2026-08~) — 커밋 prefix "paper:"
 - `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1 (MDPI 공학형, 스코프 v8+v9 unleashed, 외부검토 08-18 반영 P0 8건·P1 8건). `references.bib` 73항목 서지 전건 확정(⚠ 0건). 프로젝트 여정 서사는 `project_story_v1_to_v9.md`.
-- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig4_per_slice.py` → `paper/figs/`.
+- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig2_curves.py`/`make_fig3_qualitative.py`(다중 모델 정성 그림 — `results/vis/multimodel_compare/recon_*.npz` 조판 전용, 추론은 루트 `visualize_multimodel_compare.py`)/`make_fig4_per_slice.py` → `paper/figs/`.
 - 논문·보고 지표는 표준 지표만(SSIM 주지표 + PSNR/NMSE/L1) — composite 사용 금지 (08-07 전면 결정, `docs/eval_metric_redesign.md` ⚠ 참조).
 - **`paper/ieie/` — IEIE(대한전자공학회) 투고용 초안 2종(2026-09-03~)**: 학술지판 `draft_ieie_ko_v1.src.md` → `build_ieie_docx.py`, 학술대회 2쪽판 `draft_ieie_conf_ko_v1.src.md` → `build_ieie_conf_docx.py`(둘 다 저장소 루트에서 `CUDA_VISIBLE_DEVICES="" python …` → `.md`+`.docx`; 학술대회판은 2쪽 분량 추정 내장). 표는 `paper/tables/ieie_table{1,4}_block.md`(make_tables.py 생성, **볼륨 단위**)를 붙여넣고, 양식 근거·어긋난 지점·Word 확인 체크리스트는 `docs/paper_table_conventions.md`. 렌더러가 없으므로 `check_docx_structure.py` 로 OOXML 구조만 점검하고 부동 표/그림 위치·쪽수는 Word/한글에서 확인. 양식 원본 `template_ieie_2021.docx`·`example_conference_2page.docx`(사용자 업로드). 2026 추계학술대회 논문 마감 2026-10-19.
 - 초안 v2.1 의 클레임 스코프(09-02 잠금): "SSM>RNN" 일반화가 아니라 "SS2D 치환 > 원 bi-GRU 설계"로 한정 + 메커니즘/파라미터화 confound 한계 항목. 잔여 = 공정성 스위트·radapt 결과 반영(4팔 표는 `make_tables.py` 확장 예정) — 실험 종료 ~10월 중순, SI 마감 11-30. (초안 v1 은 `paper/archive/draft_ko_v1.*` 역사.)
@@ -93,7 +93,7 @@ ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 하이브
 ### 코드 레이아웃 (models/ · dataloaders/)
 - `models/` — `pure_eternet/`(v8·v9 순수 ETER 4팔 wrapper: `u_pure_eternet_{gru,ss2d,transformer,pixelgru}.py`, v9 `u_pure_eternet_ss2d_v9{,_radapt}.py`), `mamba_eternet/`(SS2D 클래스: `ss2d.py`·`ss2d_v9.py`·`u_choh_model_SS2D_ViT_v4.py`(DC block 정의)), `attn_eternet/`(Transformer 팔 `transformer_v10.py`, axial attention), `rnn_eternet/`(pixel-GRU 팔 `pixelgru_v10.py`), `hybrid_eternet/`(교수님 원본 `myUNet_DF.py`(U-Net DFU)·`u_choh_*` + ViT+seq v7_titan ETER `u_choh_model_ETER_ViT_v7_titan.py`), `mae/`·`vit_pytorch/`(ViT 백본, vendored), `pretrained/`(U-Net/VarNet leaderboard ckpt — baseline).
 - `dataloaders/` — 공유 로더 `dataloader_h5_v5.py`(brain mask `:243`, v5~v9 전부 이 클래스 상속), v9 `dataloader_h5_v9_multiAR.py`(per-sample R∈{2,3,4,5,6,8} 랜덤), + 옛 교수님 `myDataloader_fastmri_brain_*.py`.
-- 그 외 — `scripts_legacy/`(교수님 원본 학습 스크립트, 무수정), `tools/`(`check_recon_env.py` 환경 점검·`smoke_test_320.py`·`perceptual_loss.py`), `infra/docker/`(Docker `mri:v1` 재구성 세트 00~50 + `RUNBOOK.md`), `external/`(외부 레포 clone, git-ignore), `legacy_320/`(루트 320 트랙의 `main_train_*_v6_{1,2,3}.py`·`eval_full_compare.py`·`eval_tta_ensemble.py`·`visualize_compare*.py`·`visualize_diagnostic_v6.py` — 2026-09-03 루트에서 이동, 실행 불가·역사 보존), 루트의 `visualize_v7_titan_compare.py`·`visualize_v8_pure_compare.py`·`visualize_v9_compare.py`·`visualize_eval_modes_compare.py`(현행 트랙별 4-way 시각화, `visualize_slices_canonical.json` 정본 슬라이스), `paper/`(§paper).
+- 그 외 — `scripts_legacy/`(교수님 원본 학습 스크립트, 무수정), `tools/`(`check_recon_env.py` 환경 점검·`smoke_test_320.py`·`perceptual_loss.py`), `infra/docker/`(Docker `mri:v1` 재구성 세트 00~50 + `RUNBOOK.md`), `external/`(외부 레포 clone, git-ignore), `legacy_320/`(루트 320 트랙의 `main_train_*_v6_{1,2,3}.py`·`eval_full_compare.py`·`eval_tta_ensemble.py`·`visualize_compare*.py`·`visualize_diagnostic_v6.py` — 2026-09-03 루트에서 이동, 실행 불가·역사 보존), 루트의 `visualize_v7_titan_compare.py`·`visualize_v8_pure_compare.py`·`visualize_v9_compare.py`·`visualize_eval_modes_compare.py`(현행 트랙별 4-way 시각화, `visualize_slices_canonical.json` 정본 슬라이스)·`visualize_multimodel_compare.py`(2026-09-04, 8-way 정성 비교 GT/Zero-filled/U-Net†/E2E-VarNet†/PromptMR+/bi-GRU/SS2D/Enhanced — **CPU 전용 설계**: SS2D 는 `selective_scan_ref` 런타임 몽키패치, PromptMR+ 는 `external/PromptMR-plus` 어댑터, 실행은 `CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=8 nice -n 19 python visualize_multimodel_compare.py`), `paper/`(§paper).
 
 ### 루트 트랙 (v1~v6_x, 320×320) — 역사적 기록, 이 머신에 ckpt 없음
 
@@ -243,7 +243,8 @@ results/
     ├── v7_titan_compare/         # v7_titan 4-way GT/U-Net/ETER/SS2D
     ├── v7_titan_eval_modes/      # v7_titan eval-mode 비교
     ├── v8_pure_eternet_compare/  # v8 4-way GT/U-Net/GRU/SS2D
-    └── v9_unleashed_compare/     # v9 4-way (정본 슬라이스 스펙 --slice-spec 으로 트랙 간 정합, 08-21)
+    ├── v9_unleashed_compare/     # v9 4-way (정본 슬라이스 스펙 --slice-spec 으로 트랙 간 정합, 08-21)
+    └── multimodel_compare/       # 8-way 정성 비교 정본 12슬라이스 (CPU fp32, 09-04): recon_*.npz(로컬)·metrics_*.json·compare_*.png·metrics_summary.txt → paper Fig.3
 ```
 (radapt R-sweep·공정성 4팔 결과 폴더는 각 런 완주 후 추가.)
 

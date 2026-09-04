@@ -34,6 +34,14 @@
 ## 3. 실행 순서 (radapt 완주 후, 예상 합계 ~1일)
 
 1. CPU 스모크: ckpt 로드 + 1 슬라이스 forward (모델 생성자·키 매칭 확인) — GPU 전 검증.
+   **✅ 2026-09-04 완료** — `visualize_multimodel_compare.py`(정성 그림용 CPU 추론)에서 PromptMR+ 첫 forward
+   실행. `hyper_parameters` 로 `PromptMR` 직접 생성 + `promptmr.` 접두사 제거 로드(strict, `loss.w` 만 제외),
+   인접 5슬라이스(z±2, 경계 복제) 스택을 우리 측정값에서 유도. CPU fp32 16 s/슬라이스(8 스레드).
+   ⚠ **업스트림 버그**: `models/promptmr_v2.py:249` `PromptMRBlock.forward` 가 정의되지 않은 `self.n_buffer` 를
+   참조(의도 = `self.model.n_buffer`) → AttributeError. 외부 clone 은 무수정, 로더가 각 cascade 에
+   `blk.n_buffer = blk.model.n_buffer` 를 런타임 부여해 우회(풀런 어댑터도 같은 처리 필요).
+   정본 12 슬라이스 결과: `results/vis/multimodel_compare/metrics_summary.txt`(PromptMR+ 가 예상대로 최상위 —
+   단 12장 정성 표본이지 Table 4 수치가 아님; 다중 슬라이스 입력(5장)이라 단일 슬라이스 모델과 입력 정보량이 다름을 캡션에 명시).
 2. 층화 표본 299 (기존 `eval_paired_baselines.py` 표본과 동일 seed 0) → 방향 확인.
 3. 전체 7,334 GPU 풀런 → per-slice CSV → `make_tables.py` Table 4 재생성.
 4. ms/slice·peak VRAM 측정을 같은 런에서 채집 (Table 5).
