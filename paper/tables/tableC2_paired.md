@@ -1,0 +1,10 @@
+**Table 2. Paired per-slice analysis (7,334 slices). Δ = row method − comparator, oriented so that positive favors the row method (nMSE sign negated). 95% CI: volume-clustered bootstrap (2,000 resamples); p: two-sided Wilcoxon signed-rank over 464 volumes.**
+
+| Comparison | Metric | Δ median (IQR) | Slices favoring (%) [95% CI] | Volumes favoring (%) | p |
+|---|---|---:|---:|---:|---:|
+| SS2D vs. bi-GRU | SSIM | +0.0013 (+0.0002, +0.0025) | 78.2 [76.8, 79.7] | 94.8 | <0.001 |
+|  | PSNR (dB) | +0.12 (-0.01, +0.26) | 73.8 [72.1, 75.5] | 89.9 | <0.001 |
+|  | nMSE (10⁻³ %) | +8.9 (-0.6, +20.6) | 73.8 [72.0, 75.5] | 90.1 | <0.001 |
+| Enhanced vs. SS2D | SSIM | +0.0002 (-0.0009, +0.0015) | 55.8 [53.8, 57.6] | 66.4 | <0.001 |
+|  | PSNR (dB) | +0.02 (-0.11, +0.15) | 54.2 [52.5, 55.9] | 58.6 | <0.001 |
+|  | nMSE (10⁻³ %) | +1.2 (-7.5, +11.4) | 54.2 [52.5, 55.9] | 61.4 | <0.001 |

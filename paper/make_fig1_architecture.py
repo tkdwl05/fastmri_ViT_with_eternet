@@ -91,7 +91,7 @@ arrow(ax, (62.7, 12.5), (65.6, 12.5))                             # concat → U
 arrow(ax, (86, 12.5), (89.6, 12.5))                               # U-Net → out
 
 ax.text(2, 0.9, "All components except the sequence module are identical across the two arms: "
-                "data loader, undersampling masks, loss, optimizer, schedule, epochs, and seed.",
+                "data loader, undersampling masks, loss, optimizer, schedule, epochs, and the post-processing U-Net.",
         fontsize=8, color=MUTED)
 
 # ============================ (b) 강화 SS2D ============================
@@ -126,8 +126,8 @@ arrow(ax, (91.5, 13.1), (91.5, 11.4))
 
 ax.text(2, 1.2, "Enhancements over the controlled SS2D: gating restored · 3 residual blocks · bottleneck lifted "
                 "(20 → 64 ch, d_inner 128 → 256, d_state 16 → 32) · SSM stack ~2M.\n"
-                "fp16 + coarse scan make it faster per epoch than the controlled arm "
-                "(2.51 vs 2.78 h/epoch) — enabling 80 instead of 50 epochs in a comparable budget.",
+                "fp16 + coarse scan keep the per-epoch time comparable to the controlled arm "
+                "(2.84 vs 3.07 h/epoch; different runtime environments) — enabling 80 instead of 50 epochs.",
         fontsize=8, color=MUTED, va="bottom")
 
 png = os.path.join(OUT, "fig1_architecture.png")

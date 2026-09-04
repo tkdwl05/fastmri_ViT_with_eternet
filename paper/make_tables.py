@@ -1,9 +1,13 @@
 """논문 표 자동 생성기 — per-slice CSV 단일 원천에서 Table 1·2·3·S1 을 재현 가능하게 뽑는다.
 
 입력:  results/eval/v9_unleashed/per_slice_paired_v9.csv (7,334 슬라이스 × 3모델 × 4지표)
-출력:  paper/tables/table{1,2,2b,3,S1}.{md,tex}
-       - .md  : 한국어 헤더 (현행 draft_ko_v2 와 동일 표기)
-       - .tex : 영문 헤더 + booktabs (영어 전환용; MDPI 는 Word 도 허용되므로 선택 사용)
+출력:  paper/tables/table{1,2,2b,3,S1}.{md,tex}            — draft_ko_v2 표기(역사 유지)
+       paper/tables/tableC{1_main_volume,1_main_slice,2_paired,3_efficiency,S1_contrast}.{md,tex}
+       paper/tables/ieie_table1_block.md                     — IEIE .src.md 에 붙여넣는 @table 블록
+       - .md  : 한국어 헤더 (현행 draft_ko_v2 와 동일 표기) / C 계열은 관례형 영문
+       - .tex : 영문 헤더 + booktabs
+       관례형(C 계열, 2026-09-03): 표 내용 영문·L1 제외·nMSE %·볼륨 단위 mean±SD·Params (M)·Zero-filled 행·
+       최고값 굵게/차선 밑줄·↑↓ — 근거: 최근 Mamba 재구성 논문·Oh 2025·fastMRI 공식 관례 (docs/paper_table_conventions.md)
 
 통계 (draft_ko_v2 §3.8 과 동일 정의):
   - Δ 부호 규약: 항상 양수 = 치환/강화 모델 우위 (NMSE/L1 은 부호 반전)
@@ -242,6 +246,222 @@ tex = tex_table(r"Slice win-rates by contrast subgroup. Each cell: SSIM win-rate
                 r"Contrast & $n$ (slices) & SS2D vs.\ GRU & Enhanced vs.\ controlled", tex_rows)
 write_pair("tableS1_contrast", md, tex)
 
+# ================================================================ 관례형 표 (2026-09-03, IEIE 투고용)
+# 최근 MRI 재구성 논문(MMR-Mamba·DM-Mamba·HiFi-Mamba·MambaRecon·SO-Mamba)·교수님 논문(Oh 2025)·fastMRI 공식 관례에 맞춘 표:
+#   - 표 내용 영문, L1 열 제외, nMSE 는 % 단위, 볼륨 단위 mean±SD(ddof=1, n=464; 슬라이스 단위 변형도 생성),
+#   - Params (M) 열, Zero-filled 기준선 행(results/eval/zero_filled/, CPU 계산; 없으면 [TBD]),
+#   - 최고값 **굵게**·차선 __밑줄__ (IEIE 빌더가 두 마크업을 해석), 머리글 ↑↓.
+# 출력: tableC1_main{,_slice}.{md,tex}, tableC2_paired, tableC3_efficiency, tableCS1_contrast, ieie_table1_block.md
+ZF_CSV = os.path.join(ROOT, "results/eval/zero_filled/per_slice_zero_filled.csv")
+CONV = {  # 표 안 영문 명칭 · Params (M)
+    "zf":   {"en": "Zero-filled",        "params": "–"},
+    "gru":  {"en": "bi-GRU (original)",  "params": "668"},
+    "ss2d": {"en": "SS2D (controlled)",  "params": "31"},
+    "v9":   {"en": "Enhanced SS2D",      "params": "33"},
+}
+CM = ["ssim", "psnr", "nmse"]                       # 관례형 표의 지표 3종 (L1 제외)
+CM_HEAD_MD = {"ssim": "SSIM ↑", "psnr": "PSNR (dB) ↑", "nmse": "nMSE (%) ↓"}
+CM_HEAD_TEX = {"ssim": r"SSIM $\uparrow$", "psnr": r"PSNR (dB) $\uparrow$", "nmse": r"nMSE (\%) $\downarrow$"}
+CM_SCALE = {"ssim": 1.0, "psnr": 1.0, "nmse": 100.0}   # NMSE → %
+CM_FMT = {"ssim": ("{:.4f}", "{:.4f}"), "psnr": ("{:.2f}", "{:.2f}"), "nmse": ("{:.3f}", "{:.3f}")}
+
+# zero-filled per-slice 결과를 (file, slice_idx) 키로 조인 — 없으면 None
+ZF = None
+if os.path.exists(ZF_CSV):
+    zf_rows = {(r["file"], int(r["slice_idx"])): r for r in csv.DictReader(open(ZF_CSV))}
+    keys = [(r["file"], int(r["slice_idx"])) for r in rows]
+    if all(k in zf_rows for k in keys):
+        ZF = {m: np.array([float(zf_rows[k][f"raw_{m}"]) for k in keys]) for m in METRICS}
+        print(f"  zero-filled 기준선 조인 완료 ({len(zf_rows):,} 슬라이스, raw 변형)")
+    else:
+        print("  !! zero-filled CSV 가 불완전 — Zero-filled 행은 [TBD]")
+else:
+    print("  zero-filled CSV 없음 — Zero-filled 행은 [TBD] (v8_eter_pure/eval_zero_filled_v8.py 실행 필요)")
+
+
+def arm_values(p, m):
+    return ZF[m] if p == "zf" else M[f"{p}_{m}"]
+
+
+def vol_mean(a):
+    return np.array([a[ix].mean() for ix in vol_idx])
+
+
+def ms(p, m, unit):
+    """mean±SD 문자열. unit='volume' 이면 볼륨 단위 평균의 평균±SD(n=464), 'slice' 면 슬라이스 단위(n=7,334)."""
+    a = arm_values(p, m) * CM_SCALE[m]
+    if unit == "volume":
+        a = vol_mean(a)
+    fm, fs = CM_FMT[m]
+    return fm.format(a.mean()) + "±" + fs.format(a.std(ddof=1))
+
+
+def mean_only(p, m, unit):
+    a = arm_values(p, m) * CM_SCALE[m]
+    if unit == "volume":
+        a = vol_mean(a)
+    return CM_FMT[m][0].format(a.mean())
+
+
+def rank_marks(arms, m, unit):
+    """열 안에서 최고 → 'b', 차선 → 'u' (나머지 '')."""
+    vals = {}
+    for p in arms:
+        if p == "zf" and ZF is None:
+            continue
+        a = arm_values(p, m) * CM_SCALE[m]
+        vals[p] = (vol_mean(a) if unit == "volume" else a).mean()
+    order = sorted(vals, key=lambda p: vals[p] if m in LOWER else -vals[p])
+    return {p: ("b" if i == 0 else "u" if i == 1 else "") for i, p in enumerate(order)}
+
+
+def mark_md(text, k):
+    return f"**{text}**" if k == "b" else f"__{text}__" if k == "u" else text
+
+
+def mark_tex(text, k):
+    return rf"\textbf{{{text}}}" if k == "b" else rf"\underline{{{text}}}" if k == "u" else text
+
+
+def conv_main_table(unit):
+    arms = ["zf", "gru", "ss2d", "v9"]
+    n_txt = f"{V} volumes" if unit == "volume" else f"{n:,} slices"
+    cap_en = (f"Quantitative comparison on the fastMRI brain multi-coil validation set ({n_txt}, R = 4, brain-masked); "
+              f"mean±SD over {'volumes' if unit == 'volume' else 'slices'}, best in bold, second best underlined")
+    cap_ko = (f"fastMRI brain multi-coil 검증 집합({V} 볼륨, R=4, brain-masked)의 정량 비교"
+              f"({'볼륨' if unit == 'volume' else '슬라이스'} 단위 평균±표준편차, 최고값 굵게·차선 밑줄)")
+    marks = {m: rank_marks(arms, m, unit) for m in CM}
+    md = [f"**Table 1 ({unit}-level). {cap_en}.**", "",
+          "| Method | Params (M) | " + " | ".join(CM_HEAD_MD[m] for m in CM) + " |",
+          "|---|---:|" + "---:|" * len(CM)]
+    tex_rows, blk_rows = [], []
+    for p in arms:
+        if p == "zf" and ZF is None:
+            cells_md = ["[TBD]"] * len(CM)
+            cells_tex = ["[TBD]"] * len(CM)
+        else:
+            cells_md = [mark_md(ms(p, m, unit), marks[m].get(p, "")) for m in CM]
+            cells_tex = [mark_tex(tex_escape(ms(p, m, unit)), marks[m].get(p, "")) for m in CM]
+        md.append(f"| {CONV[p]['en']} | {CONV[p]['params']} | " + " | ".join(cells_md) + " |")
+        blk_rows.append(f"| {CONV[p]['en']} | {CONV[p]['params']} | " + " | ".join(cells_md) + " |")
+        tex_rows.append(" & ".join([CONV[p]["en"], CONV[p]["params"].replace("–", "--")] + cells_tex))
+    md += ["", "(Zero-filled = RSS of the inverse FFT of the undersampled k-space, no intensity rescaling; "
+           "SD = sample standard deviation (ddof = 1). Public leaderboard U-Net/E2E-VarNet checkpoints were trained on "
+           "train+val and are excluded from the ranking; see text.)"]
+    tex = tex_table(cap_en + ".", f"tab:main-{unit}", "lr" + "r" * len(CM),
+                    "Method & Params (M) & " + " & ".join(CM_HEAD_TEX[m] for m in CM), tex_rows)
+    write_pair(f"tableC1_main_{unit}", md, tex)
+    # IEIE .src.md 붙여넣기용 블록 (단 폭 col, 열 폭 합 4560 ≤ 4563 twips; 8 pt Times 기준 숫자 셀 줄바꿈 없음)
+    blk = ["@table: col | 1120,560,1040,880,960",
+           f"@cap_ko: {cap_ko}",
+           f"@cap_en: {cap_en}",
+           "| Method | Params (M) | " + " | ".join(CM_HEAD_MD[m] for m in CM) + " |",
+           "|---|---|" + "---|" * len(CM)] + blk_rows + ["@end"]
+    return blk
+
+
+blk_vol = conv_main_table("volume")
+blk_slice = conv_main_table("slice")
+open(os.path.join(OUT, "ieie_table1_block.md"), "w").write(
+    "%% IEIE .src.md 붙여넣기용 — 볼륨 단위 (권장, fastMRI 관례)\n" + "\n".join(blk_vol)
+    + "\n\n%% 슬라이스 단위 변형 (현행 문서·초안의 대표 수치 0.9126/0.9140/0.9145 와 일치)\n" + "\n".join(blk_slice) + "\n")
+print("  wrote ieie_table1_block.md")
+
+# ---- Table C2: 쌍대 통계 보조표 (두 비교 × 3지표, nMSE Δ 는 10⁻³ % 단위)
+def f_delta_conv(m, v):
+    return f"{v:+.4f}" if m == "ssim" else f"{v:+.2f}" if m == "psnr" else f"{v * 1e5:+.1f}"
+
+
+md = ["**Table 2. Paired per-slice analysis (7,334 slices). Δ = row method − comparator, oriented so that positive favors "
+      "the row method (nMSE sign negated). 95% CI: volume-clustered bootstrap (2,000 resamples); p: two-sided Wilcoxon "
+      "signed-rank over 464 volumes.**", "",
+      "| Comparison | Metric | Δ median (IQR) | Slices favoring (%) [95% CI] | Volumes favoring (%) | p |",
+      "|---|---|---:|---:|---:|---:|"]
+tex_rows = []
+for label, S in [("SS2D vs. bi-GRU", S_V8), ("Enhanced vs. SS2D", S_V9)]:
+    for i, m in enumerate(CM):
+        s = S[m]
+        mname = {"ssim": "SSIM", "psnr": "PSNR (dB)", "nmse": "nMSE (10⁻³ %)"}[m]
+        med = f"{f_delta_conv(m, s['med'])} ({f_delta_conv(m, s['iqr'][0])}, {f_delta_conv(m, s['iqr'][1])})"
+        md.append(f"| {label if i == 0 else ''} | {mname} | {med} | {s['win']:.1f} [{s['win_ci'][0]:.1f}, {s['win_ci'][1]:.1f}] "
+                  f"| {s['vol_win']:.1f} | {f_p(s['p_vol'])} |")
+        tex_rows.append(" & ".join([
+            (rf"\multirow{{3}}{{*}}{{{label}}}" if i == 0 else ""),
+            tex_escape(mname).replace("10⁻³", r"$10^{-3}$"), tex_escape(med),
+            f"{s['win']:.1f} [{s['win_ci'][0]:.1f}, {s['win_ci'][1]:.1f}]", f"{s['vol_win']:.1f}",
+            f_p(s["p_vol"]).replace("<", r"$<$")]))
+    tex_rows.append(r"\midrule")
+tex_rows.pop()
+tex = tex_table(r"Paired per-slice analysis (7{,}334 slices). $\Delta$ = row method $-$ comparator, oriented so that positive "
+                r"favors the row method (nMSE sign negated). 95\% CI: volume-clustered bootstrap (2{,}000 resamples); "
+                r"$p$: two-sided Wilcoxon signed-rank over 464 volumes.", "tab:paired", "llrrrr",
+                r"Comparison & Metric & $\Delta$ median (IQR) & Slices favoring (\%) [95\% CI] & Volumes favoring (\%) & $p$",
+                tex_rows)
+write_pair("tableC2_paired", md, tex)
+
+# ---- Table C3: 효율 (상수 — draft_ko_v2 Table 5 의 h/ep 실측; 추론 ms/slice·VRAM 은 GPU 확보 후)
+EFF = [("bi-GRU (original)", "668", "2.41", "[TBD]", "[TBD]"),
+       ("SS2D (controlled)", "31", "3.07", "[TBD]", "[TBD]"),
+       ("Enhanced SS2D", "33", "2.84‡", "[TBD]", "[TBD]")]
+md = ["**Table 3. Parameter and time efficiency (TITAN RTX 24 GB, batch 8, AMP, 384×384).** "
+      "† Median wall-clock between 5-epoch checkpoints, validation included. ‡ Trained after a container/dataloader "
+      "upgrade — not directly comparable with the two v8 rows. Inference time and VRAM to be measured once GPU0 is free.", "",
+      "| Method | Params (M) | Train (h/epoch)† | Inference (ms/slice) | Peak VRAM (GB) |", "|---|---:|---:|---:|---:|"]
+md += [f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} | {r[4]} |" for r in EFF]
+tex = tex_table(r"Parameter and time efficiency (TITAN RTX 24\,GB, batch 8, AMP, $384\times384$). "
+                r"$\dagger$ median wall-clock between 5-epoch checkpoints, validation included; "
+                r"$\ddagger$ trained after a container/dataloader upgrade.", "tab:efficiency", "lrrrr",
+                r"Method & Params (M) & Train (h/epoch)$^\dagger$ & Inference (ms/slice) & Peak VRAM (GB)",
+                [" & ".join([r[0], r[1], r[2].replace("‡", r"$^\ddagger$"), r[3], r[4]]) for r in EFF])
+write_pair("tableC3_efficiency", md, tex)
+
+# ---- Table CS1: contrast 별 SSIM (볼륨/슬라이스 평균) + 우위 슬라이스 비율(SSIM 기준, 괄호 = 3지표 범위)
+#      volume: 볼륨 단위 평균의 contrast 내 평균 (n = 볼륨 수) — IEIE 초안 표 4 (09-04 결정: 볼륨 단위)
+#      slice : 슬라이스 평균 (n = 슬라이스 수)
+vol_contrast = np.array([contrast[ix[0]] for ix in vol_idx])
+blk4 = ["%% IEIE .src.md 붙여넣기용 표 4 — 볼륨 단위 SSIM + 우위 슬라이스 비율(SSIM 기준, 괄호 = SSIM·PSNR·nMSE 범위)"]
+for unit in ["volume", "slice"]:
+    n_lab = "n (volumes)" if unit == "volume" else "n (slices)"
+    md = [f"**Table S1 ({unit}-level). Per-contrast SSIM ({unit}-level mean; best in bold) and fraction of favoring slices "
+          "(SSIM-based; parentheses: range over SSIM, PSNR and nMSE).**", "",
+          f"| Contrast | {n_lab} | SSIM bi-GRU | SSIM SS2D | SSIM Enhanced | SS2D vs. bi-GRU (%) | Enhanced vs. SS2D (%) |",
+          "|---|---:|---:|---:|---:|---:|---:|"]
+    tex_rows, src_rows = [], []
+    for c in sorted(set(contrast)):
+        sel = contrast == c
+        if unit == "volume":
+            vsel = vol_contrast == c
+            means = [vol_mean(M[f"{p}_ssim"])[vsel].mean() for p in ["gru", "ss2d", "v9"]]
+            n_c = int(vsel.sum())
+        else:
+            means = [M[f"{p}_ssim"][sel].mean() for p in ["gru", "ss2d", "v9"]]
+            n_c = int(sel.sum())
+        win = {}
+        for tag, (a, b) in [("v8", ("gru", "ss2d")), ("v9", ("ss2d", "v9"))]:
+            ws = [100 * np.mean(delta(a, b, m)[sel] > 0) for m in CM]
+            win[tag] = f"{ws[0]:.1f} ({min(ws):.1f}–{max(ws):.1f})"
+        best_i = int(np.argmax(means))
+        cells = [f"{v:.4f}" for v in means]
+        cells_md = [f"**{x}**" if i == best_i else x for i, x in enumerate(cells)]
+        cells_tex = [rf"\textbf{{{x}}}" if i == best_i else x for i, x in enumerate(cells)]
+        row_md = f"| {c} | {n_c:,} | " + " | ".join(cells_md) + f" | {win['v8']} | {win['v9']} |"
+        md.append(row_md)
+        src_rows.append(row_md)
+        tex_rows.append(" & ".join([c, f"{n_c:,}".replace(",", r"{,}")] + cells_tex +
+                                   [tex_escape(win["v8"]), tex_escape(win["v9"])]))
+    tex = tex_table(rf"Per-contrast SSIM ({unit}-level mean; best in bold) and fraction of favoring slices "
+                    r"(SSIM-based; parentheses: range over SSIM, PSNR and nMSE).", f"tab:contrast-{unit}",
+                    "lrrrrrr", rf"Contrast & $n$ ({'volumes' if unit == 'volume' else 'slices'}) & SSIM bi-GRU & SSIM SS2D & "
+                    r"SSIM Enhanced & SS2D vs.\ bi-GRU (\%) & Enhanced vs.\ SS2D (\%)", tex_rows)
+    write_pair(f"tableCS1_contrast_{unit}", md, tex)
+    if unit == "volume":
+        blk4 += ["@table: page | 1100,800,1100,1100,1100,2150,2150",
+                 "@cap_ko: Contrast 서브그룹별 SSIM(볼륨 단위 평균, 최고값 굵게)과 우위 슬라이스 비율. 우위 비율 칸은 SSIM 기준이며 괄호는 세 지표(SSIM·PSNR·nMSE)에 걸친 범위",
+                 "@cap_en: Per-contrast SSIM (volume-level mean, best in bold) and fraction of favoring slices. The fraction cells are SSIM-based; parentheses give the range over the three metrics (SSIM, PSNR, nMSE)",
+                 md[2], "|---|---|---|---|---|---|---|"] + src_rows + ["@end"]
+open(os.path.join(OUT, "ieie_table4_block.md"), "w", encoding="utf-8").write("\n".join(blk4) + "\n")
+print("  wrote ieie_table4_block.md")
+
 # ---------------------------------------------------------------- 자가 검증
 checks = [
     ("Table1 SS2D SSIM", f_mean("ss2d", "ssim"), "0.9140"),
@@ -251,6 +471,10 @@ checks = [
     ("Table2 SSIM winCI-hi", f"{S_V8['ssim']['win_ci'][1]:.1f}", "79.7"),
     ("Table2b SSIM win", f"{S_V9['ssim']['win']:.1f}", "55.8"),
     ("Table3 v9 SSIM", f_mean("v9", "ssim"), "0.9145"),
+    ("TableC1 volume GRU SSIM", mean_only("gru", "ssim", "volume"), "0.9127"),
+    ("TableC1 volume SS2D SSIM", mean_only("ss2d", "ssim", "volume"), "0.9141"),
+    ("TableC1 volume v9 SSIM", mean_only("v9", "ssim", "volume"), "0.9146"),
+    ("TableC1 volume SS2D nMSE%", mean_only("ss2d", "nmse", "volume"), "0.438"),
 ]
 print("\n[자가 검증 — draft_ko_v2 수치 재현]")
 ok = True

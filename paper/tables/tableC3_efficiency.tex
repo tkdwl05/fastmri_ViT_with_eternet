@@ -1,0 +1,14 @@
+\begin{table}[ht]
+\centering
+\caption{Parameter and time efficiency (TITAN RTX 24\,GB, batch 8, AMP, $384\times384$). $\dagger$ median wall-clock between 5-epoch checkpoints, validation included; $\ddagger$ trained after a container/dataloader upgrade.}
+\label{tab:efficiency}
+\begin{tabular}{lrrrr}
+\toprule
+Method & Params (M) & Train (h/epoch)$^\dagger$ & Inference (ms/slice) & Peak VRAM (GB) \\
+\midrule
+bi-GRU (original) & 668 & 2.41 & [TBD] & [TBD] \\
+SS2D (controlled) & 31 & 3.07 & [TBD] & [TBD] \\
+Enhanced SS2D & 33 & 2.84$^\ddagger$ & [TBD] & [TBD] \\
+\bottomrule
+\end{tabular}
+\end{table}
