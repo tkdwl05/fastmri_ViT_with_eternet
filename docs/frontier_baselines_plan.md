@@ -54,7 +54,12 @@
    09-06 실측(호스트 외부 부하 ~10코어·유휴 ≈8코어): 4 스레드 단독 s/slice VarNet ≈5 · U-Net ≈11 · PromptMR+ ≈40, 12 스레드가
    4 스레드보다 느린 oversubscription 확인 → 총 CPU 일량 ≈450 코어시간 = 유휴 8코어 기준 **≈2.5일**(3 프로세스 12 스레드
    첫 시도는 서로 경합해 3배 느려져 재시작). PromptMR+ 가 long pole(외부 부하가 빠지면 단축).
-   요약 `--summary` → `baseline_summary_full.md`(슬라이스·볼륨 단위 mean±SD, SS2D/v9 대비 우위 비율·Wilcoxon, contrast 별).
+   요약 `--summary` → `baseline_summary_full.md`(방법별 완료집합 블록 A + 전방법 공통집합 B: 슬라이스·볼륨 단위 mean±SD,
+   GRU/SS2D/v9 대비 우위 비율·Wilcoxon, contrast 별).
+   **09-06 21:30 — E2E-VarNet† 전체 완료**(7,334 슬라이스, non-finite 0, 8.3 s/slice): 볼륨 단위 SSIM 0.9181±0.0386 /
+   PSNR 32.78±3.21 dB / nMSE 1.133±1.291 % — SS2D(0.9141/33.91/0.438) 대비 SSIM 은 +0.004(우위 볼륨 66.8%) 이나 PSNR −1.13 dB
+   (우위 35.3%)·nMSE 2.6배 — train+val 누수에도 우리 프로토콜(16코일 절단·재-FFT)에서 domain shift 가 큼(정본 12장 관찰과 일치).
+   PromptMR+ 1,486/7,334 시점 중간(464 볼륨 전부 포함) SSIM 0.9497 / PSNR 36.38 / nMSE 0.497 % — 확정은 완주 후.
    **native 프로토콜 행**(원본 코일·해상도·공식 마스크)은 계속 GPU 큐 7단계 몫(`eval_paired_baselines.py` 의 `native_protocol`).
 4. ms/slice·peak VRAM 측정은 GPU 큐 7단계에서 별도 채집 (Table 5) — CPU 풀런의 시간은 지연시간 지표로 쓰지 않는다.
 5. DDS(또는 CM-RED): 표본 299 만이라도 — NFE=50 기준 ms/slice 대비가 목적. 풀 7,334 는
