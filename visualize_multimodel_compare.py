@@ -225,15 +225,24 @@ def zero_filled(s):
     return np.sqrt((np.abs(img_c) ** 2).sum(0)).astype(np.float32)
 
 
-def run_unet(model, s, device):
+def prep_unet(s):
+    """워커에서 실행 가능한 입력 준비 (모델 불필요): zero-filled RSS (H,W) float32."""
+    return {'zf': zero_filled(s)}
+
+
+def forward_unet(model, inp, device):
     """zero-filled RSS → z-score(clamp ±6, fastmri 방식) → U-Net → unnorm."""
-    t = torch.from_numpy(zero_filled(s)).to(device)
+    t = torch.as_tensor(inp['zf']).to(device)
     mean = t.mean()
     std = t.std().clamp(min=1e-8)
     x = ((t - mean) / std).clamp(-6.0, 6.0)[None, None]
     with torch.no_grad():
         out = model(x).squeeze()
     return (out * std + mean).float().cpu().numpy()
+
+
+def run_unet(model, s, device):
+    return forward_unet(model, prep_unet(s), device)
 
 
 def _kspace_keep_coils(packed_ksp, keep=None):
@@ -248,23 +257,37 @@ def _mask_1d(s):
     return mask_arr.reshape(-1, mask_arr.shape[-1])[0]
 
 
-def run_varnet(model, s, device):
-    """masked k-space(실측 코일만) + 1D mask + n_low → VarNet RSS (eval_paired_baselines.run_varnet 동일)."""
-    ksp_c, _ = _kspace_keep_coils(s['data'])
+def _ksp_to_tensor(ksp_c):
+    """(C,H,W) complex → (1,C,H,W,2) float (fastmri/PromptMR+ 입력 규약)."""
+    return torch.stack([torch.from_numpy(np.ascontiguousarray(ksp_c.real)),
+                        torch.from_numpy(np.ascontiguousarray(ksp_c.imag))], dim=-1).unsqueeze(0).float()
+
+
+def prep_varnet(s):
+    """실측 코일만 남긴 masked k-space(unit-max) + 1D mask — 워커에서 실행 가능."""
+    ksp_c, keep = _kspace_keep_coils(s['data'])
     ksp_c = ksp_c / (float(np.abs(ksp_c).max()) + 1e-12)
-    W = ksp_c.shape[-1]
-    mk = torch.stack([torch.from_numpy(np.ascontiguousarray(ksp_c.real)),
-                      torch.from_numpy(np.ascontiguousarray(ksp_c.imag))], dim=-1)
-    mk = mk.unsqueeze(0).float().to(device)
-    mask_vn = torch.from_numpy(_mask_1d(s) > 0.5).view(1, 1, 1, W, 1).to(device)
+    return {'ksp': _ksp_to_tensor(ksp_c), 'mask1d': torch.from_numpy(_mask_1d(s) > 0.5),
+            'coils_kept': int(keep.sum())}
+
+
+def forward_varnet(model, inp, device):
+    mk = inp['ksp'].to(device)
+    W = mk.shape[-2]
+    mask_vn = inp['mask1d'].view(1, 1, 1, W, 1).to(device)
     n_low = int(round(W * CENTER_FRACTION))
     with torch.no_grad():
         out = model(mk, mask_vn, num_low_frequencies=n_low)
     return out.squeeze().float().cpu().numpy()
 
 
-def run_promptmr(model, s, neighbors, device):
-    """인접 슬라이스 스택 (z-2..z+2, 경계 복제 = 그들 SliceDataset 규약) 을 코일축에 쌓아 공급.
+def run_varnet(model, s, device):
+    """masked k-space(실측 코일만) + 1D mask + n_low → VarNet RSS (eval_paired_baselines.run_varnet 동일)."""
+    return forward_varnet(model, prep_varnet(s), device)
+
+
+def prep_promptmr(s, neighbors):
+    """인접 슬라이스 스택 (z-2..z+2, 경계 복제 = 그들 SliceDataset 규약) 을 코일축에 쌓는다.
     neighbors: 중심 포함 num_adj 개 sample dict 리스트 (슬라이스 순). 코일 집합은 중심 슬라이스 기준."""
     _, keep = _kspace_keep_coils(s['data'])
     stack = []
@@ -273,14 +296,22 @@ def run_promptmr(model, s, neighbors, device):
         stack.append(k_c)
     ksp = np.concatenate(stack, axis=0)                          # (adj*C, H, W) complex
     ksp = ksp / (float(np.abs(ksp).max()) + 1e-12)
-    W = ksp.shape[-1]
-    mk = torch.stack([torch.from_numpy(np.ascontiguousarray(ksp.real)),
-                      torch.from_numpy(np.ascontiguousarray(ksp.imag))], dim=-1).unsqueeze(0).float().to(device)
-    mask_t = torch.from_numpy(_mask_1d(s) > 0.5).view(1, 1, 1, W, 1).to(device)
+    return {'ksp': _ksp_to_tensor(ksp), 'mask1d': torch.from_numpy(_mask_1d(s) > 0.5),
+            'coils_kept': int(keep.sum())}
+
+
+def forward_promptmr(model, inp, device):
+    mk = inp['ksp'].to(device)
+    W = mk.shape[-2]
+    mask_t = inp['mask1d'].view(1, 1, 1, W, 1).to(device)
     n_low = torch.tensor([int(round(W * CENTER_FRACTION))], device=device)
     with torch.no_grad():
         out = model(mk, mask_t, n_low, mask_type=('cartesian',), compute_sens_per_coil=True)
     return out['img_pred'].squeeze().float().cpu().numpy()
+
+
+def run_promptmr(model, s, neighbors, device):
+    return forward_promptmr(model, prep_promptmr(s, neighbors), device)
 
 
 # ──────────────────────────────────────────────

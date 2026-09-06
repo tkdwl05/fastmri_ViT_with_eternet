@@ -76,7 +76,7 @@ ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 하이브
 ### v8 공정성 스위트 (2026-09~) — 현재 운영
 - **[docs/v8_fairness_followup_plan.md](docs/v8_fairness_followup_plan.md)** (2026-09-01, 갱신 09-02) — v8 비교의 잔여 한계 ①시드 ②레시피 ③용량을 닫는 실험 계획: **E1** 멀티시드(seeds 0,1,2 × {ss2d,gru} × 25ep cosine-to-25 완결 미니런, 시드별 페어 우선 → 부호 안정성 중간판정), **E2** GRU LR 미니스윕, **E3** 용량 매칭(CPU 실측: GRU 스택 하한 H=1 에서도 62.9M — param-matched GRU 는 구조적으로 정의 불가 → 논거로 전환 + 최소-GRU 1런). 비교 기준점 명문화(원본 GRU = reference), 4번째 팔 pixel-GRU(가중치 공유 pixel-scan bi-GRU, 스택 0.115M — 메커니즘 vs 파라미터화 confound 분리), **GPU0 순차 큐 8단계(~40일, 10월 중순 종료)**. 09-02: radapt ep57 정지 + E1 자동 launch.
 - **[docs/axial_transformer_arm_design.md](docs/axial_transformer_arm_design.md)** (2026-09-01, 결정 09-02: 이번 논문 포함) — 3번째 팔 **Transformer**(도메인 변환 슬롯, 구현 = axial attention, 스택 예산 ~0.1M 매칭) 설계·비용. `models/attn_eternet/transformer_v10.py` + `u_pure_eternet_transformer.py`, `SEQ_MODEL=transformer`.
-- **[docs/frontier_baselines_plan.md](docs/frontier_baselines_plan.md)** (2026-09-01) — Table 4 확장용 공개 최전선 모델(PromptMR+ / DDS) 추론-only 기준선 계획(클론은 `external/`, git-ignore). 큐 7단계 "추론-only 일괄"에 편입. 기존 leaderboard U-Net/VarNet 은 train+val 합본 학습이라 참고선으로만(`results/eval/baselines_384*`).
+- **[docs/frontier_baselines_plan.md](docs/frontier_baselines_plan.md)** (2026-09-01, 갱신 09-06) — Table 4 확장용 공개 최전선 모델(PromptMR+ / DDS) 추론-only 기준선 계획(클론은 `external/`, git-ignore). **우리 프로토콜 행 전체 val 은 09-06 CPU 로 선행 실행 중**(`v8_eter_pure/eval_baselines_full.py` → `results/eval/baselines_384_full/`, PromptMR+ ≈3~4일 long pole); native 행·ms/VRAM 은 큐 7단계 GPU 몫. 기존 leaderboard U-Net/VarNet 은 train+val 합본 학습이라 참고선으로만(`results/eval/baselines_384*`).
 - **[docs/worklog_2026-06_07.md](docs/worklog_2026-06_07.md)** (2026-07-28, 갱신 08-05) — 6~7월 날짜별 작업 일지(근거 표기: 커밋/mtime/ckpt).
 
 ### paper/ (논문 트랙, 2026-08~) — 커밋 prefix "paper:"
@@ -199,7 +199,7 @@ v7_titan/runs/
 ```
 v8_eter_pure/runs/
 ├── chain/ gru/ ss2d/            # 모델축(GRU/SS2D) 기준 tqdm 로그 — root 의 ss2d/eter 명명과 다름
-├── multiseed/                   # E1 멀티시드 런 로그 (outer.log + run_<RUN>.log)
+├── multiseed/ multiseed_outer.log   # E1 멀티시드 런 로그 (run_<RUN>.log; 런처 stdout 은 runs/multiseed_outer.log)
 ├── run_pure_v8_autoresume.sh    # SEQ_MODEL × USE_DC env var 로 단일 런 supervisor (true-resume)
 ├── run_v8_multiseed.sh          # ★ E1 런처: SEEDS="0 1 2" × ARMS="ss2d gru" × EPOCHS=25, 완주 런 skip, MAX_RETRY=200
 └── smoke_bs.txt
@@ -238,7 +238,8 @@ results/
 │   ├── v8_r_sweep/       # v8 R 일반화 cross-eval (raw)
 │   ├── v8_r_sweep_norm/  #   〃 (normalized)
 │   ├── v9_unleashed/     # v9 per-slice paired CSV·win-rate·3-way 곡선 (2026-08-05, CSV 로컬 전용)
-│   └── baselines_384_sample300/  # leaderboard U-Net/VarNet 참고선(300 샘플; 풀 `baselines_384/` 은 큐 7단계)
+│   ├── baselines_384_sample300/  # leaderboard U-Net/VarNet 참고선(300 샘플, GPU)
+│   └── baselines_384_full/       # ★ 공개 모델 전체 val 우리-프로토콜 행 (U-Net†/E2E-VarNet†/PromptMR+, CPU, 09-06 launch): per_slice_<method>.csv(로컬)·baseline_summary_full.md·run_{promptmr,varnet_unet}.log
 └── vis/
     ├── v7_titan_compare/         # v7_titan 4-way GT/U-Net/ETER/SS2D
     ├── v7_titan_eval_modes/      # v7_titan eval-mode 비교
@@ -251,7 +252,7 @@ results/
 **`.gitignore` 화이트리스트** — `results/` 는 기본 무시, 아래만 예외적으로 GitHub 공유:
 `results/vis/{v7_titan_compare,v7_titan_eval_modes,v8_pure_eternet_compare}/` 의 PNG/txt +
 `results/eval/v8_nodc/`(matched_epoch_table.md·win_rate_summary.md·곡선 PNG) +
-`results/eval/v8_r_sweep{,_norm}/`(r_generalization_table.md·PNG) + `results/eval/baselines_384{,_sample300}/baseline_summary.md` +
+`results/eval/v8_r_sweep{,_norm}/`(r_generalization_table.md·PNG) + `results/eval/baselines_384{,_sample300}/baseline_summary.md` + `results/eval/baselines_384_full/baseline_summary_full.md` +
 `results/vis/v9_unleashed_compare/`(PNG·metrics_summary.txt) + `paper/figs/*.{png,pdf}`. 대용량 per-slice CSV/log/ckpt 는 계속 무시.
 새 결과 폴더를 공유하려면 `.gitignore` 에 디렉터리 + 파일 패턴 두 줄(`!results/eval/<dir>/` 와 `!results/eval/<dir>/<file>`)을 함께 추가해야 한다.
 
@@ -287,12 +288,20 @@ SEQ_MODEL=pixelgru USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pu
 
 # ★ E1 멀티시드 (큐 1단계, 09-02 launch 됨 — 재기동도 같은 명령: 완주 런은 자동 skip, 미완 런은 true-resume)
 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_multiseed.sh \
-  > v8_eter_pure/runs/multiseed/outer.log 2>&1 < /dev/null & disown
+  > v8_eter_pure/runs/multiseed_outer.log 2>&1 < /dev/null & disown
 # 진행 확인: tail -2 logs/PureETER_SS2D_noDC_R4_brain384_v8_s0/log.txt ; nvidia-smi
 
 # per-slice paired 평가 (전체 val, ~2h) + 4-way 시각화 (GT/U-Net/GRU/SS2D)
 python v8_eter_pure/eval_paired_v8_nodc.py
 python visualize_v8_pure_compare.py
+
+# ★ 공개 모델 기준선 전체 val (우리 프로토콜 행, CPU·재개 가능 — 09-06 launch; 러너는 visualize_multimodel_compare.py 공유,
+#   유휴 코어 ≈8 기준 PromptMR+ 5 스레드 + varnet→unet 3 스레드, 처리 순서 interleaved = 완료 prefix 가 항상 층화 표본)
+CUDA_VISIBLE_DEVICES="" nice -n 19 setsid nohup python v8_eter_pure/eval_baselines_full.py --methods promptmr --threads 5 --num-workers 1 \
+  > results/eval/baselines_384_full/run_promptmr.log 2>&1 < /dev/null & disown
+CUDA_VISIBLE_DEVICES="" nice -n 19 setsid nohup python v8_eter_pure/eval_baselines_full.py --methods varnet,unet --threads 3 --num-workers 1 \
+  > results/eval/baselines_384_full/run_varnet_unet.log 2>&1 < /dev/null & disown
+CUDA_VISIBLE_DEVICES="" python v8_eter_pure/eval_baselines_full.py --summary     # 요약(중간 집계 가능) → baseline_summary_full.md
 ```
 
 ### v9_mamba (384, ViT 없음, 강화 SS2D — unleashed 완주 · radapt 정지 중)

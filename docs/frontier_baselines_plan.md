@@ -1,7 +1,7 @@
 # 최전선 공개 모델 기준선 계획 (PromptMR+ / DDS) — Table 4 확장
 
-작성 2026-09-01. 근거 조사(문헌·리포 검증)는 세션 기록 참조. 실행은 radapt 완주(~09-04) 후
-"추론-only 일괄" GPU 큐에 편입. 클론은 `external/`(gitignore, 로컬 전용).
+작성 2026-09-01(갱신 09-06). 근거 조사(문헌·리포 검증)는 세션 기록 참조. 우리 프로토콜 행의 전체 val 추론은
+**09-06 CPU 로 선행 실행 중**(§3), native 행·ms/VRAM 은 "추론-only 일괄" GPU 큐(7단계) 유지. 클론은 `external/`(gitignore, 로컬 전용).
 
 ## 1. 왜 이 두 개인가
 
@@ -43,8 +43,20 @@
    정본 12 슬라이스 결과: `results/vis/multimodel_compare/metrics_summary.txt`(PromptMR+ 가 예상대로 최상위 —
    단 12장 정성 표본이지 Table 4 수치가 아님; 다중 슬라이스 입력(5장)이라 단일 슬라이스 모델과 입력 정보량이 다름을 캡션에 명시).
 2. 층화 표본 299 (기존 `eval_paired_baselines.py` 표본과 동일 seed 0) → 방향 확인.
-3. 전체 7,334 GPU 풀런 → per-slice CSV → `make_tables.py` Table 4 재생성.
-4. ms/slice·peak VRAM 측정을 같은 런에서 채집 (Table 5).
+   → **생략**: 정본 12 슬라이스(1단계)로 방향은 확인됐고, 3단계 풀런을 CPU 로 바로 시작(아래).
+3. 전체 7,334 풀런 → per-slice CSV → `make_tables.py` Table 4 재생성.
+   **▶ 2026-09-06 CPU 로 launch — 우리 프로토콜 행**(384² 재-FFT·16코일 절단·R4·brain-masked·LS 정합):
+   `v8_eter_pure/eval_baselines_full.py`(러너·지표를 `visualize_multimodel_compare.py` 에서 import — 정본 슬라이스
+   3368/7333 에서 저장 수치와 ≤1e-6 일치 확인, `n_buffer` 런타임 패치 포함). 방법별 CSV
+   `results/eval/baselines_384_full/per_slice_{varnet,unet,promptmr}.csv` 에 슬라이스마다 append(재개 가능),
+   PromptMR+(5 스레드) 와 E2E-VarNet†→U-Net†(순차, 3 스레드) **2 프로세스**(워커 1씩·nice 19, GPU0 의 E1 학습은 그대로;
+   처리 순서 interleaved = 완료 prefix 가 항상 전 볼륨 층화 표본 → 중간 `--summary` 가 편향 없음).
+   09-06 실측(호스트 외부 부하 ~10코어·유휴 ≈8코어): 4 스레드 단독 s/slice VarNet ≈5 · U-Net ≈11 · PromptMR+ ≈40, 12 스레드가
+   4 스레드보다 느린 oversubscription 확인 → 총 CPU 일량 ≈450 코어시간 = 유휴 8코어 기준 **≈2.5일**(3 프로세스 12 스레드
+   첫 시도는 서로 경합해 3배 느려져 재시작). PromptMR+ 가 long pole(외부 부하가 빠지면 단축).
+   요약 `--summary` → `baseline_summary_full.md`(슬라이스·볼륨 단위 mean±SD, SS2D/v9 대비 우위 비율·Wilcoxon, contrast 별).
+   **native 프로토콜 행**(원본 코일·해상도·공식 마스크)은 계속 GPU 큐 7단계 몫(`eval_paired_baselines.py` 의 `native_protocol`).
+4. ms/slice·peak VRAM 측정은 GPU 큐 7단계에서 별도 채집 (Table 5) — CPU 풀런의 시간은 지연시간 지표로 쓰지 않는다.
 5. DDS(또는 CM-RED): 표본 299 만이라도 — NFE=50 기준 ms/slice 대비가 목적. 풀 7,334 는
    diffusion 에선 비현실적(수일)이므로 표본 + 명시가 정직.
 

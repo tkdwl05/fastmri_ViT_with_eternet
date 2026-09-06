@@ -77,6 +77,9 @@ results/eval/baselines_384_sample300/*
 !results/eval/baselines_384/
 results/eval/baselines_384/*
 !results/eval/baselines_384/baseline_summary.md
+!results/eval/baselines_384_full/
+results/eval/baselines_384_full/*
+!results/eval/baselines_384_full/baseline_summary_full.md
 # Zero-filled 기준선 요약 공유 (per-slice CSV·run.log 는 무시, 2026-09-04)
 !results/eval/zero_filled/
 results/eval/zero_filled/*

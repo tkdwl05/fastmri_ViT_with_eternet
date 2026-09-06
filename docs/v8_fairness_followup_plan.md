@@ -102,7 +102,7 @@
 | 7 | 추론-only 일괄 (Table 4·PromptMR+/DDS·ms/VRAM·R-sweep·ringing) | 1~2일 | 준비 완료 |
 | 8 | U-Net-only 학습 | 4~5일 | 부록 D P0-2 |
 
-**7단계 세부(09-03 추가, 논문 표 관례 정비 `docs/paper_table_conventions.md` §3)**: (a) R-sweep 은 전체 val 7,334 슬라이스로 재실행(현 `results/eval/v8_r_sweep/` 은 stride-4 서브샘플 n=1,834 → 논문 표 불가), 세 팔 + Zero-filled, R∈{2,4,6,8}; (b) 팔별 추론 ms/slice·peak VRAM(BS 1, AMP, 동일 GPU) → 표 5 [TBD] 칸; (c) 공개 U-Net/E2E-VarNet 전체 val(n=464 볼륨, 실측 코일만 전달) — 누수 참고선·각주용; (d) fastMRI 표준 프로토콜(320 center-crop·무마스크·볼륨 단위) 1회 산출 — 외부 수치와의 비교 가능성 확보. Zero-filled 기준선은 CPU 로 09-03 완료(`results/eval/zero_filled/`).
+**7단계 세부(09-03 추가, 논문 표 관례 정비 `docs/paper_table_conventions.md` §3)**: (a) R-sweep 은 전체 val 7,334 슬라이스로 재실행(현 `results/eval/v8_r_sweep/` 은 stride-4 서브샘플 n=1,834 → 논문 표 불가), 세 팔 + Zero-filled, R∈{2,4,6,8}; (b) 팔별 추론 ms/slice·peak VRAM(BS 1, AMP, 동일 GPU) → 표 5 [TBD] 칸; (c) 공개 U-Net/E2E-VarNet 전체 val(n=464 볼륨, 실측 코일만 전달) — 누수 참고선·각주용 — **우리 프로토콜 행은 PromptMR+ 까지 포함해 09-06 CPU 로 선행 launch**(`v8_eter_pure/eval_baselines_full.py` → `results/eval/baselines_384_full/`, GPU0 불사용, `docs/frontier_baselines_plan.md` §3; 7단계엔 native 행·ms/VRAM 만 남음); (d) fastMRI 표준 프로토콜(320 center-crop·무마스크·볼륨 단위) 1회 산출 — 외부 수치와의 비교 가능성 확보. Zero-filled 기준선은 CPU 로 09-03 완료(`results/eval/zero_filled/`).
 
 합계(모두 GPU0 순차) ≈ **40일 → 10월 중순 종료**(공정성 스위트 ~33일 + radapt/평가 ~7일).
 SI 마감 11-30 대비 집필 병행 필요. (구 상의 항목 (a)(b)는 09-02 결정으로 종결 — 위 '결정' 절.)
