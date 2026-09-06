@@ -245,58 +245,23 @@ def _ms(k, a):
     return f'{_fmt(k, a.mean())}±{_fmt(k, a.std(ddof=1))}' if len(a) > 1 else _fmt(k, a.mean())
 
 
-def write_summary(args, h5):
-    from scipy.stats import wilcoxon
-    ours = _read_ours(args.v9_csv)
-    zf = _read_zf(args.zf_csv)
-    per = {m: read_done(csv_path(args.out_dir, m)) for m in ('unet', 'varnet', 'promptmr')}
-    per = {m: d for m, d in per.items() if d}
-    lines = ['# 공개 모델 기준선 — 전체 검증셋 (우리 프로토콜 행: 384² 재-FFT · 16코일 절단 · R4 · brain-masked · per-slice LS 정합)', '',
-             f'- 생성: `v8_eter_pure/eval_baselines_full.py --summary` ({time.strftime("%Y-%m-%d %H:%M")})',
-             f'- 우리 3모델: `{args.v9_csv}` (GPU fp16 평가, LS 정합 없음 α≈1) · zero-filled: `{args.zf_csv}` (raw)',
-             '- 공개 모델은 CPU fp32 추론(정본 12 슬라이스에서 GPU 와 SSIM ≤0.003 · PSNR ≤0.3 dB 차이 확인) · non-finite 출력은 0 으로 치환 후 집계(개수 별도 표기)',
-             '- † = fastMRI leaderboard 공개 가중치(train+val 합본 학습 → 본 검증셋이 학습 데이터에 포함, 누수 참고선). PromptMR+ = train 구획만 학습(누수 없음)·인접 5슬라이스 입력(정보량 다름)',
-             '']
-    # 진행 상황
-    lines += ['## 진행 상황', '', '| 방법 | 완료 슬라이스 | non-finite | 평균 s/slice |', '|---|---|---|---|']
-    for m, d in per.items():
-        nf = sum(1 for r in d.values() if r['finite'] == '0')
-        sec = np.mean([float(r['sec']) for r in d.values()])
-        lines.append(f'| {METHOD_NAMES[m]} | {len(d)} / {len(h5)} | {nf} | {sec:.1f} |')
-    lines.append('')
-
-    # 공통 슬라이스 집합 (모든 완료 방법 + 우리 3모델)
-    keys_by_m = {m: {(r['file'], int(r['slice_idx'])) for r in d.values()} for m, d in per.items()}
-    common = set(ours)
-    for ks in keys_by_m.values():
-        common &= ks
-    common = sorted(common, key=lambda k: (k[0], k[1]))
-    files = sorted({k[0] for k in common})
-    lines += [f'## 공통 슬라이스 {len(common)} (볼륨 {len(files)}) 에서의 평균', '']
-
-    def arm_arr(arm, k):
-        if arm in per:
-            d = {(r['file'], int(r['slice_idx'])): float(r[k]) for r in per[arm].values()}
-            return np.array([d[key] for key in common])
-        if arm == 'zf':
-            return np.array([zf[key][f'zf_{k}'] for key in common]) if zf else None
-        return np.array([ours[key][f'{arm}_{k}'] for key in common])
-
-    vol_of = np.array([files.index(k[0]) for k in common])
+def _stats_block(lines, title, keys, per_arms, arm_arr_fn, names):
+    """keys 위에서 arms 의 슬라이스/볼륨 단위 mean±SD 표 두 개를 lines 에 추가."""
+    files = sorted({k[0] for k in keys})
+    vol_of = np.array([files.index(k[0]) for k in keys])
 
     def vol_mean(a):
         return np.array([a[vol_of == v].mean() for v in range(len(files))])
 
-    arms = (['zf'] if zf and all(k in zf for k in common) else []) + list(per) + list(OURS)
-    names = {'zf': 'Zero-filled (raw)', **METHOD_NAMES, **OURS}
+    lines += [f'{title} — 슬라이스 {len(keys)} / 볼륨 {len(files)}', '']
     for unit in ('volume', 'slice'):
-        n = len(files) if unit == 'volume' else len(common)
-        lines += [f'### {unit} 단위 mean±SD (n={n}, SD ddof=1)', '',
+        n = len(files) if unit == 'volume' else len(keys)
+        lines += [f'{unit} 단위 mean±SD (n={n}, SD ddof=1)', '',
                   '| Method | SSIM ↑ | PSNR (dB) ↑ | nMSE (%) ↓ | L1 (×10⁻⁶) ↓ |', '|---|---|---|---|---|']
-        for arm in arms:
+        for arm in per_arms:
             cells = []
             for k in METRICS:
-                a = arm_arr(arm, k)
+                a = arm_arr_fn(arm, k, keys)
                 if a is None:
                     cells.append('–'); continue
                 if unit == 'volume':
@@ -304,47 +269,88 @@ def write_summary(args, h5):
                 cells.append(_ms(k, a))
             lines.append(f'| {names[arm]} | ' + ' | '.join(cells) + ' |')
         lines.append('')
+    return files, vol_of, vol_mean
 
-    # 우위 비율 (공개 모델 vs 우리 SS2D / v9)
-    for ref in ('ss2d', 'v9'):
-        lines += [f'## 공개 모델 vs {OURS[ref]} — 우위 비율 (슬라이스 / 볼륨) · Wilcoxon(볼륨 단위 paired)', '',
-                  '| 공개 모델 | 지표 | 공개 모델 우위 슬라이스 % | 공개 모델 우위 볼륨 % | Δ 볼륨 평균 (공개−우리) | p (볼륨) |',
-                  '|---|---|---|---|---|---|']
-        for m in per:
+
+def write_summary(args, h5):
+    from scipy.stats import wilcoxon
+    ours = _read_ours(args.v9_csv)
+    zf = _read_zf(args.zf_csv)
+    per = {m: read_done(csv_path(args.out_dir, m)) for m in ('unet', 'varnet', 'promptmr')}
+    per = {m: d for m, d in per.items() if d}
+    per_keyed = {m: {(r['file'], int(r['slice_idx'])): r for r in d.values()} for m, d in per.items()}
+    names = {'zf': 'Zero-filled (raw)', **METHOD_NAMES, **OURS}
+    lines = ['# 공개 모델 기준선 — 전체 검증셋 (우리 프로토콜 행: 384² 재-FFT · 16코일 절단 · R4 · brain-masked · per-slice LS 정합)', '',
+             f'- 생성: `v8_eter_pure/eval_baselines_full.py --summary` ({time.strftime("%Y-%m-%d %H:%M")})',
+             f'- 우리 3모델: `{args.v9_csv}` (GPU fp16 평가, LS 정합 없음 α≈1) · zero-filled: `{args.zf_csv}` (raw)',
+             '- 공개 모델은 CPU fp32 추론(정본 12 슬라이스에서 GPU 와 SSIM ≤0.003 · PSNR ≤0.3 dB 차이 확인) · non-finite 출력은 0 으로 치환 후 집계(개수 별도 표기)',
+             '- † = fastMRI leaderboard 공개 가중치(train+val 합본 학습 → 본 검증셋이 학습 데이터에 포함, 누수 참고선). PromptMR+ = train 구획만 학습(누수 없음)·인접 5슬라이스 입력(정보량 다름)',
+             '- 처리 순서가 interleaved 라 미완 상태의 완료 집합도 전 볼륨에 고른 층화 표본이다(중간 집계는 n 을 반드시 함께 인용).',
+             '']
+    lines += ['## 진행 상황', '', '| 방법 | 완료 슬라이스 | non-finite | 평균 s/slice |', '|---|---|---|---|']
+    for m, d in per.items():
+        nf = sum(1 for r in d.values() if r['finite'] == '0')
+        sec = np.mean([float(r['sec']) for r in d.values()])
+        lines.append(f'| {METHOD_NAMES[m]} | {len(d)} / {len(h5)} | {nf} | {sec:.1f} |')
+    lines.append('')
+
+    def arm_arr(arm, k, keys):
+        if arm in per_keyed:
+            return np.array([float(per_keyed[arm][key][k]) for key in keys])
+        if arm == 'zf':
+            return np.array([zf[key][f'zf_{k}'] for key in keys]) if zf and all(key in zf for key in keys) else None
+        return np.array([ours[key][f'{arm}_{k}'] for key in keys])
+
+    # A. 방법별 — 각 공개 모델의 완료 집합 위에서 우리 3모델과 같은 슬라이스로 비교
+    lines += ['## A. 방법별 비교 (각 공개 모델의 완료 집합; 우리 모델도 같은 슬라이스로 재평균)', '']
+    for m in per:
+        keys = sorted(set(per_keyed[m]) & set(ours), key=lambda k: (k[0], k[1]))
+        if not keys:
+            continue
+        files, vol_of, vol_mean = _stats_block(lines, f'### {METHOD_NAMES[m]}', keys, ['zf', m] + list(OURS), arm_arr, names)
+        lines += [f'{METHOD_NAMES[m]} 우위 비율 (슬라이스 / 볼륨) · Δ 볼륨평균(공개−우리) · Wilcoxon(볼륨 paired)', '',
+                  '| 대비 | 지표 | 우위 슬라이스 % | 우위 볼륨 % | Δ 볼륨 평균 | p (볼륨) |', '|---|---|---|---|---|---|']
+        for ref in ('gru', 'ss2d', 'v9'):
             for k in METRICS:
-                a = arm_arr(m, k); b = arm_arr(ref, k)
+                a = arm_arr(m, k, keys); b = arm_arr(ref, k, keys)
                 better = (a < b) if k in LOWER_IS_BETTER else (a > b)
                 va, vb = vol_mean(a), vol_mean(b)
                 vbetter = (va < vb) if k in LOWER_IS_BETTER else (va > vb)
                 try:
-                    pval = wilcoxon(va, vb).pvalue
+                    pval = wilcoxon(va, vb).pvalue if len(va) > 1 else float('nan')
                 except ValueError:
                     pval = float('nan')
                 dv = (va - vb).mean() * (100 if k == 'nmse' else 1)
-                lines.append(f'| {METHOD_NAMES[m]} | {k} | {100*better.mean():.1f} | {100*vbetter.mean():.1f} | '
-                             f'{dv:+.4f} | {pval:.2e} |')
+                lines.append(f'| vs {OURS[ref]} | {k} | {100*better.mean():.1f} | {100*vbetter.mean():.1f} | {dv:+.4f} | {pval:.2e} |')
         lines.append('')
-    # contrast 별 SSIM (볼륨 단위)
-    acqs = sorted({per[list(per)[0]][str(0)]['acquisition'] for _ in [0]} if False else
-                  {r['acquisition'] for d in per.values() for r in d.values()})
-    if acqs:
-        lines += ['## contrast 별 SSIM (볼륨 단위 평균, 공통 슬라이스)', '',
-                  '| Contrast | 볼륨 수 | ' + ' | '.join(names[a] for a in arms) + ' |',
-                  '|---|---|' + '---|' * len(arms)]
+
+    # B. 전 방법 공통 집합 (모두 완주하면 = 전체 검증셋) + contrast 별
+    common = set(ours)
+    for m in per_keyed:
+        common &= set(per_keyed[m])
+    common = sorted(common, key=lambda k: (k[0], k[1]))
+    if len(common) >= 50:
+        arms = ['zf'] + list(per) + list(OURS)
+        files, vol_of, vol_mean = _stats_block(lines, '## B. 전 방법 공통 집합', common, arms, arm_arr, names)
         acq_of_file = {}
         for d in per.values():
             for r in d.values():
                 acq_of_file[r['file']] = r['acquisition']
+        acqs = sorted({acq_of_file.get(fn, '') for fn in files})
+        lines += ['contrast 별 SSIM (볼륨 단위 평균, 공통 집합)', '',
+                  '| Contrast | 볼륨 수 | ' + ' | '.join(names[a] for a in arms) + ' |', '|---|---|' + '---|' * len(arms)]
         for acq in acqs:
             vsel = np.array([acq_of_file.get(fn) == acq for fn in files])
             if not vsel.any():
                 continue
             cells = []
             for arm in arms:
-                a = arm_arr(arm, 'ssim')
+                a = arm_arr(arm, 'ssim', common)
                 cells.append('–' if a is None else f'{vol_mean(a)[vsel].mean():.4f}')
             lines.append(f'| {acq} | {int(vsel.sum())} | ' + ' | '.join(cells) + ' |')
         lines.append('')
+    else:
+        lines += [f'## B. 전 방법 공통 집합 — 아직 {len(common)} 슬라이스(<50) 라 생략', '']
     lines += ['(우위 비율 = proportion favoring the public model; nMSE·L1 은 낮을수록 우위. 이 표는 참고선이며 순위 판정에 쓰지 않는다 — '
               '†는 누수, PromptMR+ 는 다중 슬라이스 입력·물리 모델 계열.)']
     msg = '\n'.join(lines)
