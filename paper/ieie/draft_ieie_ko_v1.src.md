@@ -87,7 +87,7 @@ $$ h_t = \exp(\Delta_t A)\, h_{t-1} + \Delta_t B_t x_t, \quad y_t = C_t h_t + D 
 
 ## 강화 SS2D (통제 해제 변형)
 
-통제비교의 SS2D는 공정성을 위해 의도적으로 최소 구성이다. 그림 1(b)의 강화 변형은 세 가지를 복원·확장한다. 첫째, 게이팅 복원 — 공식 Mamba[@gu2023mamba]의 y = y·SiLU(z) 게이트 분기(통제판에는 없음). 둘째, 잔차 스택 — 채널 불변 SS2D 블록 3개를 residual skip으로 쌓는다. 셋째, 병목 해제 — 출력 채널 20→64, d_inner 128→256, d_state 16→32, dropout 0.05. 384² 풀해상도 4방향 스캔의 연산 병목은 fp16 selective scan과 다운샘플 front-end(ds=3)로 해결했다: stem이 풀해상도 k-space를 먼저 처리한 뒤 특징을 128²로 낮춰 coarse scan하고 bilinear 업샘플해 U-Net에 전달한다(전역 문맥은 SSM, 풀해상도 디테일은 U-Net이 분담). 그 결과 풀용량을 유지한 채 epoch당 학습시간을 통제판과 비슷한 수준으로 눌러(Ⅳ장 9절) 실험 기간 내에 epoch 50→80 연장이 가능했다. 총 파라미터는 약 33M(SSM 스택 약 2M)이다. 학습 위생으로 Mamba 상태 파라미터(A, D)는 weight decay에서 제외했다.
+통제비교의 SS2D는 공정성을 위해 의도적으로 최소 구성이다. 그림 1(b)의 강화 변형은 세 가지를 복원·확장한다. 첫째, 게이팅 복원 — 공식 Mamba[@gu2023mamba]의 y = y·SiLU(z) 게이트 분기(통제판에는 없음). 둘째, 잔차 스택 — 채널 불변 SS2D 블록 3개를 residual skip으로 쌓는다. 셋째, 병목 해제 — 출력 채널 20→64, d_inner 128→256, d_state 16→32, dropout 0.05. 384² 풀해상도 4방향 스캔의 연산 병목은 fp16 selective scan과 다운샘플 front-end(ds=3)로 해결했다: stem이 풀해상도 k-space를 먼저 처리한 뒤 특징을 128²로 낮춰 coarse scan하고 bilinear 업샘플해 U-Net에 전달한다(전역 문맥은 SSM, 풀해상도 디테일은 U-Net이 분담). 그 결과 풀용량을 유지한 채 epoch당 학습시간을 통제판과 비슷한 수준으로 눌러(Ⅳ장 9절) 실험 기간 내에 epoch 50→80 연장이 가능했다. 총 파라미터는 약 34M(34.2M; SSM 스택 3.1M = 3개 블록 1.9M + 다운/업샘플 투영 1.2M)이다. 학습 위생으로 Mamba 상태 파라미터(A, D)는 weight decay에서 제외했다.
 
 ## 손실 함수와 평가지표
 
@@ -129,7 +129,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 | Zero-filled | – | – | 0.7523±0.0410 | 24.76±2.11 | 3.935±2.166 |
 | bi-GRU (original) | 668 | 50/50 | 0.9127±0.0366 | 33.78±1.86 | 0.448±0.274 |
 | SS2D (controlled) | 31 | 48/50 | __0.9141±0.0365__ | __33.91±1.90__ | **0.438±0.283** |
-| Enhanced SS2D | 33 | 78/80 | **0.9146±0.0361** | **33.92±1.90** | __0.439±0.304__ |
+| Enhanced SS2D | 34 | 78/80 | **0.9146±0.0361** | **33.92±1.90** | __0.439±0.304__ |
 @note: Zero-filled: RSS of the inverse FFT of the undersampled k-space without intensity rescaling. Public models (fastMRI leaderboard U-Net/E2E-VarNet, PromptMR+) are not ranked here because of train+val leakage and protocol mismatch; they are given separately as reference lines in Table 4.
 @end
 
@@ -154,7 +154,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 
 ## 정성 비교
 
-그림 3은 contrast가 다른 검증 슬라이스 세 장(AXT2·AXT1POST·AXFLAIR)에 대해 본 연구의 세 모델과 공개 참조 모델을 한 파이프라인에서 나란히 비교한 것이다. 열은 GT, zero-filled, fastMRI 공개 leaderboard 가중치의 U-Net†과 E2E-VarNet†[@sriram2020endtoend], 공개 최전선 모델 PromptMR+[@xin2024rethinking](train 구획만으로 학습된 공개 가중치, 12-cascade unrolled + 학습형 코일 감도 + DC, 인접 5슬라이스 입력, 92.9M), 원 bi-GRU, 통제 SS2D, 강화 SS2D이고, 슬라이스마다 재구성과 brain mask 내부 절대오차 맵(공통 0–0.10 스케일)을 두 행으로, 마지막 행에는 배경을 드러내기 위해 표시 이득을 4배로 올린 AXT2 슬라이스를 두었다. 모든 방법이 동일한 384² 재-FFT·16코일·R=4 마스크·GT를 받으며, 공개 모델의 출력 스케일이 제각각이므로 표시와 패널 수치 계산 전에 brain mask 내부 슬라이스별 최소제곱 강도 정합을 모든 방법에 똑같이 적용하였다(표 2의 수치는 정합 없이 계산한 것이라 패널 값과 직접 비교하지 않는다). 추론은 CPU fp32로 수행했으며(GPU가 진행 중인 실험에 점유되어 있음), 본 연구 세 모델의 패널 값은 GPU fp16 평가 CSV와 정본 12 슬라이스에서 SSIM 0.003·PSNR 0.3 dB 이내로 일치한다(그림의 AXT2 슬라이스는 소수 넷째 자리까지 동일).
+그림 3은 contrast가 다른 검증 슬라이스 세 장(AXT2·AXT1POST·AXFLAIR)에 대해 본 연구의 세 모델과 공개 참조 모델을 한 파이프라인에서 나란히 비교한 것이다. 열은 GT, zero-filled, fastMRI 공개 leaderboard 가중치의 U-Net†과 E2E-VarNet†[@sriram2020endtoend], 공개 최전선 모델 PromptMR+[@xin2024rethinking](train 구획만으로 학습된 공개 가중치, 12-cascade unrolled + 학습형 코일 감도 + DC, 인접 5슬라이스 입력, 92.9M), 원 bi-GRU, 통제 SS2D, 강화 SS2D이고, 슬라이스마다 재구성과 brain mask 내부 절대오차 맵(공통 0–0.10 스케일)을 두 행으로, 마지막 행에는 배경을 드러내기 위해 표시 이득을 4배로 올린 AXT2 슬라이스를 두었다. 모든 방법이 동일한 384² 재-FFT·16코일·R=4 마스크·GT를 받으며, 공개 모델의 출력 스케일이 제각각이므로 표시와 패널 수치 계산 전에 brain mask 내부 슬라이스별 최소제곱 강도 정합을 모든 방법에 똑같이 적용하였다(표 2의 수치는 정합 없이 계산한 것이라 패널 값과 직접 비교하지 않는다). 추론은 CPU fp32로 수행했으며(GPU가 진행 중인 실험에 점유되어 있음), 본 연구 세 모델의 패널 값은 GPU fp16 평가 CSV와 정본 12 슬라이스에서 SSIM 0.003·PSNR 0.31 dB 이내로 일치한다(그림의 AXT2 슬라이스는 세 모델 모두 SSIM이 소수 넷째 자리까지 동일).
 
 세 가지가 읽힌다. 첫째, 통제 SS2D는 세 슬라이스 모두에서 원 bi-GRU보다 PSNR·SSIM이 높고(정본 12 슬라이스에서는 두 지표 각각 11장), 오차 맵의 구조는 두 팔이 비슷하다. 마지막 행에서 bi-GRU 재구성은 두개골 바깥 배경에 수평 방향의 주기적 ringing(줄무늬)을 보이는 반면, SS2D와 강화 SS2D에는 주기적 줄무늬가 없고 저강도의 비주기적 잔여 aliasing 신호(머리 윤곽의 희미한 ghost)만 남는다. 이 차이는 brain mask 밖이라 정량 지표에는 반영되지 않는 정성적 차이로(Ⅲ장 4절의 brain mask 정의 참조), GRU 재구성이 관심영역 밖에서 덜 안정적임을 시사한다. 둘째, 공개 모델은 좌표를 제공한다: PromptMR+는 세 슬라이스에서 39~41 dB·SSIM 0.97~0.98로 나머지 전부를 크게 앞선다(정본 12장 중 SSIM 12장·PSNR 11장에서 최상위). 이는 물리 모델(감도·DC)을 12회 반복하고 인접 5슬라이스의 측정을 함께 입력받는 다른 계열의 결과이며, 본 논문의 직접 도메인 변환 골격은 단일 슬라이스·무DC라는 점에서 입력 정보량과 구조가 다르다 — 그림은 경쟁이 아니라 품질 좌표계 위의 위치를 보이기 위한 것이다. 셋째, train+val로 학습된 leaderboard 가중치(†)는 본 검증셋이 학습 데이터에 포함됨에도 본 프로토콜(384² 재-FFT·16코일)에서는 우세하지 않았다: U-Net†은 정본 12장 전부에서 SS2D보다 낮았고, E2E-VarNet†은 SSIM에서는 12장 중 9장에서 SS2D를 앞섰으나 PSNR에서는 6장에 그쳤으며, 마지막 행에서 보듯 두개골 바깥에 강한 세로 띠 아티팩트를 남겼다(프로토콜 불일치에 따른 domain shift로 해석되며, 이들 역시 참고선일 뿐 순위에 넣지 않는다). 공개 모델의 전체 검증셋 수치는 다음 절의 표 4에 제시한다.
 
@@ -178,7 +178,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 | PromptMR+ | train | 93 | [TBD] | [TBD] | [TBD] | [TBD] |
 | bi-GRU (original) | train | 668 | 0.9127±0.0366 | 33.78±1.86 | 0.448±0.274 | 21.8 / 26.2 |
 | SS2D (controlled) | train | 31 | 0.9141±0.0365 | 33.91±1.90 | 0.438±0.283 | – |
-| Enhanced SS2D | train | 33 | 0.9146±0.0361 | 33.92±1.90 | 0.439±0.304 | 55.8 / 54.2 |
+| Enhanced SS2D | train | 34 | 0.9146±0.0361 | 33.92±1.90 | 0.439±0.304 | 55.8 / 54.2 |
 @note: †: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol (domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask (their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. CPU fp32 inference. [TBD] = full-validation inference still running.
 @end
 
@@ -186,7 +186,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 
 표 2의 마지막 행과 표 3의 하단 세 행은 강화 SS2D의 결과다. 강화판은 best epoch 78/80에서 SSIM 0.9146, PSNR 33.92 dB로 통제판(0.9141, 33.91 dB)을 근소하게 넘었으며, 슬라이스 단위 우위 비율은 통제판 대비 세 지표 54~56%(클러스터 부트스트랩 95% CI 하한 52.5%), 원 bi-GRU 대비 78~82%였다. 볼륨 단위로도 세 지표 전부 유의하다(우위 볼륨 58.6~66.4%, Wilcoxon n=464, 모두 p<0.001). 차이 분포는 그림 4(b)다.
 
-그러나 이득의 크기는 작고 지표에 따라 균일하지 않다. 평균 차이의 95% CI가 0을 배제하는 것은 SSIM뿐이고(ΔSSIM +0.0005 [+0.0003, +0.0006]), PSNR의 평균 차이는 CI가 0을 포함하며, nMSE는 평균 기준 사실상 동률이다(표 2에서 통제판이 근소 우세). 순위 기반 통계(중앙값·우위 비율·Wilcoxon)로는 세 지표 전부 강화판 우위다. 해석에도 주의가 필요하다: matched-epoch 50 시점의 강화판 검증 SSIM은 0.9130으로 통제판 best(0.9140; 이상 학습 로그 기준)에 미달하며, 통제판 best에 도달한 것은 연장 구간의 epoch 64(동률)~66(상회)이다. 즉 "같은 학습량에서 더 좋다"가 아니라 "더 긴 스케줄(80 epoch)을 소화해 최종 품질을 근소하게 넘었다"가 정확한 서술이며, best 도달까지의 wall-clock도 강화판이 더 길다(약 187시간 대 통제판 약 147시간; Ⅳ장 9절). coarse-scan(ds=3) 다운샘플은 품질을 해치지 않았다 — epoch 40 시점에는 열위였다가 후반 cosine annealing 구간에서 역전해 최종 상회했다.
+그러나 이득의 크기는 작고 지표에 따라 균일하지 않다. 평균 차이의 95% CI가 0을 배제하는 것은 SSIM뿐이고(ΔSSIM +0.0005 [+0.0003, +0.0006]), PSNR의 평균 차이는 CI가 0을 포함하며, nMSE는 평균 기준 사실상 동률이다(표 2에서 통제판이 근소 우세). 순위 기반 통계(중앙값·우위 비율·Wilcoxon)로는 세 지표 전부 강화판 우위다. 해석에도 주의가 필요하다: matched-epoch 50 시점의 강화판 검증 SSIM은 0.9130으로 통제판 best(0.9140; 이상 학습 로그 기준)에 미달하며, 통제판 best에 도달한 것은 연장 구간의 epoch 64(동률)~66(상회)이다. 즉 "같은 학습량에서 더 좋다"가 아니라 "더 긴 스케줄(80 epoch)을 소화해 최종 품질을 근소하게 넘었다"가 정확한 서술이며, 통제판 best 수준(0.9140)에 도달하기까지의 wall-clock도 강화판이 더 길다(약 187시간 = 66 epoch × 2.84 h 대 통제판 약 147시간 = 48 epoch × 3.07 h; 강화판 자체의 best인 epoch 78까지는 약 221시간; h/epoch는 Ⅳ장 9절). coarse-scan(ds=3) 다운샘플은 품질을 해치지 않았다 — epoch 40 시점에는 열위였다가 후반 cosine annealing 구간에서 역전해 최종 상회했다.
 
 @figure: paper/figs/fig4_per_slice_distribution.png | page | 1.0
 @cap_ko: 슬라이스 단위 paired 차이의 분포(검증 7,334 슬라이스; 네 번째 패널의 L1은 손실 항 참고용). (a) SS2D − bi-GRU, (b) 강화 SS2D − 통제판 SS2D. 양수가 치환(강화) 우위 방향이며(NMSE·L1은 부호 반전), 각 패널에 우위 슬라이스 비율을 표시하였다
@@ -210,7 +210,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 
 ## 효율
 
-파라미터 수와 학습 시간을 표 6에 정리했다. 파라미터 수는 bi-GRU 668M, 통제판 SS2D 31M, 강화 SS2D 약 33M이다. epoch당 학습시간(5-epoch 체크포인트 저장 간격의 중앙값, 검증 포함 wall-clock, 재시작으로 인한 outlier 구간 제외)은 bi-GRU 2.41시간, 통제판 SS2D 3.07시간, 강화 SS2D 2.84시간이었다. 통제 비교의 두 팔은 동일 실행환경에서 학습되어 상호 비교 가능하며, epoch당 학습시간은 순차 RNN임에도 cuDNN 최적화의 이점으로 bi-GRU가 더 빨랐다. 따라서 본 논문의 효율 주장은 학습 속도가 아니라 파라미터(21배)와 동등 이상의 품질에 있다. 강화판은 통제 비교 완주 후 컨테이너·데이터로더 환경 개선을 거쳐 학습되어 wall-clock 직접 비교에는 환경 차이가 섞여 있으므로 명목값(2.84 < 3.07)의 해석에는 주의가 필요하다. 추론 시간(ms/slice)과 peak VRAM은 [TBD: GPU 큐 확보 후 측정 예정].
+파라미터 수와 학습 시간을 표 6에 정리했다. 파라미터 수는 bi-GRU 668M, 통제판 SS2D 31M, 강화 SS2D 약 34M이다. epoch당 학습시간(5-epoch 체크포인트 저장 간격의 wall-clock 중앙값, 검증 포함; 중앙값이므로 재시작으로 길어진 한 구간의 영향은 받지 않는다)은 bi-GRU 2.41시간, 통제판 SS2D 3.07시간, 강화 SS2D 2.84시간이었다. 통제 비교의 두 팔은 동일 실행환경에서 학습되어 상호 비교 가능하며, epoch당 학습시간은 순차 RNN임에도 cuDNN 최적화의 이점으로 bi-GRU가 더 빨랐다. 따라서 본 논문의 효율 주장은 학습 속도가 아니라 파라미터(21배)와 동등 이상의 품질에 있다. 강화판은 통제 비교 완주 후 컨테이너·데이터로더 환경 개선을 거쳐 학습되어 wall-clock 직접 비교에는 환경 차이가 섞여 있으므로 명목값(2.84 < 3.07)의 해석에는 주의가 필요하다. 추론 시간(ms/slice)과 peak VRAM은 [TBD: GPU 큐 확보 후 측정 예정].
 
 @table: page | 2300,1200,1800,2000,1800
 @cap_ko: 파라미터 및 시간 효율(TITAN RTX 24GB, batch 8, AMP, 384×384). 학습 시간은 5-epoch 체크포인트 간격의 wall-clock 중앙값(검증 포함)이며, ‡는 컨테이너·데이터로더 개선 후 학습되어 통제 비교 두 행과 직접 비교할 수 없음을 뜻한다
@@ -219,7 +219,7 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 |---|---|---|---|---|
 | bi-GRU (original) | 668 | 2.41 | [TBD] | [TBD] |
 | SS2D (controlled) | 31 | 3.07 | [TBD] | [TBD] |
-| Enhanced SS2D | 33 | 2.84‡ | [TBD] | [TBD] |
+| Enhanced SS2D | 34 | 2.84‡ | [TBD] | [TBD] |
 @end
 
 ## 진행 중인 보강 실험 [TBD]

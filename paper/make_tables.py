@@ -35,7 +35,7 @@ BOOT_N, BOOT_SEED = 2000, 0
 INFO = {
     "gru":  {"ko": "GRU",           "en": "GRU",              "ep": "50/50", "params": "668M"},
     "ss2d": {"ko": "SS2D (통제판)", "en": "SS2D (controlled)", "ep": "48/50", "params": "31M"},
-    "v9":   {"ko": "강화 SS2D",     "en": "Enhanced SS2D",     "ep": "78/80", "params": "~33M"},
+    "v9":   {"ko": "강화 SS2D",     "en": "Enhanced SS2D",     "ep": "78/80", "params": "~34M"},
 }
 
 # ---------------------------------------------------------------- 데이터 적재
@@ -258,7 +258,7 @@ CONV = {  # 표 안 영문 명칭 · Params (M)
     "zf":   {"en": "Zero-filled",        "params": "–"},
     "gru":  {"en": "bi-GRU (original)",  "params": "668"},
     "ss2d": {"en": "SS2D (controlled)",  "params": "31"},
-    "v9":   {"en": "Enhanced SS2D",      "params": "33"},
+    "v9":   {"en": "Enhanced SS2D",      "params": "34"},
 }
 CM = ["ssim", "psnr", "nmse"]                       # 관례형 표의 지표 3종 (L1 제외)
 CM_HEAD_MD = {"ssim": "SSIM ↑", "psnr": "PSNR (dB) ↑", "nmse": "nMSE (%) ↓"}
@@ -403,7 +403,7 @@ write_pair("tableC2_paired", md, tex)
 # ---- Table C3: 효율 (상수 — draft_ko_v2 Table 5 의 h/ep 실측; 추론 ms/slice·VRAM 은 GPU 확보 후)
 EFF = [("bi-GRU (original)", "668", "2.41", "[TBD]", "[TBD]"),
        ("SS2D (controlled)", "31", "3.07", "[TBD]", "[TBD]"),
-       ("Enhanced SS2D", "33", "2.84‡", "[TBD]", "[TBD]")]
+       ("Enhanced SS2D", "34", "2.84‡", "[TBD]", "[TBD]")]
 md = ["**Table 3. Parameter and time efficiency (TITAN RTX 24 GB, batch 8, AMP, 384×384).** "
       "† Median wall-clock between 5-epoch checkpoints, validation included. ‡ Trained after a container/dataloader "
       "upgrade — not directly comparable with the two v8 rows. Inference time and VRAM to be measured once GPU0 is free.", "",

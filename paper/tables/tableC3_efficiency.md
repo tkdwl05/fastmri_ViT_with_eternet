@@ -4,4 +4,4 @@
 |---|---:|---:|---:|---:|
 | bi-GRU (original) | 668 | 2.41 | [TBD] | [TBD] |
 | SS2D (controlled) | 31 | 3.07 | [TBD] | [TBD] |
-| Enhanced SS2D | 33 | 2.84‡ | [TBD] | [TBD] |
+| Enhanced SS2D | 34 | 2.84‡ | [TBD] | [TBD] |

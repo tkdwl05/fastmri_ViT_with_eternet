@@ -55,6 +55,13 @@ SS2DStackV9:
   head:  LayerNorm → Conv1x1(d_inner→out_ch)   # out_ch 자유
 ```
 
+> **정정(2026-09-08 논문 검증)**: 아래 33.0M / "SS2D 스택 ~2M" 은 ds=3 front-end 도입 **이전**(블록만 센) 값이다. 최종 백본의
+> 실측은 **34.2M** = U-Net 31.085M + SS2D 스택 3.095M(in_proj 0.008 + down 0.590 + 3블록 1.889 + up_proj 0.590 + out_proj 0.016;
+> 트레이너 로그 `params=34.2M`, 부록 A 와 동일). 논문·`paper/make_tables.py` 는 34M 로 통일. 또한 본문 곳곳의 2.51/2.78 h/ep 는
+> 스모크 추정치이며, 논문 정본은 08-18 실측(5-epoch ckpt 간격 wall-clock 중앙값·검증 포함) GRU 2.41 / v8 SS2D 3.07 / v9 2.84 h/ep
+> (unleashed 완주 225.8 h/80 ep = 2.82 와 일치). §11.3 의 "best 도달 wall-clock ≈181h > ≈133h" 도 같은 이유로 논문에서는
+> 187 h(66 ep × 2.84, 통제판 best 수준 도달) vs 147 h(48 ep × 3.07) 로 재산출했다.
+
 **관찰(중요)**: v9 총 params ≈ **33.0M** 인데 SS2D 스택은 ~2M 뿐이고 **U-Net DFU(~30M)가 지배적**(v8 도
 동일 구조). GRU 가 668M 였던 건 flatten reshape 탓. 즉 이 ETER-net 파이프라인에서 "언리시드"의 실체는
 param 수가 아니라 **k→image 변환의 질**(게이팅·깊이·d_state). 더 키우려면 d_inner 512 / n_blocks 6+
