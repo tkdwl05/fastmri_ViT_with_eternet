@@ -4,6 +4,7 @@
 출력:  paper/tables/table{1,2,2b,3,S1}.{md,tex}            — draft_ko_v2 표기(역사 유지)
        paper/tables/tableC{1_main_volume,1_main_slice,2_paired,3_efficiency,S1_contrast}.{md,tex}
        paper/tables/ieie_table1_block.md                     — IEIE .src.md 에 붙여넣는 @table 블록
+       paper/tables/tableC4_reference.{md,tex} · ieie_table_ref_block.md — 공개 모델 참고선(전체 val 우리 프로토콜, 09-08; 미완주 방법 [TBD])
        - .md  : 한국어 헤더 (현행 draft_ko_v2 와 동일 표기) / C 계열은 관례형 영문
        - .tex : 영문 헤더 + booktabs
        관례형(C 계열, 2026-09-03): 표 내용 영문·L1 제외·nMSE %·볼륨 단위 mean±SD·Params (M)·Zero-filled 행·
@@ -462,6 +463,100 @@ for unit in ["volume", "slice"]:
 open(os.path.join(OUT, "ieie_table4_block.md"), "w", encoding="utf-8").write("\n".join(blk4) + "\n")
 print("  wrote ieie_table4_block.md")
 
+# ---- Table C4 / IEIE 표 블록: 공개 모델 참고선 (전체 검증셋 · 우리 프로토콜 · CPU 추론 — results/eval/baselines_384_full/)
+#      행 = U-Net†·E2E-VarNet†·PromptMR+ (v8_eter_pure/eval_baselines_full.py 의 per-slice CSV) + 우리 3모델(좌표용, 표 2 와 동일 값).
+#      순위 표시(굵게/밑줄) 없음 — 참고선: † 는 train+val 누수, 세 공개 가중치 모두 원 코일 구성으로 학습된 것을 본 프로토콜에 적용(domain shift),
+#      PromptMR+ 는 인접 5슬라이스 입력. 공개 모델 지표는 brain mask 내부 per-slice LS 강도 정합 후(정합은 공개 모델에만 유리할 수 있음), 우리 행은 정합 없음.
+#      미완주(7,334 슬라이스 미만) 방법은 [TBD] 셀 — CSV 가 채워지면 재실행만으로 확정된다(09-08: U-Net†·E2E-VarNet† 완주, PromptMR+ 진행 중).
+PUB_DIR = os.path.join(ROOT, "results/eval/baselines_384_full")
+PUB = [("unet", "U-Net†", "train+val", "496"),        # fastMRI leaderboard U-Net (chans 256, 4 pools) 496.4M
+       ("varnet", "E2E-VarNet†", "train+val", "30"),  # 12 cascades, chans 18, sens 8 → 29.9M
+       ("promptmr", "PromptMR+", "train", "93")]      # fm-brain 공개 가중치(train 구획만) 92.9M
+keys_ours = [(r["file"], int(r["slice_idx"])) for r in rows]
+
+
+def load_pub(method):
+    """per_slice_<method>.csv → 우리 CSV 행 순서로 정렬된 {metric: array}. 미완주면 (None, 확보 수)."""
+    path = os.path.join(PUB_DIR, f"per_slice_{method}.csv")
+    if not os.path.exists(path):
+        return None, 0
+    got = {}
+    for r in csv.DictReader(open(path)):
+        try:
+            v = {m: float(r[m]) for m in METRICS}
+        except (KeyError, ValueError):
+            continue                       # 동시 append 중 잘린 행
+        if all(np.isfinite(x) for x in v.values()):
+            got[(r["file"], int(r["slice_idx"]))] = v
+    if not all(k in got for k in keys_ours):
+        return None, len(got)
+    return {m: np.array([got[k][m] for k in keys_ours]) for m in METRICS}, len(got)
+
+
+def ms_arr(a, m, unit):
+    a = a * CM_SCALE[m]
+    if unit == "volume":
+        a = vol_mean(a)
+    fm, fs = CM_FMT[m]
+    return fm.format(a.mean()) + "±" + fs.format(a.std(ddof=1))
+
+
+def fav_vs_ss2d(a_ssim, a_psnr):
+    """통제 SS2D 보다 나은 슬라이스 비율 'SSIM / PSNR' (%)."""
+    return f"{100 * np.mean(a_ssim > M['ss2d_ssim']):.1f} / {100 * np.mean(a_psnr > M['ss2d_psnr']):.1f}"
+
+
+ref_rows, PUB_DATA, pending = [], {}, []
+for meth, name, split, params in PUB:
+    arr, n_got = load_pub(meth)
+    PUB_DATA[meth] = arr
+    if arr is None:
+        ref_rows.append((name, split, params, ["[TBD]"] * len(CM), "[TBD]"))
+        pending.append(name)
+        print(f"  참고선 {name}: {n_got:,}/{n:,} 슬라이스 — 미완주 → [TBD]")
+    else:
+        ref_rows.append((name, split, params, [ms_arr(arr[m], m, "volume") for m in CM],
+                         fav_vs_ss2d(arr["ssim"], arr["psnr"])))
+        print(f"  참고선 {name}: 완주 ({n_got:,} 슬라이스)")
+for p in ["gru", "ss2d", "v9"]:
+    fav = "–" if p == "ss2d" else fav_vs_ss2d(M[f"{p}_ssim"], M[f"{p}_psnr"])
+    ref_rows.append((CONV[p]["en"], "train", CONV[p]["params"], [ms(p, m, "volume") for m in CM], fav))
+
+REF_CAP_KO = ("공개 모델 참고선 — 전체 검증 집합(464 볼륨/7,334 슬라이스)을 본 논문과 동일한 프로토콜(384² 재-FFT·16코일·R=4·brain-masked)로 "
+              "추론한 볼륨 단위 평균±표준편차. 참고선이므로 순위 표시(굵게·밑줄)는 두지 않는다. 마지막 열은 통제 SS2D보다 나은 슬라이스의 비율(SSIM / PSNR, %)")
+REF_CAP_EN = ("Public-model reference lines — full validation set (464 volumes/7,334 slices) inferred under the protocol of this paper "
+              "(384² re-FFT, 16 coils, R = 4, brain-masked); mean±SD over volumes. Reference only, hence no ranking marks. "
+              "Last column: fraction of slices on which the method beats the controlled SS2D (SSIM / PSNR, %)")
+REF_NOTE = ("†: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. "
+            "PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. "
+            "All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol "
+            "(domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask "
+            "(their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. "
+            "CPU fp32 inference."
+            + (" [TBD] = full-validation inference still running." if pending else ""))
+REF_HEAD = ["Method", "Training split", "Params (M)"] + [CM_HEAD_MD[m] for m in CM] + ["Favoring vs. SS2D (%) SSIM / PSNR"]
+md = [f"**Table 4. {REF_CAP_EN}.** {REF_NOTE}", "",
+      "| " + " | ".join(REF_HEAD) + " |", "|---|---|---:|" + "---:|" * len(CM) + "---:|"]
+tex_rows = []
+for name, split, params, cells, fav in ref_rows:
+    md.append(f"| {name} | {split} | {params} | " + " | ".join(cells) + f" | {fav} |")
+    tex_rows.append(" & ".join([name.replace("†", r"$^\dagger$"), split, params.replace("–", "--")]
+                               + [tex_escape(c) for c in cells] + [tex_escape(fav).replace("–", "--")]))
+tex = tex_table(tex_escape(REF_CAP_EN) + ". " + tex_escape(REF_NOTE).replace("†", r"$^\dagger$"), "tab:reference",
+                "llr" + "r" * len(CM) + "r",
+                "Method & Training split & Params (M) & " + " & ".join(CM_HEAD_TEX[m] for m in CM)
+                + r" & Favoring vs.\ SS2D (\%) SSIM / PSNR", tex_rows)
+write_pair("tableC4_reference", md, tex)
+blk_ref = ["%% IEIE .src.md 붙여넣기용 — 공개 모델 참고선(볼륨 단위, 순위 표시 없음). 열 폭 합 9400 twips(page). 미완주 방법은 [TBD] 셀.",
+           "@table: page | 1900,1000,800,1400,1300,1300,1700",
+           f"@cap_ko: {REF_CAP_KO}",
+           f"@cap_en: {REF_CAP_EN}",
+           "| " + " | ".join(REF_HEAD) + " |", "|---|---|---|" + "---|" * len(CM) + "---|"]
+blk_ref += [f"| {name} | {split} | {params} | " + " | ".join(cells) + f" | {fav} |" for name, split, params, cells, fav in ref_rows]
+blk_ref += [f"@note: {REF_NOTE}", "@end"]
+open(os.path.join(OUT, "ieie_table_ref_block.md"), "w", encoding="utf-8").write("\n".join(blk_ref) + "\n")
+print("  wrote ieie_table_ref_block.md")
+
 # ---------------------------------------------------------------- 자가 검증
 checks = [
     ("Table1 SS2D SSIM", f_mean("ss2d", "ssim"), "0.9140"),
@@ -476,6 +571,9 @@ checks = [
     ("TableC1 volume v9 SSIM", mean_only("v9", "ssim", "volume"), "0.9146"),
     ("TableC1 volume SS2D nMSE%", mean_only("ss2d", "nmse", "volume"), "0.438"),
 ]
+for meth, want in [("varnet", "0.9181"), ("unet", "0.8971")]:     # baseline_summary_full.md (09-06 / 09-08)
+    if PUB_DATA.get(meth) is not None:
+        checks.append((f"TableC4 volume {meth} SSIM", ms_arr(PUB_DATA[meth]["ssim"], "ssim", "volume").split("±")[0], want))
 print("\n[자가 검증 — draft_ko_v2 수치 재현]")
 ok = True
 for name, got, want in checks:

@@ -60,6 +60,11 @@
    PSNR 32.78±3.21 dB / nMSE 1.133±1.291 % — SS2D(0.9141/33.91/0.438) 대비 SSIM 은 +0.004(우위 볼륨 66.8%) 이나 PSNR −1.13 dB
    (우위 35.3%)·nMSE 2.6배 — train+val 누수에도 우리 프로토콜(16코일 절단·재-FFT)에서 domain shift 가 큼(정본 12장 관찰과 일치).
    PromptMR+ 1,486/7,334 시점 중간(464 볼륨 전부 포함) SSIM 0.9497 / PSNR 36.38 / nMSE 0.497 % — 확정은 완주 후.
+   **09-08 09:22 — U-Net† 전체 완료**(7,334, non-finite 0): 볼륨 SSIM 0.8971±0.0366 / PSNR 30.95±2.29 / nMSE 0.973±0.796 % — 세 지표 전부
+   원 bi-GRU 에도 미달(SS2D 대비 우위 슬라이스 SSIM 7.7 % / PSNR 3.9 %). PromptMR+ 6,801/7,334 시점 중간 볼륨 SSIM 0.9411 / PSNR 36.15 / nMSE 0.527 %.
+   **▶ 논문 반영(09-08, 사용자 지시 "표 자리를 남겨두고 반영")**: `make_tables.py` 에 Table C4 참고선 생성기 추가(`paper/tables/tableC4_reference.{md,tex}` +
+   IEIE 블록 `ieie_table_ref_block.md`; 미완주 방법은 자동 `[TBD]` 셀, 완주 시 재실행만으로 확정) → 학술지판 신설 Ⅳ장 6절 "공개 모델 참고선"(표 4, 이후 표·절 번호
+   +1)·표 2 note·보강실험 (4)·고찰 "공개 모델 참고선의 해석" 문단·서지 `xin2024rethinking`(ECCV 2024) 추가, 학술대회판 한 문장(1.99 쪽 유지). PromptMR+ 행·간격 수치는 완주 후 `[TBD]` 교체.
    **native 프로토콜 행**(원본 코일·해상도·공식 마스크)은 계속 GPU 큐 7단계 몫(`eval_paired_baselines.py` 의 `native_protocol`).
 4. ms/slice·peak VRAM 측정은 GPU 큐 7단계에서 별도 채집 (Table 5) — CPU 풀런의 시간은 지연시간 지표로 쓰지 않는다.
 5. DDS(또는 CM-RED): 표본 299 만이라도 — NFE=50 기준 ms/slice 대비가 목적. 풀 7,334 는

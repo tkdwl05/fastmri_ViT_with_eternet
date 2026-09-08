@@ -44,7 +44,8 @@ paired 통계(우위 비율·Wilcoxon)는 관례상 주 표가 아니므로 **�
 ## 3. 남은 [TBD] (GPU0 큐 확보 후 — `docs/v8_fairness_followup_plan.md` 큐에 편입 예정)
 - ~~Zero-filled 행~~ **완료(09-03 16:32)**: `results/eval/zero_filled/`(CPU, 7,334 슬라이스) → `make_tables.py` 조인 → 두 초안 표에 반영. raw 변형 슬라이스 단위 SSIM 0.7521±0.0767 / PSNR 24.76±2.96 dB / nMSE 3.938±3.806 % (볼륨 단위 0.7523±0.0410 / 24.76±2.11 / 3.935±2.166). ls(강도 정합) 변형은 md 요약에만(0.7620 / 25.36 / 3.10 %).
 - 가속률 일반화 표(R∈{2,4,6,8}): 현재 `results/eval/v8_r_sweep/` 는 stride-4 서브샘플(n=1,834, 상향 편향)이라 논문 표 불가 → 전체 val 재실행 필요.
-- 효율 표의 추론 ms/slice·peak VRAM, 공개 모델 전체 평가(n=299 → 7,334), fastMRI 표준 프로토콜(320 crop·무마스크·볼륨 단위) 수치.
+- 효율 표의 추론 ms/slice·peak VRAM, fastMRI 표준 프로토콜(320 crop·무마스크·볼륨 단위) 수치.
+- ~~공개 모델 전체 평가(n=299 → 7,334)~~ **우리 프로토콜 행 09-06 CPU 런 → 09-08 논문 반영**: `make_tables.py` Table C4(`paper/tables/tableC4_reference.{md,tex}`·IEIE 블록 `ieie_table_ref_block.md`, 순위 표시 없음·마지막 열 = SS2D 대비 우위 슬라이스 % SSIM/PSNR) → 학술지판 **표 4**(신설 Ⅳ장 6절 "공개 모델 참고선"; contrast 표 4→5, 효율 표 5→6 재번호)·학술대회판 한 문장. U-Net† 0.8971±0.0366 / 30.95±2.29 / 0.973±0.796 %, E2E-VarNet† 0.9181±0.0386 / 32.78±3.21 / 1.133±1.291 %(볼륨 단위, LS 정합 후) 확정, **PromptMR+ 행은 `[TBD]`**(추론 진행 중 — 완주 후 `make_tables.py` 재실행 → 초안 `[TBD]` 교체). 공개 가중치의 원 프로토콜 행·ms/VRAM 은 GPU 큐 7단계.
 - ~~대표 수치를 볼륨 단위로 바꿀지~~ **결정·적용(09-04): 볼륨 단위**. 두 초안의 결과 표(학술지 표 2·표 4, 학술대회 표 1)·초록·본문 대표 수치를 볼륨 단위(n=464, ddof=1)로 교체 — SSIM bi-GRU 0.9127±0.0366 / SS2D 0.9141±0.0365 / Enhanced 0.9146±0.0361, PSNR 33.78 / 33.91 / 33.92 dB, nMSE 0.448 / 0.438 / 0.439 %, Zero-filled 0.7523 / 24.76 / 3.935. paired 분석(표 3·그림 4)은 슬라이스 단위 Δ + 볼륨 단위 검정 병행으로 유지, 학습 로그 수치(matched-epoch 0.9130 vs 0.9140)는 "(학습 로그 기준)" 명시. 순위·유의성은 두 단위에서 동일. 블록 출처 `paper/tables/ieie_table1_block.md`(첫 블록)·`ieie_table4_block.md`.
 
 ## 4. 렌더 확인 — 구조 점검기 + Word/한글 체크리스트 (09-04)
