@@ -1,7 +1,7 @@
 # 최전선 공개 모델 기준선 계획 (PromptMR+ / DDS) — Table 4 확장
 
-작성 2026-09-01(갱신 09-06). 근거 조사(문헌·리포 검증)는 세션 기록 참조. 우리 프로토콜 행의 전체 val 추론은
-**09-06 CPU 로 선행 실행 중**(§3), native 행·ms/VRAM 은 "추론-only 일괄" GPU 큐(7단계) 유지. 클론은 `external/`(gitignore, 로컬 전용).
+작성 2026-09-01(갱신 09-08). 근거 조사(문헌·리포 검증)는 세션 기록 참조. 우리 프로토콜 행의 전체 val 추론은
+**09-06 CPU 로 launch → 09-08 세 모델 모두 완주**(§3), native 행·ms/VRAM 은 "추론-only 일괄" GPU 큐(7단계) 유지. 클론은 `external/`(gitignore, 로컬 전용).
 
 ## 1. 왜 이 두 개인가
 
@@ -65,6 +65,11 @@
    **▶ 논문 반영(09-08, 사용자 지시 "표 자리를 남겨두고 반영")**: `make_tables.py` 에 Table C4 참고선 생성기 추가(`paper/tables/tableC4_reference.{md,tex}` +
    IEIE 블록 `ieie_table_ref_block.md`; 미완주 방법은 자동 `[TBD]` 셀, 완주 시 재실행만으로 확정) → 학술지판 신설 Ⅳ장 6절 "공개 모델 참고선"(표 4, 이후 표·절 번호
    +1)·표 2 note·보강실험 (4)·고찰 "공개 모델 참고선의 해석" 문단·서지 `xin2024rethinking`(ECCV 2024) 추가, 학술대회판 한 문장(1.99 쪽 유지). PromptMR+ 행·간격 수치는 완주 후 `[TBD]` 교체.
+   **09-08 11:56 — PromptMR+ 전체 완료**(7,334 슬라이스, non-finite 0, 27.2 s/slice 평균): 볼륨 SSIM 0.9417±0.0349 / PSNR 36.12±4.02 dB /
+   nMSE 0.526±0.841 % — 통제 SS2D 대비 SSIM +0.028(우위 슬라이스 96.9 %·볼륨 98.9 %), PSNR +2.21 dB(85.4 %·82.8 %; 둘 다 Wilcoxon p<0.001).
+   ⚠ nMSE 평균은 SS2D(0.438 %)보다 높다 — 슬라이스 85.4 %·볼륨 81.5 %에선 PromptMR+ 가 낮지만 소수 볼륨의 큰 강도 오차(SD 0.841 % vs 0.283 %)가
+   평균을 끌어올린 꼬리 효과(초안엔 그대로 서술). `--summary` 재실행 → `baseline_summary_full.md`, `make_tables.py` 재실행 → 표 C4·`ieie_table_ref_block.md` 의
+   PromptMR+ 행 확정, 학술지판 초안 `[TBD]` 4곳(표 4 행·Ⅳ장 6절·보강 (4)·고찰 간격)과 학술대회판 한 문장 교체·재빌드(09-08).
    **native 프로토콜 행**(원본 코일·해상도·공식 마스크)은 계속 GPU 큐 7단계 몫(`eval_paired_baselines.py` 의 `native_protocol`).
 4. ms/slice·peak VRAM 측정은 GPU 큐 7단계에서 별도 채집 (Table 5) — CPU 풀런의 시간은 지연시간 지표로 쓰지 않는다.
 5. DDS(또는 CM-RED): 표본 299 만이라도 — NFE=50 기준 ms/slice 대비가 목적. 풀 7,334 는

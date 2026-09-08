@@ -167,7 +167,7 @@ Fig. 3. Multi-model qualitative comparison (three validation slices, 384², R = 
 
 표 4는 그림 3의 공개 참조 모델 세 개를 전체 검증 집합(464 볼륨/7,334 슬라이스)에 대해 본 논문과 같은 프로토콜로 추론한 결과다. 이 표는 순위표가 아니다. U-Net†과 E2E-VarNet†[15]은 fastMRI leaderboard 공개 가중치로 train+val 구획을 합쳐 학습되어 본 검증셋이 학습 데이터에 포함되고, PromptMR+[49]는 train 구획만으로 학습된 공개 가중치이나 12-cascade unrolled 구조에 인접 5슬라이스를 입력받는 다른 계열이다. 세 가중치 모두 원 코일 구성으로 학습된 것을 본 프로토콜(384² 재-FFT·16코일 절단)에 그대로 적용했으므로 domain shift가 섞여 있고, 공개 모델의 지표는 brain mask 내부 슬라이스별 최소제곱 강도 정합 후 계산한 값(정합은 공개 모델에만 유리하게 작용할 수 있음)이며 본 연구 세 모델의 행은 정합 없는 표 2의 값이다. 따라서 표 4는 본 논문의 결과가 놓이는 품질 좌표계를 제공할 뿐 우열 판정에는 쓰지 않는다.
 
-그 좌표 위에서 두 가지가 읽힌다. 첫째, 누수가 있는 leaderboard 가중치가 본 프로토콜에서 통제 SS2D를 일관되게 앞서지는 않는다. U-Net†은 볼륨 SSIM 0.8971, PSNR 30.95 dB로 세 지표 전부에서 원 bi-GRU에도 미치지 못했고(SS2D보다 나은 슬라이스 SSIM 7.7%·PSNR 3.9%), E2E-VarNet†은 SSIM에서는 SS2D를 앞섰으나(0.9181 대 0.9141, 우위 슬라이스 70.8%·볼륨 66.8%, Wilcoxon p<0.001) PSNR은 1.13 dB 낮고(우위 슬라이스 45.5%·볼륨 35.3%, p<0.001) nMSE는 2.6배(표준편차 1.291 %)로 컸다 — 구조 유사도는 유지되나 강도 오차가 슬라이스별로 크게 흔들리는 이 양상은 그림 3 마지막 행의 세로 띠 아티팩트와 함께 프로토콜 불일치(domain shift)의 전형이다. 둘째, PromptMR+는 본 연구의 세 모델을 크게 앞선다 [TBD: 전체 검증셋 추론 진행 중 — 6,801/7,334 슬라이스 시점(464 볼륨 전부 포함) 중간값 볼륨 SSIM 0.9411 / PSNR 36.15 dB / nMSE 0.527 %; 완주 후 표 4 행과 함께 확정]. 이 간격은 반복 물리 모델(감도 추정·DC 12회)과 다중 슬라이스 입력이 주는 이득의 크기이며, 단일 슬라이스·무DC 직접 변환 골격에 남은 여지를 정량화한다(Ⅴ장).
+그 좌표 위에서 두 가지가 읽힌다. 첫째, 누수가 있는 leaderboard 가중치가 본 프로토콜에서 통제 SS2D를 일관되게 앞서지는 않는다. U-Net†은 볼륨 SSIM 0.8971, PSNR 30.95 dB로 세 지표 전부에서 원 bi-GRU에도 미치지 못했고(SS2D보다 나은 슬라이스 SSIM 7.7%·PSNR 3.9%), E2E-VarNet†은 SSIM에서는 SS2D를 앞섰으나(0.9181 대 0.9141, 우위 슬라이스 70.8%·볼륨 66.8%, Wilcoxon p<0.001) PSNR은 1.13 dB 낮고(우위 슬라이스 45.5%·볼륨 35.3%, p<0.001) nMSE는 2.6배(표준편차 1.291 %)로 컸다 — 구조 유사도는 유지되나 강도 오차가 슬라이스별로 크게 흔들리는 이 양상은 그림 3 마지막 행의 세로 띠 아티팩트와 함께 프로토콜 불일치(domain shift)의 전형이다. 둘째, PromptMR+는 본 연구의 세 모델을 크게 앞선다: 볼륨 SSIM 0.9417, PSNR 36.12 dB로 통제 SS2D보다 SSIM +0.028(우위 슬라이스 96.9%·볼륨 98.9%), PSNR +2.21 dB(우위 슬라이스 85.4%·볼륨 82.8%; 두 지표 모두 Wilcoxon p<0.001)이다. 다만 nMSE 평균은 0.526 %로 SS2D(0.438 %)보다 오히려 높은데, 이는 슬라이스 85.4%·볼륨 81.5%에서는 PromptMR+가 더 낮음에도 소수 볼륨의 큰 강도 오차(표준편차 0.841 % 대 0.283 %)가 평균을 끌어올린 꼬리 효과다. 이 간격은 반복 물리 모델(감도 추정·DC 12회)과 다중 슬라이스 입력이 주는 이득의 크기이며, 단일 슬라이스·무DC 직접 변환 골격에 남은 여지를 정량화한다(Ⅴ장).
 
 표 4. 공개 모델 참고선 — 전체 검증 집합(464 볼륨/7,334 슬라이스)을 본 논문과 동일한 프로토콜(384² 재-FFT·16코일·R=4·brain-masked)로 추론한 볼륨 단위 평균±표준편차. 참고선이므로 순위 표시(굵게·밑줄)는 두지 않는다. 마지막 열은 통제 SS2D보다 나은 슬라이스의 비율(SSIM / PSNR, %)  
 Table 4. Public-model reference lines — full validation set (464 volumes/7,334 slices) inferred under the protocol of this paper (384² re-FFT, 16 coils, R = 4, brain-masked); mean±SD over volumes. Reference only, hence no ranking marks. Last column: fraction of slices on which the method beats the controlled SS2D (SSIM / PSNR, %)
@@ -176,12 +176,12 @@ Table 4. Public-model reference lines — full validation set (464 volumes/7,334
 |---|---|---|---|---|---|---|
 | U-Net† | train+val | 496 | 0.8971±0.0366 | 30.95±2.29 | 0.973±0.796 | 7.7 / 3.9 |
 | E2E-VarNet† | train+val | 30 | 0.9181±0.0386 | 32.78±3.21 | 1.133±1.291 | 70.8 / 45.5 |
-| PromptMR+ | train | 93 | [TBD] | [TBD] | [TBD] | [TBD] |
+| PromptMR+ | train | 93 | 0.9417±0.0349 | 36.12±4.02 | 0.526±0.841 | 96.9 / 85.4 |
 | bi-GRU (original) | train | 668 | 0.9127±0.0366 | 33.78±1.86 | 0.448±0.274 | 21.8 / 26.2 |
 | SS2D (controlled) | train | 31 | 0.9141±0.0365 | 33.91±1.90 | 0.438±0.283 | – |
 | Enhanced SS2D | train | 34 | 0.9146±0.0361 | 33.92±1.90 | 0.439±0.304 | 55.8 / 54.2 |
 
-†: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol (domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask (their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. CPU fp32 inference. [TBD] = full-validation inference still running.
+†: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol (domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask (their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. CPU fp32 inference.
 
 ### 7. 강화 SS2D — 통제 해제 시의 상한
 
@@ -224,7 +224,7 @@ Table 6. Parameter and time efficiency (TITAN RTX 24 GB, batch 8, AMP, 384×384)
 
 ### 10. 진행 중인 보강 실험 [TBD]
 
-본 초안 작성 시점(2026-09-03, 갱신 09-08)에 다음 보강 실험이 진행 중이거나 대기 중이며, 결과는 확보되는 대로 본 절과 해당 표에 반영한다. (1) 멀티시드 재현(seed 0, 1, 2 × {SS2D, bi-GRU} × 25 epoch 축약 스케줄) — 부호 안정성 확인 [TBD: 진행 중]. (2) 도메인 변환 자리의 추가 두 팔 — 동일 스택 예산(약 0.1M)의 Transformer 팔과, 재귀 메커니즘에 SS2D와 같은 공간 가중치 공유를 준 pixel-GRU 팔(메커니즘 대 파라미터화 confound 분리) [TBD: 학습 대기]. (3) 시퀀스 모듈을 제거한 U-Net-only 기준(치환 이득 해석의 분모) [TBD]. (4) 공개 모델의 전체 검증셋 추론 참고선(표 4) — U-Net†·E2E-VarNet†[15]은 확정되었고, PromptMR+[49]는 [TBD: 추론 진행 중 — 완주 후 표 4의 행과 Ⅳ장 6절·Ⅴ장의 간격 수치 확정]. 공개 가중치의 원 프로토콜(원 코일 구성·공식 마스크 규약) 추론과 ms/slice·VRAM 은 GPU 확보 후 측정 [TBD]. (5) mask 조건화·DC·multi-R 학습을 결합한 R-적응 변형의 가속률 일반화(R∈{2, 4, 6, 8}) [TBD: 학습 중단 상태(epoch 57/80), 공정성 실험 후 재개].
+본 초안 작성 시점(2026-09-03, 갱신 09-08)에 다음 보강 실험이 진행 중이거나 대기 중이며, 결과는 확보되는 대로 본 절과 해당 표에 반영한다. (1) 멀티시드 재현(seed 0, 1, 2 × {SS2D, bi-GRU} × 25 epoch 축약 스케줄) — 부호 안정성 확인 [TBD: 진행 중]. (2) 도메인 변환 자리의 추가 두 팔 — 동일 스택 예산(약 0.1M)의 Transformer 팔과, 재귀 메커니즘에 SS2D와 같은 공간 가중치 공유를 준 pixel-GRU 팔(메커니즘 대 파라미터화 confound 분리) [TBD: 학습 대기]. (3) 시퀀스 모듈을 제거한 U-Net-only 기준(치환 이득 해석의 분모) [TBD]. (4) 공개 모델의 전체 검증셋 추론 참고선(표 4)은 U-Net†·E2E-VarNet†[15]·PromptMR+[49] 모두 확정되었다. 공개 가중치의 원 프로토콜(원 코일 구성·공식 마스크 규약) 추론과 ms/slice·VRAM 은 GPU 확보 후 측정 [TBD]. (5) mask 조건화·DC·multi-R 학습을 결합한 R-적응 변형의 가속률 일반화(R∈{2, 4, 6, 8}) [TBD: 학습 중단 상태(epoch 57/80), 공정성 실험 후 재개].
 
 ## Ⅴ. 고  찰
 
@@ -236,7 +236,7 @@ DC 축을 주 비교에서 제외한 근거. (a) 원 논문[20]에 DC가 없고,
 
 선행 Mamba-MRI와의 관계. 본 결과는 기존 Mamba-MRI 연구[29-37]의 아키텍처 기여와 경쟁하지 않는다. 그들이 "어떤 새 Mamba 구조가 최고 성능인가"를 묻는다면, 본 연구는 "기존 도메인 변환 골격에서 RNN→SSM 치환만으로 무엇이 달라지는가"를 격리해 답한다. 특히 DH-Mamba[30]가 지적한 k-space 직접 스캔의 스펙트럼 파괴 우려에 대해, 본 결과는 ETER-Net식 도메인 변환 자리(k-space 입력)에서도 SS2D 치환이 원 bi-GRU 설계를 일관되게 상회함을 실증한다 — 이는 해당 우려가 도메인 변환형 골격에는 그대로 적용되지 않음을 시사한다.
 
-공개 모델 참고선의 해석. 표 4의 좌표는 두 방향으로 읽어야 한다. 아래쪽으로, 본 검증셋을 학습에 포함한 leaderboard 가중치가 본 프로토콜에서 PSNR·nMSE 기준 통제 SS2D를 넘지 못한 것은 그 모델들의 본래 성능이 아니라 누수의 이득과 프로토콜 불일치(16코일 절단·384² 재-FFT·마스크 규약)의 손실이 상쇄된 결과이며, 본 검증셋을 학습에 쓰지 않은 본 연구의 모델이 자기 프로토콜 안에서 그 가중치들과 같은 품질 좌표대에 있다는 정도로만 읽어야 한다(공식 프로토콜의 리더보드 수치와 직접 대조하지 않는 이유는 Ⅲ장 4절). 위쪽으로, PromptMR+와의 간격 [TBD: 확정 후 기입]은 반복 물리 모델과 다중 슬라이스 입력이 주는 이득의 크기다. 본 논문의 주장은 골격 내부 치환의 효과로 한정되므로 이 간격은 주장과 충돌하지 않으며, 오히려 다음 단계 — 문헌 방식의 DC 재설계와 인접 슬라이스 입력 — 의 기대 이득을 정량화한다.
+공개 모델 참고선의 해석. 표 4의 좌표는 두 방향으로 읽어야 한다. 아래쪽으로, 본 검증셋을 학습에 포함한 leaderboard 가중치가 본 프로토콜에서 PSNR·nMSE 기준 통제 SS2D를 넘지 못한 것은 그 모델들의 본래 성능이 아니라 누수의 이득과 프로토콜 불일치(16코일 절단·384² 재-FFT·마스크 규약)의 손실이 상쇄된 결과이며, 본 검증셋을 학습에 쓰지 않은 본 연구의 모델이 자기 프로토콜 안에서 그 가중치들과 같은 품질 좌표대에 있다는 정도로만 읽어야 한다(공식 프로토콜의 리더보드 수치와 직접 대조하지 않는 이유는 Ⅲ장 4절). 위쪽으로, PromptMR+와의 간격(볼륨 SSIM +0.028, PSNR +2.2 dB; nMSE 평균은 꼬리 효과로 역전)은 반복 물리 모델과 다중 슬라이스 입력이 주는 이득의 크기다. 본 논문의 주장은 골격 내부 치환의 효과로 한정되므로 이 간격은 주장과 충돌하지 않으며, 오히려 다음 단계 — 문헌 방식의 DC 재설계와 인접 슬라이스 입력 — 의 기대 이득을 정량화한다.
 
 평가지표의 신뢰성. SSIM과 PSNR이 높아도 병변 소실이나 구조 hallucination을 잡지 못한다는 것은 fastMRI 챌린지 보고[17] 이후 정설이며, 딥러닝 재구성의 불안정성[50]과 정확도–안정성 트레이드오프[51]도 이론적으로 정리되어 있다. 본 연구는 (i) 배경 부풀림을 차단하는 brain-masked 지표, (ii) 집계 평균이 아닌 슬라이스 단위 우위 비율과 비모수 검정, (iii) 정성 비교로 평가의 성실성을 보강했으나, 영상의학과 의사의 reader study는 수행하지 않았다. 이는 본 연구가 임상 성능이 아닌 아키텍처 통제 비교를 주장하는 이유이자 한계다. 투고 전 CLAIM 체크리스트[52]에 따른 자체 점검을 수행할 예정이다.
 

@@ -76,14 +76,14 @@ ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 하이브
 ### v8 공정성 스위트 (2026-09~) — 현재 운영
 - **[docs/v8_fairness_followup_plan.md](docs/v8_fairness_followup_plan.md)** (2026-09-01, 갱신 09-02) — v8 비교의 잔여 한계 ①시드 ②레시피 ③용량을 닫는 실험 계획: **E1** 멀티시드(seeds 0,1,2 × {ss2d,gru} × 25ep cosine-to-25 완결 미니런, 시드별 페어 우선 → 부호 안정성 중간판정), **E2** GRU LR 미니스윕, **E3** 용량 매칭(CPU 실측: GRU 스택 하한 H=1 에서도 62.9M — param-matched GRU 는 구조적으로 정의 불가 → 논거로 전환 + 최소-GRU 1런). 비교 기준점 명문화(원본 GRU = reference), 4번째 팔 pixel-GRU(가중치 공유 pixel-scan bi-GRU, 스택 0.115M — 메커니즘 vs 파라미터화 confound 분리), **GPU0 순차 큐 8단계(~40일, 10월 중순 종료)**. 09-02: radapt ep57 정지 + E1 자동 launch.
 - **[docs/axial_transformer_arm_design.md](docs/axial_transformer_arm_design.md)** (2026-09-01, 결정 09-02: 이번 논문 포함) — 3번째 팔 **Transformer**(도메인 변환 슬롯, 구현 = axial attention, 스택 예산 ~0.1M 매칭) 설계·비용. `models/attn_eternet/transformer_v10.py` + `u_pure_eternet_transformer.py`, `SEQ_MODEL=transformer`.
-- **[docs/frontier_baselines_plan.md](docs/frontier_baselines_plan.md)** (2026-09-01, 갱신 09-06) — Table 4 확장용 공개 최전선 모델(PromptMR+ / DDS) 추론-only 기준선 계획(클론은 `external/`, git-ignore). **우리 프로토콜 행 전체 val 은 09-06 CPU 로 선행 실행 중**(`v8_eter_pure/eval_baselines_full.py` → `results/eval/baselines_384_full/`, PromptMR+ ≈3~4일 long pole); native 행·ms/VRAM 은 큐 7단계 GPU 몫. 기존 leaderboard U-Net/VarNet 은 train+val 합본 학습이라 참고선으로만(`results/eval/baselines_384*`).
+- **[docs/frontier_baselines_plan.md](docs/frontier_baselines_plan.md)** (2026-09-01, 갱신 09-08) — Table 4 확장용 공개 최전선 모델(PromptMR+ / DDS) 추론-only 기준선 계획(클론은 `external/`, git-ignore). **우리 프로토콜 행 전체 val 은 CPU 로 09-06 launch → 09-08 세 모델 모두 완주**(`v8_eter_pure/eval_baselines_full.py` → `results/eval/baselines_384_full/`; 볼륨 SSIM U-Net† 0.8971 / E2E-VarNet† 0.9181 / PromptMR+ 0.9417 — 학술지판 표 4 확정); native 행·ms/VRAM 은 큐 7단계 GPU 몫. 기존 leaderboard U-Net/VarNet 은 train+val 합본 학습이라 참고선으로만(`results/eval/baselines_384*`).
 - **[docs/worklog_2026-06_07.md](docs/worklog_2026-06_07.md)** (2026-07-28, 갱신 08-05) — 6~7월 날짜별 작업 일지(근거 표기: 커밋/mtime/ckpt).
 
 ### paper/ (논문 트랙, 2026-08~) — 커밋 prefix "paper:"
 - `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1 (MDPI 공학형, 스코프 v8+v9 unleashed, 외부검토 08-18 반영 P0 8건·P1 8건). `references.bib` 73항목 서지 전건 확정(⚠ 0건). 프로젝트 여정 서사는 `project_story_v1_to_v9.md`.
-- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig2_curves.py`/`make_fig3_qualitative.py`(다중 모델 정성 그림 — `results/vis/multimodel_compare/recon_*.npz` 조판 전용, 추론은 루트 `visualize_multimodel_compare.py`)/`make_fig4_per_slice.py` → `paper/figs/`.
+- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig2_curves.py`/`make_fig3_qualitative.py`(다중 모델 정성 그림 — `results/vis/multimodel_compare/recon_*.npz` 조판 전용, 추론은 루트 `visualize_multimodel_compare.py`)/`make_fig4_per_slice.py` → `paper/figs/`; 학술대회판 전용 세부 아키텍처 그림 3장은 `make_figs_conf_arch.py`(단 폭 3.15 in, 텍스트 자동 축소 맞춤, 600 dpi).
 - 논문·보고 지표는 표준 지표만(SSIM 주지표 + PSNR/NMSE/L1) — composite 사용 금지 (08-07 전면 결정, `docs/eval_metric_redesign.md` ⚠ 참조).
-- **`paper/ieie/` — IEIE(대한전자공학회) 투고용 초안 2종(2026-09-03~)**: 학술지판 `draft_ieie_ko_v1.src.md` → `build_ieie_docx.py`, 학술대회 2쪽판 `draft_ieie_conf_ko_v1.src.md` → `build_ieie_conf_docx.py`(둘 다 저장소 루트에서 `CUDA_VISIBLE_DEVICES="" python …` → `.md`+`.docx`; 학술대회판은 2쪽 분량 추정 내장). 표는 `paper/tables/ieie_table{1,4}_block.md`·`ieie_table_ref_block.md`(공개 모델 참고선 = 학술지판 표 4, 09-08; `results/eval/baselines_384_full/` CSV 가 미완주인 방법은 자동 `[TBD]` 셀 — PromptMR+ 완주 후 `make_tables.py` 재실행 → 초안 `[TBD]` 교체)(make_tables.py 생성, **볼륨 단위**)를 붙여넣고, 양식 근거·어긋난 지점·Word 확인 체크리스트는 `docs/paper_table_conventions.md`. 렌더러가 없으므로 `check_docx_structure.py` 로 OOXML 구조만 점검하고 부동 표/그림 위치·쪽수는 Word/한글에서 확인. 양식 원본 `template_ieie_2021.docx`·`example_conference_2page.docx`(사용자 업로드). 2026 추계학술대회 논문 마감 2026-10-19.
+- **`paper/ieie/` — IEIE(대한전자공학회) 투고용 초안 2종(2026-09-03~)**: 학술지판 `draft_ieie_ko_v1.src.md` → `build_ieie_docx.py`, 학술대회 2쪽판 `draft_ieie_conf_ko_v1.src.md` → `build_ieie_conf_docx.py`(둘 다 저장소 루트에서 `CUDA_VISIBLE_DEVICES="" python …` → `.md`+`.docx`; 학술대회판은 분량 추정 내장 — 09-08 그림 1 을 세부 그림 3장(`paper/make_figs_conf_arch.py` → `paper/figs/conf_fig{1_pipeline,2_arms,3_enhanced}.png`)으로 나눠 ≈2.6~2.9 쪽; 2026 추계 규정은 "Double Column 1페이지 이상"이라 2쪽 상한 아님). 표는 `paper/tables/ieie_table{1,4}_block.md`·`ieie_table_ref_block.md`(공개 모델 참고선 = 학술지판 표 4 — U-Net†·E2E-VarNet†·PromptMR+ 셋 다 09-08 확정; `results/eval/baselines_384_full/` CSV 가 미완주인 방법은 자동 `[TBD]` 셀)(make_tables.py 생성, **볼륨 단위**)를 붙여넣고, 양식 근거·어긋난 지점·Word 확인 체크리스트는 `docs/paper_table_conventions.md`. 렌더러가 없으므로 `check_docx_structure.py` 로 OOXML 구조만 점검하고 부동 표/그림 위치·쪽수는 Word/한글에서 확인. 양식 원본 `template_ieie_2021.docx`·`example_conference_2page.docx`(사용자 업로드). 2026 추계학술대회 논문 마감 2026-10-19.
 - 초안 v2.1 의 클레임 스코프(09-02 잠금): "SSM>RNN" 일반화가 아니라 "SS2D 치환 > 원 bi-GRU 설계"로 한정 + 메커니즘/파라미터화 confound 한계 항목. 잔여 = 공정성 스위트·radapt 결과 반영(4팔 표는 `make_tables.py` 확장 예정) — 실험 종료 ~10월 중순, SI 마감 11-30. (초안 v1 은 `paper/archive/draft_ko_v1.*` 역사.)
 
 - (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
@@ -239,7 +239,7 @@ results/
 │   ├── v8_r_sweep_norm/  #   〃 (normalized)
 │   ├── v9_unleashed/     # v9 per-slice paired CSV·win-rate·3-way 곡선 (2026-08-05, CSV 로컬 전용)
 │   ├── baselines_384_sample300/  # leaderboard U-Net/VarNet 참고선(300 샘플, GPU)
-│   └── baselines_384_full/       # ★ 공개 모델 전체 val 우리-프로토콜 행 (U-Net†/E2E-VarNet†/PromptMR+, CPU, 09-06 launch): per_slice_<method>.csv(로컬)·baseline_summary_full.md·run_{promptmr,varnet_unet}.log
+│   └── baselines_384_full/       # ★ 공개 모델 전체 val 우리-프로토콜 행 (U-Net†/E2E-VarNet†/PromptMR+, CPU, 09-06 launch → 09-08 완주): per_slice_<method>.csv(로컬)·baseline_summary_full.md·run_{promptmr,varnet_unet}.log
 └── vis/
     ├── v7_titan_compare/         # v7_titan 4-way GT/U-Net/ETER/SS2D
     ├── v7_titan_eval_modes/      # v7_titan eval-mode 비교
@@ -295,7 +295,7 @@ CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_multiseed.sh \
 python v8_eter_pure/eval_paired_v8_nodc.py
 python visualize_v8_pure_compare.py
 
-# ★ 공개 모델 기준선 전체 val (우리 프로토콜 행, CPU·재개 가능 — 09-06 launch; 러너는 visualize_multimodel_compare.py 공유,
+# ★ 공개 모델 기준선 전체 val (우리 프로토콜 행, CPU·재개 가능 — 09-06 launch → 09-08 완주(재실행 시 완료 슬라이스 skip); 러너는 visualize_multimodel_compare.py 공유,
 #   유휴 코어 ≈8 기준 PromptMR+ 5 스레드 + varnet→unet 3 스레드, 처리 순서 interleaved = 완료 prefix 가 항상 층화 표본)
 CUDA_VISIBLE_DEVICES="" nice -n 19 setsid nohup python v8_eter_pure/eval_baselines_full.py --methods promptmr --threads 5 --num-workers 1 \
   > results/eval/baselines_384_full/run_promptmr.log 2>&1 < /dev/null & disown

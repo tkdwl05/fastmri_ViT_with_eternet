@@ -78,7 +78,7 @@ ax.text(60.5, 12.5, "C", ha="center", va="center", fontsize=10, color=INK,
 ax.text(58.2, 9.5, "channel\nconcat", ha="right", va="center", fontsize=7.6, color=INK2)
 
 # U-Net + 출력
-box(ax, 66, 8.5, 20, 8, ["skip connections, depth 5, wf 6", "~30M  ·  identical in both arms"],
+box(ax, 66, 8.5, 20, 8, ["skip connections, depth 5, wf 6", "31.1M  ·  identical in both arms"],
     title=r"De-aliasing U-Net  $g_\phi$")
 box(ax, 90, 9.5, 9, 6, ["1 × 384²"], title="Magnitude\nimage", fs=8.0, tfs=8.2)
 
@@ -125,7 +125,7 @@ arrow(ax, (80.8, 15.5), (83.6, 16.2))
 arrow(ax, (91.5, 13.1), (91.5, 11.4))
 
 ax.text(2, 1.2, "Enhancements over the controlled SS2D: gating restored · 3 residual blocks · bottleneck lifted "
-                "(20 → 64 ch, d_inner 128 → 256, d_state 16 → 32) · SSM stack ~2M.\n"
+                "(20 → 64 ch, d_inner 128 → 256, d_state 16 → 32) · SSM stack 3.1M, arm total 34.2M.\n"
                 "fp16 + coarse scan keep the per-epoch time comparable to the controlled arm "
                 "(2.84 vs 3.07 h/epoch; different runtime environments) — enabling 80 instead of 50 epochs.",
         fontsize=8, color=MUTED, va="bottom")

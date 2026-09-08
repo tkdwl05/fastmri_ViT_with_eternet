@@ -1,6 +1,6 @@
 \begin{table}[ht]
 \centering
-\caption{Public-model reference lines — full validation set (464 volumes/7,334 slices) inferred under the protocol of this paper (384² re-FFT, 16 coils, R = 4, brain-masked); mean$\pm$SD over volumes. Reference only, hence no ranking marks. Last column: fraction of slices on which the method beats the controlled SS2D (SSIM / PSNR, \%). $^\dagger$: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol (domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask (their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. CPU fp32 inference. [TBD] = full-validation inference still running.}
+\caption{Public-model reference lines — full validation set (464 volumes/7,334 slices) inferred under the protocol of this paper (384² re-FFT, 16 coils, R = 4, brain-masked); mean$\pm$SD over volumes. Reference only, hence no ranking marks. Last column: fraction of slices on which the method beats the controlled SS2D (SSIM / PSNR, \%). $^\dagger$: public fastMRI leaderboard weights trained on the train+val split, so this validation set is part of their training data. PromptMR+: public weights trained on the train split only, but a 12-cascade unrolled model that takes five adjacent slices as input. All public weights were trained with their native coil configuration and are applied here to the 384² re-FFT/16-coil protocol (domain shift). Public-model metrics are computed after per-slice least-squares intensity alignment inside the brain mask (their output scales differ; the alignment can only favor them); the three rows of this paper are the unaligned values of Table 2. CPU fp32 inference.}
 \label{tab:reference}
 \begin{tabular}{llrrrrr}
 \toprule
@@ -8,7 +8,7 @@ Method & Training split & Params (M) & SSIM $\uparrow$ & PSNR (dB) $\uparrow$ & 
 \midrule
 U-Net$^\dagger$ & train+val & 496 & 0.8971$\pm$0.0366 & 30.95$\pm$2.29 & 0.973$\pm$0.796 & 7.7 / 3.9 \\
 E2E-VarNet$^\dagger$ & train+val & 30 & 0.9181$\pm$0.0386 & 32.78$\pm$3.21 & 1.133$\pm$1.291 & 70.8 / 45.5 \\
-PromptMR+ & train & 93 & [TBD] & [TBD] & [TBD] & [TBD] \\
+PromptMR+ & train & 93 & 0.9417$\pm$0.0349 & 36.12$\pm$4.02 & 0.526$\pm$0.841 & 96.9 / 85.4 \\
 bi-GRU (original) & train & 668 & 0.9127$\pm$0.0366 & 33.78$\pm$1.86 & 0.448$\pm$0.274 & 21.8 / 26.2 \\
 SS2D (controlled) & train & 31 & 0.9141$\pm$0.0365 & 33.91$\pm$1.90 & 0.438$\pm$0.283 & -- \\
 Enhanced SS2D & train & 34 & 0.9146$\pm$0.0361 & 33.92$\pm$1.90 & 0.439$\pm$0.304 & 55.8 / 54.2 \\
