@@ -392,7 +392,7 @@ def fig2(th):
     text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "cross-scan", fs=5.2, va="bottom")
     lab(ax, gxc, gy0 - 0.03, "rows →←, cols ↓↑, $L$=384", va="top", fs=4.8)
     arrow(ax, (1.06, ym), (gx0 - 0.005, ym))
-    # four S6 scans (one weight set)
+    # four S6 scans — independent weights per direction (ss2d.py: ssm_h_fwd/h_bwd/v_fwd/v_bwd), each shared by all its rows/columns
     s6x, s6w, s6h, pitch = 1.74, 0.36, 0.10, 0.115
     ys6 = [gy0 + 0.005 + k * pitch for k in range(4)]
     for yy in ys6:
@@ -410,10 +410,10 @@ def fig2(th):
     box(ax, 2.74, yr, 0.36, bh, "1×1 conv", sub="128 → 20", fs=5.6, sub_fs=4.8)
     lab(ax, 2.92, yr - 0.03, "20×384$^2$", va="top", fs=5.0, color=INK)
     # S6 recurrence + hyper-parameters
-    text(ax, 0.04, 0.30, "S6:  $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t$,   $y_t = C_t h_t$,   "
-         "$(\\Delta_t, B_t, C_t) = \\mathrm{Linear}(x_t)$", fs=5.6, ha="left", va="center", max_w=W - 0.08)
-    lab(ax, 0.04, 0.15, "d_inner 128, d_state 16; one weight set shared by all rows and columns",
-        ha="left", va="center", fs=4.9)
+    text(ax, 0.04, 0.30, "S6:  $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t$,   $y_t = C_t h_t + D x_t$,   "
+         "$(\\Delta_t, B_t, C_t)$ from $x_t$", fs=5.6, ha="left", va="center", max_w=W - 0.08)
+    lab(ax, 0.04, 0.15, "d_inner 128, d_state 16; one S6 weight set per direction, shared by all its rows (columns)",
+        ha="left", va="center", fs=4.9, max_w=W - 0.08)
     save(fig, "conf_fig2_arms")
 
 
@@ -429,8 +429,8 @@ def fig3(th):
     specs = [("stem", "32 → 256", FILL, EDGE),
              ("conv ↓3", "256, stride 3", FILL, EDGE),
              ("SS2D block", "×3, 256", FILL_G, EDGE_G),
-             ("upsample ↑3", "256, bilinear", FILL, EDGE),
-             ("1×1 conv", "256 → 64", FILL, EDGE)]
+             ("upsample ↑3", "LN · bilinear", FILL, EDGE),
+             ("head", "256 → 64", FILL, EDGE)]
     dims = ["32×384$^2$", "256×384$^2$", "256×128$^2$", "256×128$^2$", "256×384$^2$", "64×384$^2$"]
     bw, gap, x = 0.42, 0.20, 0.04
     xs = []
@@ -451,7 +451,8 @@ def fig3(th):
     arrow(ax, (x_out, yt + bh / 2), (W - 0.04, yt + bh / 2))
     lab(ax, W - 0.04, yt + bh + 0.03, dims[-1], ha="right", fs=4.7)                   # output tensor
     lab(ax, W - 0.04, yt - 0.03, "to concat · U-Net (Fig. 1)", ha="right", va="top", fs=4.7)
-    lab(ax, 0.04, yt - 0.03, "stem = LN · Linear · SiLU; arrows: spatial size", ha="left", va="top", fs=4.5)
+    lab(ax, 0.04, yt - 0.03, "stem = LN · Linear · SiLU;   head = 3×3 conv · SiLU · 1×1 conv", ha="left", va="top",
+        fs=4.5, max_w=W - 0.08 - 0.90)
 
     # ── one block (bottom panel) ──
     py = 0.06

@@ -27,12 +27,12 @@ MRI는 k-space를 순차 수집하므로 촬영이 느리며, 언더샘플링 �
 @figure: paper/figs/conf_fig1_pipeline.png | col | 1.0
 @cap_ko: 두 팔이 공유하는 ETER-Net 통제 파이프라인. 점선 상자의 시퀀스 모델 f_θ만이 유일한 변수이고 마스크·zero-filled 분기·U-Net·손실은 두 팔에서 동일하다. 화살표의 숫자는 채널 수(공간 384²), 영상은 검증 슬라이스 예시
 
-그림 2는 f_θ 자리에 들어가는 두 팔의 내부다. (a) bi-GRU 팔은 원본 ETER-Net 그대로 k-space를 384개 행의 시퀀스(스텝당 12,288차원)로 펼쳐 양방향 GRU를 통과시킨 뒤, 전치해 열 방향으로 한 번 더 통과시킨다. 두 GRU의 입력–은닉 행렬(방향별 12,288×11,520과 7,680×11,520)이 파라미터의 대부분이라 GRU 스택만 637.1M, 팔 전체 668.2M이며, 재귀는 스텝 순서대로만 계산된다. (b) SS2D 팔은 픽셀별 LN·Linear(32→128)·SiLU와 depthwise conv 뒤에 selective scan(S6)을 네 방향(각 행 →/←, 각 열 ↓/↑, L=384)으로 적용하고 네 출력을 합쳐 Linear와 1×1 conv로 GRU와 같은 20채널에 정합한다. 상태 갱신 h_t=Ā_t h_{t−1}+B̄_t x_t의 (Δ_t, B_t, C_t)는 입력에서 생성되고(d_inner 128, d_state 16), 한 조의 가중치를 모든 행·열이 공유하므로 SSM 스택은 0.12M(팔 전체 31.2M)에 그치며 스캔은 병렬 O(L)로 계산된다.
+그림 2는 f_θ 자리에 들어가는 두 팔의 내부다. (a) bi-GRU 팔은 원본 ETER-Net 그대로 k-space를 384개 행의 시퀀스(스텝당 12,288차원)로 펼쳐 양방향 GRU를 통과시킨 뒤, 전치해 열 방향으로 한 번 더 통과시킨다. 두 GRU의 입력–은닉 행렬(방향별 12,288×11,520과 7,680×11,520)이 파라미터의 대부분이라 GRU 스택만 637.1M, 팔 전체 668.2M이며, 재귀는 스텝 순서대로만 계산된다. (b) SS2D 팔은 픽셀별 LN·Linear(32→128)·SiLU와 depthwise conv 뒤에 selective scan(S6)을 네 방향(각 행 →/←, 각 열 ↓/↑, L=384)으로 적용하고 네 출력을 채널 결합해 LN·Linear와 1×1 conv로 GRU와 같은 20채널에 정합한다. 상태 갱신 h_t=Ā_t h_{t−1}+B̄_t x_t의 (Δ_t, B_t, C_t)는 입력에서 생성되고(d_inner 128, d_state 16), 방향별 한 조의 S6 가중치를 그 방향의 모든 행(열)이 공유하므로 SSM 스택은 0.12M(팔 전체 31.2M)에 그치며 스캔은 병렬 O(L)로 계산된다.
 
 @figure: paper/figs/conf_fig2_arms.png | col | 1.0
-@cap_ko: 시퀀스 모델 f_θ의 두 팔. (a) 원본 bi-GRU: k-space 행을 시퀀스로 펼친 양방향 GRU를 행·열 방향으로 2단 적용(flatten-reshape, 668.2M). (b) SS2D: 4방향 cross-scan을 한 조의 S6 가중치로 병렬 계산해 결합(SSM 스택 0.12M, 팔 전체 31.2M)
+@cap_ko: 시퀀스 모델 f_θ의 두 팔. (a) 원본 bi-GRU: k-space 행을 시퀀스로 펼친 양방향 GRU를 행·열 방향으로 2단 적용(flatten-reshape, 668.2M). (b) SS2D: 4방향 cross-scan을 방향별 S6로 병렬 스캔한 뒤 채널 결합(SSM 스택 0.12M, 팔 전체 31.2M)
 
-강화 SS2D(그림 3)는 통제를 해제한 변형이다. stem(LN·Linear 32→256·SiLU) 뒤 stride-3 conv로 128² 격자로 내린 다음, Mamba 게이팅을 복원한 잔차 SS2D 블록 3개(LN·Linear 256→512를 x_ssm|z로 분할 → DWConv·SiLU → 4방향 스캔(d_inner 256, d_state 32, fp16) → y·SiLU(z) → Linear·dropout 0.05 → 잔차 합)를 쌓고, bilinear 업샘플·3×3 conv·1×1 conv로 64채널 특징을 낸다. 이후의 결합·U-Net·손실은 그림 1과 같다. coarse scan 덕분에 epoch당 시간은 통제판 수준(2.84 h 대 3.07 h)이고 파라미터는 34.2M(SSM 스택 3.1M)이다.
+강화 SS2D(그림 3)는 통제를 해제한 변형이다. stem(LN·Linear 32→256·SiLU) 뒤 stride-3 conv로 128² 격자로 내린 다음, Mamba 게이팅을 복원한 잔차 SS2D 블록 3개(LN·Linear 256→512를 x_ssm|z로 분할 → DWConv·SiLU → 4방향 스캔(d_inner 256, d_state 32, fp16) → y·SiLU(z) → Linear·dropout 0.05 → 잔차 합)를 쌓고, LN·bilinear 업샘플·3×3 conv(SiLU)·1×1 conv로 64채널 특징을 낸다. 이후의 결합·U-Net·손실은 그림 1과 같다. coarse scan 덕분에 epoch당 시간은 통제판 수준(2.84 h 대 3.07 h)이고 파라미터는 34.2M(SSM 스택 3.1M)이다.
 
 @figure: paper/figs/conf_fig3_enhanced.png | col | 1.0
 @cap_ko: 강화 SS2D 변형(f_θ 자리 교체, 34.2M). 위: stem → stride-3 다운샘플(128²) → 게이팅 잔차 SS2D 블록 3개 → 업샘플·head(64채널). 아래: 블록 내부 — SSM 분기 x_ssm과 게이트 분기 z의 곱 y·SiLU(z)에 잔차를 더한다
