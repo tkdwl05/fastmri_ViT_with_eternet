@@ -111,7 +111,7 @@ fastMRI brain multicoil[@zbontar2018fastmri; @knoll2020fastmri] 공식 배포본
 
 ## 학습 세부
 
-Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient clipping 1.0, batch size 8을 사용했다. 통제비교는 50 epoch, 강화판은 80 epoch이며 검증은 매 2 epoch 수행했다. 하드웨어는 NVIDIA TITAN RTX 24GB 단일 GPU, 구현은 PyTorch 2.3과 mamba_ssm 2.2(CUDA selective-scan 커널)이다. 코드는 게재 시 공개할 계획이다.
+Adam(학습률 2×10⁻⁴, weight decay 3×10⁻⁵), cosine annealing 스케줄, AMP(fp16), gradient clipping 1.0, batch size 8을 사용했다. 통제비교는 50 epoch, 강화판은 80 epoch이며 검증은 매 2 epoch 수행했다. 하드웨어는 NVIDIA TITAN RTX 24GB 단일 GPU, 구현은 PyTorch 2.3과 mamba_ssm 2.2(CUDA selective-scan 커널)이다. 코드는 게재 시 공개할 계획이다.
 
 ## 통계 분석
 
@@ -149,8 +149,8 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 우위는 소수 슬라이스나 소수 볼륨에 의한 것이 아니라 대다수 슬라이스(74~78%)와 압도적 다수 볼륨(90~95%)에서 일관되었으며, 슬라이스 평균 Δ의 클러스터 부트스트랩 95% CI도 세 지표 전부 0을 배제하였다(예: ΔSSIM +0.0014 [+0.0013, +0.0015]). 그림 4(a)는 지표별 paired 차이의 분포다. 또한 그림 2의 학습 곡선에서 25개 검증 지점(epoch 2~50) 전부에서 SS2D의 SSIM이 GRU 이상이었고(Δ +0.0000~+0.0055; 동률은 epoch 14 한 지점뿐), PSNR은 전 지점 우위였다. ViT 하이브리드 선행 실험에서 관찰됐던 후반 역전(crossover)은 없었다. 다만 이 곡선은 시드를 고정하지 않은 단일 런의 단일 궤적임에 유의해야 한다(Ⅴ장).
 
 @figure: paper/figs/fig2_learning_curves.png | page | 1.0
-@cap_ko: 학습 곡선(검증, 매 2 epoch, 배치 풀링 로그값 — 볼륨 단위 표 2와 직접 비교 불가). (a) SSIM, (b) PSNR, (c) matched-epoch ΔSSIM(SS2D − GRU). 별표는 각 팔의 best epoch, 점선은 통제 비교의 epoch 50
-@cap_en: Learning curves (validation every 2 epochs, batch-pooled log values — not directly comparable with the volume-level Table 2). (a) SSIM, (b) PSNR, (c) matched-epoch ΔSSIM (SS2D − GRU). Stars mark the best epoch of each arm; the dotted line marks epoch 50 of the controlled comparison
+@cap_ko: 학습 곡선(검증, 매 2 epoch, 배치 풀링 로그값 — 볼륨 단위 표 2와 직접 비교 불가). (a) SSIM, (b) PSNR, (c) matched-epoch ΔSSIM(SS2D − GRU). 별표는 표에 보고한 best checkpoint의 epoch(Ⅲ장 4절의 내부 선택 기준; 강화판은 78로, 로그 SSIM 최고점 epoch 72와 0.0002 차이), 점선은 통제 비교의 epoch 50
+@cap_en: Learning curves (validation every 2 epochs, batch-pooled log values — not directly comparable with the volume-level Table 2). (a) SSIM, (b) PSNR, (c) matched-epoch ΔSSIM (SS2D − GRU). Stars mark the epoch of the best checkpoint reported in the tables (internal selection criterion of Sec. III-4; for the enhanced arm epoch 78, 0.0002 below the log-SSIM peak at epoch 72); the dotted line marks epoch 50 of the controlled comparison
 
 ## 정성 비교
 
@@ -184,13 +184,13 @@ Adam(학습률 2×10⁻⁴), cosine annealing 스케줄, AMP(fp16), gradient cli
 
 ## 강화 SS2D — 통제 해제 시의 상한
 
-표 2의 마지막 행과 표 3의 하단 세 행은 강화 SS2D의 결과다. 강화판은 best epoch 78/80에서 SSIM 0.9146, PSNR 33.92 dB로 통제판(0.9141, 33.91 dB)을 근소하게 넘었으며, 슬라이스 단위 우위 비율은 통제판 대비 세 지표 54~56%(클러스터 부트스트랩 95% CI 하한 52.5%), 원 bi-GRU 대비 78~82%였다. 볼륨 단위로도 세 지표 전부 유의하다(우위 볼륨 58.6~66.4%, Wilcoxon n=464, 모두 p<0.001). 차이 분포는 그림 4(b)다.
+표 2의 마지막 행과 표 3의 하단 세 행은 강화 SS2D의 결과다. 강화판은 best checkpoint(내부 선택 기준, epoch 78/80)에서 SSIM 0.9146, PSNR 33.92 dB로 통제판(0.9141, 33.91 dB)을 근소하게 넘었으며, 슬라이스 단위 우위 비율은 통제판 대비 세 지표 54~56%(클러스터 부트스트랩 95% CI 하한 52.5%), 원 bi-GRU 대비 78~82%였다. 볼륨 단위로도 세 지표 전부 유의하다(우위 볼륨 58.6~66.4%, Wilcoxon n=464, 모두 p<0.001). 차이 분포는 그림 4(b)다.
 
 그러나 이득의 크기는 작고 지표에 따라 균일하지 않다. 평균 차이의 95% CI가 0을 배제하는 것은 SSIM뿐이고(ΔSSIM +0.0005 [+0.0003, +0.0006]), PSNR의 평균 차이는 CI가 0을 포함하며, nMSE는 평균 기준 사실상 동률이다(표 2에서 통제판이 근소 우세). 순위 기반 통계(중앙값·우위 비율·Wilcoxon)로는 세 지표 전부 강화판 우위다. 해석에도 주의가 필요하다: matched-epoch 50 시점의 강화판 검증 SSIM은 0.9130으로 통제판 best(0.9140; 이상 학습 로그 기준)에 미달하며, 통제판 best에 도달한 것은 연장 구간의 epoch 64(동률)~66(상회)이다. 즉 "같은 학습량에서 더 좋다"가 아니라 "더 긴 스케줄(80 epoch)을 소화해 최종 품질을 근소하게 넘었다"가 정확한 서술이며, 통제판 best 수준(0.9140)에 도달하기까지의 wall-clock도 강화판이 더 길다(약 187시간 = 66 epoch × 2.84 h 대 통제판 약 147시간 = 48 epoch × 3.07 h; 강화판 자체의 best인 epoch 78까지는 약 221시간; h/epoch는 Ⅳ장 9절). coarse-scan(ds=3) 다운샘플은 품질을 해치지 않았다 — epoch 40 시점에는 열위였다가 후반 cosine annealing 구간에서 역전해 최종 상회했다.
 
 @figure: paper/figs/fig4_per_slice_distribution.png | page | 1.0
-@cap_ko: 슬라이스 단위 paired 차이의 분포(검증 7,334 슬라이스; 네 번째 패널의 L1은 손실 항 참고용). (a) SS2D − bi-GRU, (b) 강화 SS2D − 통제판 SS2D. 양수가 치환(강화) 우위 방향이며(NMSE·L1은 부호 반전), 각 패널에 우위 슬라이스 비율을 표시하였다
-@cap_en: Distributions of slice-level paired differences (7,334 validation slices; the fourth panel, L1, is the loss term shown for reference). (a) SS2D − bi-GRU; (b) enhanced SS2D − controlled SS2D. Positive values favor the replacement (enhancement) (sign flipped for NMSE and L1); the fraction of favoring slices is annotated in each panel
+@cap_ko: 슬라이스 단위 paired 차이의 분포(검증 7,334 슬라이스; 네 번째 패널의 L1은 손실 항 참고용). (a) SS2D − bi-GRU, (b) 강화 SS2D − 통제판 SS2D. 양수가 치환(강화) 우위 방향이며(nMSE·L1은 부호 반전), 각 패널에 우위 슬라이스 비율을 표시하였다
+@cap_en: Distributions of slice-level paired differences (7,334 validation slices; the fourth panel, L1, is the loss term shown for reference). (a) SS2D − bi-GRU; (b) enhanced SS2D − controlled SS2D. Positive values favor the replacement (enhancement) (sign flipped for nMSE and L1); the fraction of favoring slices is annotated in each panel
 
 ## Contrast 서브그룹 분석
 

@@ -40,7 +40,7 @@ MRI는 k-space를 순차 수집하므로 촬영이 느리며, 언더샘플링 �
 
 ## Ⅲ. 실험 및 결과
 
-fastMRI brain multicoil[8] 확보 서브셋(혼합 contrast)을 공식 구획대로 사용하였다(train 65,028 슬라이스, val 464 볼륨/7,334 슬라이스). GT는 RSS 영상의 384×384 crop/pad, 언더샘플링은 R=4 equispaced Cartesian 마스크(ACS 8%)다. Adam(2×10⁻⁴)·cosine 스케줄·AMP·batch 8·50 epoch(강화판 80)으로 TITAN RTX 1장에서 학습하였다. 지표는 brain mask 내부 SSIM·PSNR·nMSE(%)를 슬라이스 단위로 계산해 fastMRI 관례대로 볼륨 단위 평균±표준편차로 보고하고(표 1, zero-filled 기준선 포함), paired 설계이므로 우위 슬라이스 비율과 볼륨 단위 Wilcoxon 검정으로 유의성을 평가하였다.
+fastMRI brain multicoil[8] 확보 서브셋(혼합 contrast)을 공식 구획대로 사용하였다(train 65,028 슬라이스, val 464 볼륨/7,334 슬라이스). GT는 RSS 영상의 384×384 crop/pad, 언더샘플링은 R=4 equispaced Cartesian 마스크(ACS 8%)다. Adam(2×10⁻⁴, weight decay 3×10⁻⁵)·cosine 스케줄·AMP·batch 8·50 epoch(강화판 80)으로 TITAN RTX 1장에서 학습하였다. 지표는 brain mask 내부 SSIM·PSNR·nMSE(%)를 슬라이스 단위로 계산해 fastMRI 관례대로 볼륨 단위 평균±표준편차로 보고하고(표 1, zero-filled 기준선 포함), paired 설계이므로 우위 슬라이스 비율과 볼륨 단위 Wilcoxon 검정으로 유의성을 평가하였다.
 
 표 1에서 SS2D 치환은 21배 적은 파라미터로 세 지표 전부에서 원 설계를 앞섰고, paired 비교에서 슬라이스 74~78%(SSIM 78.2%)·볼륨 90~95%에서 우위였다(모든 지표 p<0.001). 우위는 25회 검증 시점 전부와 5개 contrast 서브그룹 전부(≥68.7%)에서 유지되었다. 정성적으로 bi-GRU만 두개골 바깥에 주기적 ringing을 남겼다. 다만 epoch당 학습시간은 cuDNN GRU가 짧아(2.41 h 대 3.07 h) 효율 이점은 파라미터 수에 있다. 같은 프로토콜로 전체 검증셋을 추론한 공개 모델은 볼륨 SSIM 기준 U-Net† 0.8971, E2E-VarNet† 0.9181, PromptMR+ 0.9417이었다(†: train+val 학습 leaderboard 가중치, 참고선; PromptMR+는 train 구획만 학습한 12-cascade unrolled 모델로 인접 5슬라이스를 입력받아 계열이 다르다). 강화 SS2D는 통제판 대비 세 지표 모두 근소하게 개선되었으나(우위 슬라이스 54~56%), 이 이득은 동일 50 epoch 시점(SSIM 0.9130)이 아닌 80 epoch 연장 구간의 것이다.
 

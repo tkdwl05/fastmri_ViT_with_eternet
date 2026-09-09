@@ -4,8 +4,9 @@
 
     CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_conf_docx.py
 
-입력  paper/ieie/draft_ieie_conf_ko_v1.src.md  (+ paper/references.bib, paper/figs/*.png)
-출력  paper/ieie/draft_ieie_conf_ko_v1.md / .docx
+입력  paper/ieie/draft_ieie_v2.src.md  (+ paper/references.bib, paper/figs/*.png) — 학술지 빌더와 **같은 소스**
+출력  paper/ieie/draft_ieie_v2_conf.md / .docx   (프로시딩 게재용: @author_ko/@affil_ko/@email/@author_en/@affil_en 포함)
+      (09-09 교수님 지시: 서면 심사용(학술지 양식)과 내용 동일, 저자·소속만 차이. 규정 Double Column 1~5쪽. 옛 v1 은 archive/.)
 
 투고용 학술지 빌더(build_ieie_docx.py)의 소스 파서·서지 포맷터·인용 번호·OMML·검증기를 그대로 import 하고,
 문서 조립만 작성예시의 직접 서식을 재현한다(외부 패키지 없음, stdlib 만):
@@ -29,10 +30,10 @@ from build_ieie_docx import (ROOT, IEIE, BIB, ROMAN, EMU_PER_TWIP, parse_bib, pa
                              runs_text, runs_md, fmt_reference, wt, _xml, png_size, latex_to_omml, latex_to_plain,
                              build_docx, validate, walk, MdBuilder)
 
-SRC = os.path.join(IEIE, "draft_ieie_conf_ko_v1.src.md")
+SRC = os.path.join(IEIE, "draft_ieie_v2.src.md")
 TEMPLATE = os.path.join(IEIE, "example_conference_2page.docx")
-OUT_MD = os.path.join(IEIE, "draft_ieie_conf_ko_v1.md")
-OUT_DOCX = os.path.join(IEIE, "draft_ieie_conf_ko_v1.docx")
+OUT_MD = os.path.join(IEIE, "draft_ieie_v2_conf.md")
+OUT_DOCX = os.path.join(IEIE, "draft_ieie_v2_conf.docx")
 
 # 작성예시 sectPr: A4, 여백 상하 1701 / 좌우 1134 → 본문 폭 9638, 2단 간격 567 → 단 폭 4535 (twips)
 PAGE_W = 11906 - 1134 - 1134
@@ -363,26 +364,39 @@ def parse_authors(path: str) -> dict:
     return out
 
 
-def main():
+MAX_PAGES = 5.0   # 2026 추계학술대회 프로시딩 게재용 규정: Double Column 1페이지 이상 5페이지 이내
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="IEIE 학술대회 양식 docx 빌더(프로시딩 게재용 — 저자·소속 포함)")
+    ap.add_argument("--src", default=SRC, help="소스 .src.md (학술지판과 동일 소스를 공유 — 09-09 교수님: 두 파일 내용 동일, 저자만 차이)")
+    ap.add_argument("--out", default=None, help="출력 stem (기본: 소스 이름에서 .src.md 를 뗀 것 + _conf) → <stem>.md / <stem>.docx")
+    args = ap.parse_args(argv)
+    src = args.src if os.path.isabs(args.src) else os.path.join(ROOT, args.src)
+    stem = args.out or re.sub(r"\.src\.md$", "", os.path.basename(src)) + "_conf"
+    out_md = os.path.join(os.path.dirname(src), stem + ".md")
+    out_docx = os.path.join(os.path.dirname(src), stem + ".docx")
+
     bib = parse_bib(BIB)
-    doc = parse_src(SRC)
-    authors = parse_authors(SRC)
+    doc = parse_src(src)
+    authors = parse_authors(src)
     nb = Numberer(bib)
     dx = DocxConf(nb)
     dx.front(doc.meta, authors)
     md = MdConf(nb, authors)
     md.front(doc.meta)
     walk(doc, [dx, md], bib)
-    build_docx(dx, TEMPLATE, OUT_DOCX, doc.meta["title_ko"], sect_pr=SECT_2COL, subject="IEIE 학술대회 2쪽 초안")
-    with open(OUT_MD, "w", encoding="utf-8") as fh:
+    build_docx(dx, TEMPLATE, out_docx, doc.meta["title_ko"], sect_pr=SECT_2COL, subject="IEIE 학술대회 프로시딩 게재용 초안")
+    with open(out_md, "w", encoding="utf-8") as fh:
         fh.write(md.text())
-    info = validate(OUT_DOCX)
+    info = validate(out_docx)
     pages, hf, hb, p1 = dx.estimate_pages()
-    print(f"[md ] {os.path.relpath(OUT_MD, ROOT)}  ({len(md.text())} chars)")
-    print(f"[docx] {os.path.relpath(OUT_DOCX, ROOT)}  {info}")
+    print(f"[md ] {os.path.relpath(out_md, ROOT)}  ({len(md.text())} chars)")
+    print(f"[docx] {os.path.relpath(out_docx, ROOT)}  {info}")
     print(f"      figures={dx.fig_no} tables={dx.tbl_no} equations={dx.eq_no} references={len(nb.order)}")
     print(f"      분량 추정: 제목블록 {hf:.0f}pt, 2단 본문 {hb:.0f}pt (1쪽 수용 {p1:.0f}pt, 이후 쪽당 {2 * PAGE_H_PT:.0f}pt) → 약 {pages:.2f} 쪽"
-          + ("  ⚠ 2쪽 초과 가능 — 본문을 줄일 것" if pages > 2.0 else ""))
+          + (f"  ⚠ {MAX_PAGES:.0f}쪽 초과 가능 — 본문을 줄일 것" if pages > MAX_PAGES else f"  (규정 1~{MAX_PAGES:.0f}쪽)"))
     return 0
 
 

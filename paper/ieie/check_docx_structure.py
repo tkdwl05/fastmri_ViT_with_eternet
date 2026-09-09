@@ -26,9 +26,9 @@ NS = {
 }
 W = "{%s}" % NS["w"]; WP = "{%s}" % NS["wp"]; A = "{%s}" % NS["a"]; R = "{%s}" % NS["r"]; M = "{%s}" % NS["m"]
 XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
-DEFAULT = [  # (docx, 대응 양식)
-    ("draft_ieie_ko_v1.docx", "template_ieie_2021.docx"),
-    ("draft_ieie_conf_ko_v1.docx", "example_conference_2page.docx"),
+DEFAULT = [  # (docx, 대응 양식) — 09-09 통합판 v2(학술지 = 서면 심사용, 학술대회 = 프로시딩 게재용, 같은 소스)
+    ("draft_ieie_v2.docx", "template_ieie_2021.docx"),
+    ("draft_ieie_v2_conf.docx", "example_conference_2page.docx"),
 ]
 
 
@@ -328,7 +328,9 @@ def block_texts(root):
 
 
 def check_captions_and_refs(rep, blocks, n_tables, n_figs, n_eqs, journal):
-    # 표: 캡션이 표 위(ko + en), 그림: 캡션이 그림 아래(ko + en)
+    # 표: 캡션이 표 위, 그림: 캡션이 그림 아래. 국문 캡션은 필수. 영문 캡션은 양식 예시엔 있으나 09-09 교수님 지시로
+    # 국문만 쓰기로 했으므로 있으면 개수만 알리고(정보), 없어도 경고하지 않는다.
+    n_en = 0
     for i, (k, t) in enumerate(blocks):
         if k == "tbl":
             prev = [x for x in blocks[max(0, i - 3):i] if x[0] == "p" and x[1]]
@@ -336,16 +338,15 @@ def check_captions_and_refs(rep, blocks, n_tables, n_figs, n_eqs, journal):
             ko = re.search(r"(?<![가-힣])표\s*\d+", txt); en = re.search(r"Table\s*\d+", txt)
             if not ko:
                 rep.fail("표 캡션(위) 없음", t[:50])
-            elif journal and not en:
-                rep.warn("표 영문 캡션 없음", txt[:50])
+            n_en += bool(en)
         if k == "fig":
             nxt = [x for x in blocks[i + 1:i + 4] if x[0] == "p" and x[1]]
             txt = " ".join(x[1] for x in nxt)
             ko = re.search(r"그림\s*\d+", txt); en = re.search(r"Fig\.\s*\d+", txt)
             if not ko:
                 rep.fail("그림 캡션(아래) 없음", txt[:50])
-            elif journal and not en:
-                rep.warn("그림 영문 캡션 없음", txt[:50])
+            n_en += bool(en)
+    rep.ok("캡션 언어", f"국문 캡션 {n_tables + n_figs}개 확인, 영문 캡션 {n_en}개 (09-09 규칙: 국문만)")
     alltext = "\n".join(t for k, t in blocks)
     refs = {"표": [int(x) for x in re.findall(r"(?<![가-힣])표\s*(\d+)", alltext)],
             "그림": [int(x) for x in re.findall(r"그림\s*(\d+)", alltext)],

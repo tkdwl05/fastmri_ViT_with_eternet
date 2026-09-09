@@ -3,7 +3,7 @@
 사용자 요청(09-03): "최근 MRI reconstruction 논문이 표를 어떻게 쓰고 지표를 어떻게 비교하는지" 확인하고, 우리 표가
 "하고 싶은 대로 만든" 형태에서 벗어나는 지점을 **전부** 관례에 맞게 고친다. 이 문서는 (1) 확인한 양식 근거, (2) 어긋난
 지점과 조치, (3) 남은 [TBD] 를 기록한다. 표 자체는 `paper/make_tables.py` 가 생성(`paper/tables/tableC*.md|tex`,
-`ieie_table1_block.md`), IEIE 초안은 `paper/ieie/draft_ieie_{ko,conf_ko}_v1.src.md` → 빌더 2종.
+`ieie_table1_block.md`), IEIE 초안은 `paper/ieie/draft_ieie_v2.src.md`(09-09 통합 단일 소스; v1 두 소스는 `paper/ieie/archive/`) → 빌더 2종.
 
 ## 1. 확인한 양식 근거
 
@@ -59,6 +59,7 @@ paired 통계(우위 비율·Wilcoxon)는 관례상 주 표가 아니므로 **�
 5. 쪽수: 학술대회판은 09-08 그림 1 을 세부 그림 3장(파이프라인·두 팔 내부·강화 SS2D)으로 나눠 빌더 추정 2.88쪽/점검기 2.6쪽 — 2026 추계 규정은 "Double Column 1페이지 이상"(하계는 "1페이지 이상 5페이지 이내")이라 2쪽은 작성예시의 분량이지 상한이 아님(웹 확인 09-08). 2쪽에 맞춰야 하면 그림 배율 `| col | 0.85` + 방법 절 축약으로 조정. 학술지판 총 쪽수·게재료 기준 확인.
 6. 캡션 규칙: 표 위 캡션(국문+영문), 그림 아래 캡션(국문+영문), 표·그림 본문 영문 — 캡션이 표/그림과 다른 쪽으로 분리되지 않는지.
    - 그림 문법(09-08, 사용자 "어색하다" 지적으로 학술대회판 그림 1~3 재작성): 어색함의 원인은 슬라이드 문법 — 상자 안 서술문·굵은 제목/색 띠·크기 제각각 상자·실데이터 없음·위아래로 꺾이는 흐름·RNN/SS2D/Mamba 를 관례와 다르게 그림. 교정 규칙 = ① 블록은 한 줄 라벨(+작은 부라벨)로 균일, 크기·채널은 화살표 위 작은 회색 글씨 ② 실데이터 썸네일(정본 슬라이스 k-space·마스크·zero-filled·복원·GT) ③ 좌→우 한 줄 흐름, 손실은 끝에 점선 괄호 ④ bi-RNN 은 펼친 체인(순/역방향 두 행, 아래 x_t·위 y_t) ⑤ SS2D 는 cross-scan 격자 4개 → S6 ×4 → Ⓒ(concat)→LN·Linear(코드 `ss2d.py` 확인: 덧셈 아님) ⑥ Mamba 블록은 분기(SSM 가지/SiLU 게이트)→⊗→Linear→⊕ 잔차 ⑦ 본문 글꼴 Liberation Sans(Arial 메트릭, OFL, `paper/fonts/`), 6.5 pt 라벨/5 pt 주석. 학술지판 그림 1 도 09-09 같은 규칙으로 재작성(`paper/make_fig1_architecture.py` — page 폭 6.69 in 3-패널 (a)파이프라인/(b)두 팔/(c)강화 SS2D, 도우미는 `make_figs_conf_arch.py` import; 캡션 (a)(b)(c) 갱신, 본문 '그림 1(b)'→'그림 1(c)' 정정).
+   - 그림 인쇄 크기(09-09, 삽입 그림 점검에서 발견): 빌더가 그림을 page 폭 6.69 in 으로 삽입하므로 figsize 가 그보다 넓으면 글자가 비례 축소된다 — 옛 그림 2(10.5 in 조판 → ×0.64, 범례 4.8 pt)·그림 4(12.5 in → ×0.54, 라벨 ~4 pt)·그림 3(7.5 in → ×0.89, 패널 수치 4.8 pt). 교정 = 세 스크립트 모두 `PAGE_W = 6.69` 로 직접 조판(최소 글자 6.5 pt — 그림 3 패널 안 수치만 5.5 pt, Liberation Sans, 그림 2·4 600 dpi, 그림 3 은 384 px 슬라이스가 패널에 1:1 로 들어가는 506 dpi; 그림 2 범례는 패널 밖 하단 공통 한 줄, 그림 4 는 2×4 패널 높이 3.7 in + 우상단 2행 범례). `check_docx_structure.py` 는 유효 dpi 만 검사하고 글자 크기는 검사하지 않으므로 재생성한 PNG 를 실제 폭(6.69 in)으로 눈으로 확인한다(그림 수치·슬라이스는 조판 전과 동일).
 7. 참고문헌 51건(학술지)·8건(학술대회) 번호 순서와 본문 [n] 상첨자 표기, 저자 `***` 자리표시자 교체.
 선택지: 진짜 렌더가 필요하면 scratchpad 에 LibreOffice AppImage 를 내려받아(환경 무변경) PDF 로 변환해 볼 수 있다 — 요청 시 진행.
 
@@ -66,3 +67,13 @@ paired 통계(우위 비율·Wilcoxon)는 관례상 주 표가 아니므로 **�
 Sources: https://www.theieie.org/download/paper_submission_guideline.pdf · https://www.theieie.org/pages_journal/journal_info.vm ·
 https://pmc.ncbi.nlm.nih.gov/articles/PMC12842503/ · https://arxiv.org/abs/2406.18950 · https://arxiv.org/abs/2501.08163 ·
 https://arxiv.org/abs/2508.09179 · https://arxiv.org/abs/2409.12401 · https://arxiv.org/abs/2605.22031 · https://github.com/facebookresearch/fastMRI (evaluate.py)
+
+## 5. 09-09 통합판 v2 (교수님 검토 반영)
+
+- 교수님 지시: 학술지 양식 = **서면 심사용(4쪽, blind)**, 학술대회 양식 = **프로시딩 게재용(1~5쪽, 저자 포함)** — 두 파일은 **내용 동일**, 저자·소속만 차이.
+  → 단일 소스 `paper/ieie/draft_ieie_v2.src.md` 를 두 빌더로 빌드(`--src/--out` 지원). 학술지 빌더는 `check_blind()` 로 본문 저자·소속 단서를 막는다(논문지 양식 자체에 저자란 없음).
+- **캡션 규칙 변경**: 국문만, 한 줄로 간결하게(세부는 본문). 논문지 양식 예시에는 "그림 1." + "Fig. 1." 두 줄이 있으나 교수님이 영문 불필요라 하심 → `@cap_en` 은 선택(있을 때만 병기). `check_docx_structure.py` 는 영문 캡션 부재를 더 이상 경고하지 않고 개수만 알린다.
+- **표 1 하나로 통합**: 본 연구 4행(Zero-filled / bi-GRU / SS2D / Enhanced SS2D, 최고 굵게·차선 밑줄) + 공개 모델 참고선 3행(U-Net† / E2E-VarNet† / PromptMR+, 순위 표시 없음) — 수치는 `ieie_table1_block.md`·`ieie_table_ref_block.md` 그대로, `@note` 에 † 와 PromptMR+ 계열 차이 명시.
+- 초록 c44/c71 코멘트 반영: "모든 구성요소(데이터·마스크·U-Net 구조·손실·최적화 설정)가 동일(가중치 공유 없이 각각 독립 학습)", 우위 비율은 지표별로 슬라이스 78.2/73.8/73.8 %·볼륨 94.8/89.9/90.1 %.
+- 쪽수(휴리스틱 ±15 %): 학술지판 ≈3.7쪽(참고문헌 12편 ≈0.65쪽 포함), 학술대회판 ≈3.3쪽. Word 실측 후 4쪽 초과 시 1순위 절감 = 참고문헌·Ⅱ.2 문단.
+

@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 """IEIE(대한전자공학회) 투고용 양식 초안 빌더 — stdlib 만 사용 (python-docx/pandoc 불필요).
 
-입력  : paper/ieie/draft_ieie_ko_v1.src.md      (본문 소스: 디렉티브 + 마크다운 일부)
+입력  : paper/ieie/draft_ieie_v2.src.md         (본문 소스: 디렉티브 + 마크다운 일부 — 학술대회 빌더와 **같은 소스**)
         paper/references.bib                    (서지 — [@key] 인용을 IEIE 영문 형식 [n] 으로 변환)
         paper/ieie/template_ieie_2021.docx      (학회 투고용 논문 양식 2021 — 스타일/머리글/섹션 설정을 그대로 재사용)
         paper/figs/*.png                        (그림)
-출력  : paper/ieie/draft_ieie_ko_v1.md          (읽기용 마크다운, 번호·참고문헌 확정본)
-        paper/ieie/draft_ieie_ko_v1.docx        (양식 적용 docx)
+출력  : paper/ieie/draft_ieie_v2.md             (읽기용 마크다운, 번호·참고문헌 확정본)
+        paper/ieie/draft_ieie_v2.docx           (양식 적용 docx = 서면 심사용. 논문지 양식엔 저자란이 없고, 본문의
+                                                 저자·소속 단서는 check_blind() 가 막는다 — 발견 시 탈락 규정)
 
-실행  : python paper/ieie/build_ieie_docx.py
+실행  : CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_docx.py [--src <x.src.md>] [--out <stem>] [--no-blind-check]
+        (09-09 교수님 지시: 프로시딩 게재용과 내용 동일, 저자·소속만 삭제 → 같은 소스를 build_ieie_conf_docx.py 로도 빌드.
+         캡션은 국문만·간결하게(@cap_en 은 선택, 있으면 병기). 옛 v1 소스·산출물은 paper/ieie/archive/.)
 
-소스 디렉티브 (draft_ieie_ko_v1.src.md):
+소스 디렉티브 (draft_ieie_v2.src.md):
   %% 주석                       빌더가 무시
   @title_ko: / @title_en: / @keywords:
   @abstract_ko: / @abstract_en:   다음 @ 디렉티브 전까지의 블록
@@ -34,11 +37,11 @@ from xml.etree import ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 IEIE = os.path.join(ROOT, "paper", "ieie")
-SRC = os.path.join(IEIE, "draft_ieie_ko_v1.src.md")
+SRC = os.path.join(IEIE, "draft_ieie_v2.src.md")
 BIB = os.path.join(ROOT, "paper", "references.bib")
 TEMPLATE = os.path.join(IEIE, "template_ieie_2021.docx")
-OUT_MD = os.path.join(IEIE, "draft_ieie_ko_v1.md")
-OUT_DOCX = os.path.join(IEIE, "draft_ieie_ko_v1.docx")
+OUT_MD = os.path.join(IEIE, "draft_ieie_v2.md")
+OUT_DOCX = os.path.join(IEIE, "draft_ieie_v2.docx")
 
 PAGE_W = 9637   # 본문 폭 (twips): 11906 - 1134 - 1135
 COL_W = 4563    # 2단 한 단 폭 (twips): (9637 - 510) / 2
@@ -671,14 +674,19 @@ class DocxBuilder:
         return self.eq_no
 
     # ---- captions
+    # 캡션: @cap_en 이 비어 있으면 국문 한 줄만 낸다(09-09 교수님 지시 — 영어 캡션 불필요, 캡션은 간결하게·세부는 본문).
     def _fig_caption(self, no: int, ko: str, en: str) -> str:
         ko_x = para("a8", wr("그림") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(ko, self.nb)))
+        if not en.strip():
+            return ko_x
         en_x = para("a8", wr("Fig.") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(en, self.nb)))
         return ko_x + en_x
 
     def _tbl_caption(self, no: int, ko: str, en: str) -> str:
         ppr = '<w:tabs><w:tab w:val="left" w:pos="466"/></w:tabs>'
         ko_x = para("a8", wr("표") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(ko, self.nb)), ppr)
+        if not en.strip():
+            return ko_x
         en_x = para("a8", wr("Table") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(en, self.nb)), ppr)
         return ko_x + en_x
 
@@ -898,11 +906,11 @@ class MdBuilder:
         self.fig_no += 1
         rel = os.path.relpath(os.path.join(ROOT, path), IEIE)
         self.out.append(f"![그림 {self.fig_no}]({rel})\n")
-        self.out.append(f"그림 {self.fig_no}. {self._t(ko)}  \nFig. {self.fig_no}. {self._t(en)}\n")
+        self.out.append(f"그림 {self.fig_no}. {self._t(ko)}" + (f"  \nFig. {self.fig_no}. {self._t(en)}" if en.strip() else "") + "\n")
 
     def table(self, width, colw, rows, ko, en, note):
         self.tbl_no += 1
-        self.out.append(f"표 {self.tbl_no}. {self._t(ko)}  \nTable {self.tbl_no}. {self._t(en)}\n")
+        self.out.append(f"표 {self.tbl_no}. {self._t(ko)}" + (f"  \nTable {self.tbl_no}. {self._t(en)}" if en.strip() else "") + "\n")
         ncol = max(len(r) for r in rows)
         lines = []
         for ri, r in enumerate(rows):
@@ -1084,9 +1092,47 @@ def _check_structure(xml_bytes: bytes):
         assert not (a.tag == W + "tbl" and b.tag == W + "tbl"), "표가 문단 없이 연속됨"
 
 
-def main():
+# 서면 심사용(blind) 점검 — 논문지 양식(template_ieie_2021.docx)에는 저자 블록이 없으므로 본문·초록에 신원 단서만 없으면 된다.
+# 학술대회판과 소스를 공유하므로 @author_* 디렉티브는 parse_src 가 무시하고, 여기서는 본문에 남은 단서만 잡는다.
+BLIND_PATTERNS = (r"\*\*\*", r"[Uu]niversit", r"대학교", r"대학원", r"연구실", r"연구소", r"e-?mail", r"저자", r"우리 (연구|그룹|팀)",
+                  r"[Oo]ur (previous|prior|earlier) (work|study|paper)", r"본 (연구실|그룹)", r"\b(Oh|Choh)\b")
+
+
+def check_blind(doc) -> list:
+    texts = [doc.meta.get("title_ko", ""), doc.meta.get("title_en", ""), doc.meta.get("keywords", "")]
+    texts += list(doc.meta.get("abstract_ko", [])) + list(doc.meta.get("abstract_en", []))
+    for b in doc.blocks:
+        if b["kind"] in ("chapter", "section", "subsection", "para"):
+            texts.append(b.get("text", b.get("title", "")))
+        elif b["kind"] == "figure":
+            texts += [b["cap_ko"], b["cap_en"]]
+        elif b["kind"] == "table":
+            texts += [b["cap_ko"], b["cap_en"], b["note"]] + [c for r in b["rows"] for c in r]
+    hits = []
+    for t in texts:
+        for pat in BLIND_PATTERNS:
+            for m in re.finditer(pat, t):
+                hits.append((pat, t[max(0, m.start() - 20):m.end() + 20]))
+    return hits
+
+
+def main(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="IEIE 논문지 양식 docx 빌더")
+    ap.add_argument("--src", default=SRC, help="소스 .src.md (기본: draft_ieie_v2.src.md — 학술대회 빌더와 공유)")
+    ap.add_argument("--out", default=None, help="출력 stem (기본: 소스 이름에서 .src.md 를 뗀 것) → <stem>.md / <stem>.docx")
+    ap.add_argument("--no-blind-check", action="store_true", help="서면 심사용 신원 단서 점검 생략")
+    args = ap.parse_args(argv)
+    src = args.src if os.path.isabs(args.src) else os.path.join(ROOT, args.src)
+    stem = args.out or re.sub(r"\.src\.md$", "", os.path.basename(src))
+    out_md = os.path.join(os.path.dirname(src), stem + ".md")
+    out_docx = os.path.join(os.path.dirname(src), stem + ".docx")
+
     bib = parse_bib(BIB)
-    doc = parse_src(SRC)
+    doc = parse_src(src)
+    if not args.no_blind_check:
+        hits = check_blind(doc)
+        assert not hits, "서면 심사용 신원 단서 발견(저자·소속 등 — 발견 시 탈락 규정): " + "; ".join(f"{p} → …{c}…" for p, c in hits)
     # 두 빌더가 같은 번호 매기기를 공유하도록 하나의 Numberer 사용 — docx 를 먼저 훑으면서 번호 확정
     nb = Numberer(bib)
     dx = DocxBuilder(nb)
@@ -1094,13 +1140,14 @@ def main():
     md = MdBuilder(nb)
     md.front(doc.meta)
     walk(doc, [dx, md], bib)
-    build_docx(dx, TEMPLATE, OUT_DOCX, doc.meta["title_ko"])
-    with open(OUT_MD, "w", encoding="utf-8") as fh:
+    build_docx(dx, TEMPLATE, out_docx, doc.meta["title_ko"])
+    with open(out_md, "w", encoding="utf-8") as fh:
         fh.write(md.text())
-    info = validate(OUT_DOCX)
-    print(f"[md ] {os.path.relpath(OUT_MD, ROOT)}  ({len(md.text())} chars)")
-    print(f"[docx] {os.path.relpath(OUT_DOCX, ROOT)}  {info}")
-    print(f"      figures={dx.fig_no} tables={dx.tbl_no} equations={dx.eq_no} references={len(nb.order)}")
+    info = validate(out_docx)
+    print(f"[md ] {os.path.relpath(out_md, ROOT)}  ({len(md.text())} chars)")
+    print(f"[docx] {os.path.relpath(out_docx, ROOT)}  {info}")
+    print(f"      figures={dx.fig_no} tables={dx.tbl_no} equations={dx.eq_no} references={len(nb.order)}"
+          + ("" if args.no_blind_check else "  blind-check: OK(저자·소속 단서 없음)"))
     return 0
 
 
