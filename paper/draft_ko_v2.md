@@ -206,7 +206,7 @@ de-aliasing 후처리 U-Net 이다. f_θ 를 제외한 모든 것을 고정한�
   U-Net. (난수 시드는 두 런 모두 고정하지 않았다 — 시드 민감도는 멀티시드 재현 실험으로 별도
   검증한다, §5-(6).)
 
-### 3.3 강화 SS2D (통제 해제 변형) — Fig. 1(b)
+### 3.3 강화 SS2D (통제 해제 변형) — Fig. 1(c)
 
 통제비교의 SS2D 는 공정성을 위해 의도적으로 최소 구성이다. 통제를 해제한 강화 변형은 세 가지를
 복원/확장한다:
@@ -567,7 +567,7 @@ ETER 계열의 도메인 변환 모듈로서 SS2D 는 원 설계의 bi-GRU 에 �
 
 | 논문 요소 | 소스 (저장소 경로) | 상태 |
 |---|---|---|
-| Fig.1 아키텍처 다이어그램 (a: 공통 골격+양 arm, b: 강화 SS2D) | `paper/figs/fig1_architecture.{png,pdf}` — 생성 스크립트 `paper/make_fig1_architecture.py` | ✅ 2026-08-18 (색 규약 Fig.4 와 통일: blue=SS2D, red=GRU, 회색=공유) |
+| Fig.1 아키텍처 다이어그램 (a: 공통 골격, b: bi-GRU·SS2D 두 팔 내부, c: 강화 SS2D 블록 체인+블록 내부) | `paper/figs/fig1_architecture.{png,pdf}` — 생성 스크립트 `paper/make_fig1_architecture.py`(도우미·양식 규칙은 `make_figs_conf_arch.py` 에서 import) | ✅ 2026-09-09 고전적 블록 다이어그램 문법으로 재작성(page 폭 6.69 in, 600 dpi; 색 규약 Fig.4 와 통일: blue=SS2D, red=GRU, green=강화, 회색=공유). 이전 08-18 판은 슬라이드형(폐기) |
 | Fig.2 학습 곡선 (GRU vs SS2D vs 강화판, SSIM/PSNR) | `results/eval/v9_unleashed/curves_v9_vs_v8.png` | ✅ (논문용 재도색 권장) |
 | Fig.3 4-way 정성 비교 + 배경 ringing | `results/vis/v8_pure_eternet_compare/compare_*.png` | ✅ (슬라이스 선별 필요) |
 | Fig.4 per-slice 우위 비율/차이 분포 | `paper/figs/fig4_per_slice_distribution.{png,pdf}` — 생성 스크립트 `paper/make_fig4_per_slice.py` (입력 `results/eval/v9_unleashed/per_slice_paired_v9.csv`) | ✅ 2026-08-18 (2행×4지표 paired-Δ 히스토그램 + win-rate, 양수=치환/강화 우위 규약) |

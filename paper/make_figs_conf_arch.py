@@ -83,11 +83,13 @@ LW_ARR = 0.7
 _OVERFLOW = []
 
 
-def canvas(h, y_lo=0.0):
-    """폭 W 고정 캔버스(단위 inch). y_lo > 0 이면 아래쪽 y_lo 만큼 잘라낸다(여백 정리)."""
-    fig = plt.figure(figsize=(W, h - y_lo))
+def canvas(h, y_lo=0.0, w=None):
+    """폭 w(기본 W=단 폭) 캔버스(단위 inch). y_lo > 0 이면 아래쪽 y_lo 만큼 잘라낸다(여백 정리).
+    학술지판 page 폭 그림(make_fig1_architecture.py)은 w 를 넘겨 같은 도우미를 재사용한다."""
+    w = W if w is None else w
+    fig = plt.figure(figsize=(w, h - y_lo))
     ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(0, W)
+    ax.set_xlim(0, w)
     ax.set_ylim(y_lo, h)
     ax.set_aspect("equal")
     ax.axis("off")

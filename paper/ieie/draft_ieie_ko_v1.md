@@ -70,12 +70,12 @@ $$ \hat{x} = g_{\phi}\left( \mathrm{concat}\left( f_{\theta}(\{\tilde{y}_c\}), \
 
 ![그림 1](../figs/fig1_architecture.png)
 
-그림 1. (a) 두 팔이 공유하는 순수 ETER-Net 골격 — 시퀀스 모델 f_θ(bi-GRU 또는 SS2D)만이 유일한 변수이며, 데이터로더·마스크·손실·최적화·스케줄·후처리 U-Net은 동일하다. (b) 통제를 해제한 강화 SS2D 변형(게이팅·잔차 스택 3블록·병목 해제·fp16 coarse-scan)  
-Fig. 1. (a) The pure ETER-Net backbone shared by both arms — the sequence model f_θ (bi-GRU or SS2D) is the only variable; the data loader, masks, loss, optimizer, schedule, and post-processing U-Net are identical. (b) The enhanced SS2D variant with the controls released (gating, three residual blocks, widened bottleneck, and fp16 coarse scan)
+그림 1. (a) 두 팔이 공유하는 순수 ETER-Net 골격 — 점선 상자의 시퀀스 모델 f_θ(bi-GRU 또는 SS2D)만이 유일한 변수이며, 마스크·zero-filled 분기·후처리 U-Net·손실은 동일하다(화살표의 숫자는 채널 수, 공간 384²; 영상은 검증 슬라이스 예시). (b) f_θ의 두 팔 — 왼쪽은 원 bi-GRU(k-space 행을 시퀀스로 펼친 양방향 GRU를 행·열 방향으로 2단 적용, 668.2M), 오른쪽은 SS2D(4방향 cross-scan을 방향별 S6로 병렬 스캔한 뒤 채널 결합, SSM 스택 0.12M·팔 전체 31.2M). (c) 통제를 해제한 강화 SS2D 변형(34.2M) — 왼쪽은 stem → stride-3 다운샘플(128²) → 게이팅 잔차 SS2D 블록 3개 → 업샘플·head(64채널)의 블록 체인, 오른쪽은 블록 내부(SSM 분기 x_ssm과 게이트 분기 z의 곱 y·SiLU(z)에 잔차를 더한다)  
+Fig. 1. (a) The pure ETER-Net backbone shared by both arms — the sequence model f_θ (bi-GRU or SS2D) in the dashed box is the only variable; the mask, the zero-filled branch, the post-processing U-Net, and the loss are identical (numbers on arrows: channels at 384²; images: a validation slice). (b) The two arms of f_θ — left: the original bi-GRU, which unrolls k-space rows into a sequence and applies a bidirectional GRU in two passes (rows, then columns; 668.2M); right: SS2D, which scans four cross-scan directions with one S6 per direction in parallel and concatenates the outputs (SSM stack 0.12M, arm 31.2M). (c) The enhanced SS2D variant with the controls released (34.2M) — left: the block chain stem → stride-3 downsampling (128²) → three gated residual SS2D blocks → upsampling and head (64 channels); right: one block, where the SSM branch x_ssm is multiplied by the gate branch SiLU(z) and added to the residual
 
 #### 가. bi-GRU 팔 (원 설계)
 
-ETER-Net 원본[20]의 양방향(수평 + 수직) GRU로, k-space의 각 행(열)을 flatten하여 GRU에 순차 입력하고 출력을 다시 reshape하는 구조다. hidden 배수는 원 코드의 두 설정(canonical 12 / 실험 config 10) 중 10을 채택해 총 668.2M 파라미터이며, canonical 12로는 880.5M이다(재현 클래스가 원본 클래스와 동일 설정에서 파라미터 수가 완전히 일치함을 검증하였다). 즉 10의 채택은 GRU를 더 작게 잡는 보수적 선택이며, 본문의 파라미터 격차 21배는 canonical 기준(28배)의 하한이다.
+ETER-Net 원본[20]의 양방향(수평 + 수직) GRU로, k-space의 각 행(열)을 flatten하여 GRU에 순차 입력하고 출력을 다시 reshape하는 구조다(그림 1(b) 왼쪽). hidden 배수는 원 코드의 두 설정(canonical 12 / 실험 config 10) 중 10을 채택해 총 668.2M 파라미터이며, canonical 12로는 880.5M이다(재현 클래스가 원본 클래스와 동일 설정에서 파라미터 수가 완전히 일치함을 검증하였다). 즉 10의 채택은 GRU를 더 작게 잡는 보수적 선택이며, 본문의 파라미터 격차 21배는 canonical 기준(28배)의 하한이다.
 
 #### 나. SS2D 팔 (치환, 통제판)
 
@@ -83,11 +83,11 @@ Mamba[27]의 선택적 상태공간모델은 이산화된 선형 시불변 시�
 
 $$ h_t = \exp(\Delta_t A)\, h_{t-1} + \Delta_t B_t x_t, \quad y_t = C_t h_t + D x_t \qquad (3) $$
 
-를 계산한다. 여기서 Δ_t, B_t, C_t는 x_t의 선형 사영으로 생성되고(Δ_t는 softplus를 거친다), A와 D는 학습 파라미터다. 이 재귀는 병렬 스캔으로 시퀀스 길이에 선형인 비용으로 계산된다. SS2D[28]는 2차원 특징맵을 네 방향(좌→우, 우→좌, 상→하, 하→상)으로 펼쳐 각각 selective scan을 수행한 뒤 합산함으로써 2차원 전역 수용영역을 만든다. 통제판 SS2D 팔은 이 4방향 selective scan 단일 블록(d_inner 128, d_state 16; 방향별 독립 S6 가중치를 그 방향의 모든 행·열이 공유하고, 네 출력은 합산 대신 채널 결합 후 LN·Linear로 병합)이며, 출력 채널을 GRU 팔과 동일한 20으로 강제 정합해 용량 상한을 GRU 이하로 억제하였다. 총 파라미터는 31.2M으로, 이 중 공유 U-Net이 31.1M으로 지배적이고 SSM 스택 자체는 0.12M이다. 이 외 모든 것 — 데이터로더·언더샘플링 마스크·손실·옵티마이저·스케줄·epoch·후처리 U-Net — 이 동일하다. 난수 시드는 두 런 모두 고정하지 않았으며, 시드 민감도는 별도의 멀티시드 실험으로 검증한다(Ⅴ장).
+를 계산한다. 여기서 Δ_t, B_t, C_t는 x_t의 선형 사영으로 생성되고(Δ_t는 softplus를 거친다), A와 D는 학습 파라미터다. 이 재귀는 병렬 스캔으로 시퀀스 길이에 선형인 비용으로 계산된다. SS2D[28]는 2차원 특징맵을 네 방향(좌→우, 우→좌, 상→하, 하→상)으로 펼쳐 각각 selective scan을 수행한 뒤(그림 1(b) 오른쪽) 합산함으로써 2차원 전역 수용영역을 만든다. 통제판 SS2D 팔은 이 4방향 selective scan 단일 블록(d_inner 128, d_state 16; 방향별 독립 S6 가중치를 그 방향의 모든 행·열이 공유하고, 네 출력은 합산 대신 채널 결합 후 LN·Linear로 병합)이며, 출력 채널을 GRU 팔과 동일한 20으로 강제 정합해 용량 상한을 GRU 이하로 억제하였다. 총 파라미터는 31.2M으로, 이 중 공유 U-Net이 31.1M으로 지배적이고 SSM 스택 자체는 0.12M이다. 이 외 모든 것 — 데이터로더·언더샘플링 마스크·손실·옵티마이저·스케줄·epoch·후처리 U-Net — 이 동일하다. 난수 시드는 두 런 모두 고정하지 않았으며, 시드 민감도는 별도의 멀티시드 실험으로 검증한다(Ⅴ장).
 
 ### 3. 강화 SS2D (통제 해제 변형)
 
-통제비교의 SS2D는 공정성을 위해 의도적으로 최소 구성이다. 그림 1(b)의 강화 변형은 세 가지를 복원·확장한다. 첫째, 게이팅 복원 — 공식 Mamba[27]의 y = y·SiLU(z) 게이트 분기(통제판에는 없음). 둘째, 잔차 스택 — 채널 불변 SS2D 블록 3개를 residual skip으로 쌓는다. 셋째, 병목 해제 — 출력 채널 20→64, d_inner 128→256, d_state 16→32, dropout 0.05. 384² 풀해상도 4방향 스캔의 연산 병목은 fp16 selective scan과 다운샘플 front-end(ds=3)로 해결했다: stem이 풀해상도 k-space를 먼저 처리한 뒤 특징을 128²로 낮춰 coarse scan하고 bilinear 업샘플해 U-Net에 전달한다(전역 문맥은 SSM, 풀해상도 디테일은 U-Net이 분담). 그 결과 풀용량을 유지한 채 epoch당 학습시간을 통제판과 비슷한 수준으로 눌러(Ⅳ장 9절) 실험 기간 내에 epoch 50→80 연장이 가능했다. 총 파라미터는 약 34M(34.2M; SSM 스택 3.1M = 3개 블록 1.9M + 다운/업샘플 투영 1.2M)이다. 학습 위생으로 Mamba 상태 파라미터(A, D)는 weight decay에서 제외했다.
+통제비교의 SS2D는 공정성을 위해 의도적으로 최소 구성이다. 그림 1(c)의 강화 변형은 세 가지를 복원·확장한다. 첫째, 게이팅 복원 — 공식 Mamba[27]의 y = y·SiLU(z) 게이트 분기(통제판에는 없음). 둘째, 잔차 스택 — 채널 불변 SS2D 블록 3개를 residual skip으로 쌓는다. 셋째, 병목 해제 — 출력 채널 20→64, d_inner 128→256, d_state 16→32, dropout 0.05. 384² 풀해상도 4방향 스캔의 연산 병목은 fp16 selective scan과 다운샘플 front-end(ds=3)로 해결했다: stem이 풀해상도 k-space를 먼저 처리한 뒤 특징을 128²로 낮춰 coarse scan하고 bilinear 업샘플해 U-Net에 전달한다(전역 문맥은 SSM, 풀해상도 디테일은 U-Net이 분담). 그 결과 풀용량을 유지한 채 epoch당 학습시간을 통제판과 비슷한 수준으로 눌러(Ⅳ장 9절) 실험 기간 내에 epoch 50→80 연장이 가능했다. 총 파라미터는 약 34M(34.2M; SSM 스택 3.1M = 3개 블록 1.9M + 다운/업샘플 투영 1.2M)이다. 학습 위생으로 Mamba 상태 파라미터(A, D)는 weight decay에서 제외했다.
 
 ### 4. 손실 함수와 평가지표
 
