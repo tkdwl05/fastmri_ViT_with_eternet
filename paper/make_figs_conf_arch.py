@@ -1,362 +1,507 @@
-"""학술대회판(IEIE 2단, 단 폭 3.15 in) 전용 아키텍처 그림 3장 — 옛 그림 1(2패널 광폭) 을 3장으로 분할.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+IEIE 학술대회판 전용 세부 아키텍처 그림 3장 — 고전적 블록 다이어그램 양식(v2, 2026-09-08).
 
-  conf_fig1_pipeline.png : 데이터 → 마스크 → f_θ(유일 변수) / zero-filled → concat → U-Net → 출력 → 손실·GT
-  conf_fig2_arms.png     : 두 팔의 내부 — (a) bi-GRU flatten→2단 bi-GRU→reshape, (b) SS2D 4방향 selective scan
-  conf_fig3_enhanced.png : 강화 SS2D — stem → ds=3 → 잔차 게이팅 블록 ×3 → 업샘플 → head + 블록 내부
+  paper/figs/conf_fig1_pipeline.{png,pdf}   그림 1  두 팔이 공유하는 통제 파이프라인(데이터 노드는 실제 썸네일)
+  paper/figs/conf_fig2_arms.{png,pdf}       그림 2  (a) bi-GRU 팔 = 펼친(unrolled) 양방향 순환 체인, (b) SS2D 팔 = 4방향 cross-scan → S6 → merge
+  paper/figs/conf_fig3_enhanced.{png,pdf}   그림 3  강화 SS2D: 위 = 블록 체인(화살표 위 텐서 크기), 아래 = Mamba 블록 내부(게이트·잔차)
 
-물리 크기(figsize)를 최종 인쇄 폭(3.15 in)으로 잡아 글자 크기(pt)가 그대로 지면 크기가 되게 했고,
-박스 안 글자는 렌더러로 실제 폭을 재서 박스를 넘치면 자동 축소한다(최소 4.6 pt; 축소 시 stderr 경고).
-수치 출처: models/pure_eternet/u_pure_eternet_{gru,ss2d}.py, models/mamba_eternet/ss2d{,_v9}.py,
-           paper/make_tables.py(params), CLAUDE.md(34.2M 분해·h/ep). 색 규약 = Fig.2/Fig.4 와 동일
-(red = bi-GRU, blue = SS2D, green = enhanced, gray = 공유).
-출력: paper/figs/conf_fig{1,2,3}_*.{png,pdf}
+양식 규칙(v1 의 "슬라이드" 인상을 고친 지점):
+  - 블록 = 균일한 크기의 둥근 사각형에 한 줄 라벨만. 텐서 크기·채널 수는 블록 안이 아니라 화살표 위 작은 회색 글자.
+  - 설명 문장은 그림 안에 넣지 않는다(캡션·본문 몫). 굵은 제목·색 막대·각주 없음.
+  - 데이터 노드(k-space·마스크·zero-filled·복원·GT)는 정본 슬라이스의 실제 영상 썸네일.
+  - RNN 은 펼친 셀 체인(→/← 두 줄), SS2D 는 cross-scan(4 격자) → S6 ×4 → merge, Mamba 블록은 원 논문의 게이트 분기 형태로 그린다.
+  - 글꼴 Liberation Sans(Arial metric 호환, paper/fonts/) 6.5 pt 본문 / 5.5 pt 주석; 없으면 DejaVu Sans 폴백.
+  - 단 폭 3.15 in, 600 dpi PNG + PDF. 색은 팔 식별용 3색(bi-GRU 빨강·SS2D 파랑·강화 초록)만 옅게.
+
+데이터(로컬 전용): 정본 슬라이스 index 4689 = fastMRI_data/multicoil_val/file_brain_AXT2_203_2030309.h5 slice 7
+(visualize_slices_canonical.json) 의 k-space 를 dataloader_h5_v5 와 같은 전처리(코일 영상 384² crop/pad → re-FFT →
+R=4 equispaced 마스크, offset 3)로 만들고, zero-filled·SS2D 복원·GT 는 results/vis/multimodel_compare/recon_4689.npz 에서 읽는다.
+둘 중 하나라도 없으면 합성 자리표시 썸네일로 대체하고 경고를 출력한다.
+
+실행: CUDA_VISIBLE_DEVICES="" python paper/make_figs_conf_arch.py
 """
 import os
 import sys
+import warnings
+
+import numpy as np
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Circle, Rectangle
+from matplotlib import font_manager as fm, rcParams
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.lines import Line2D
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "paper/figs")
-os.makedirs(OUT, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+FIG_DIR = os.path.join(HERE, "figs")
+os.makedirs(FIG_DIR, exist_ok=True)
 
-plt.rcParams.update({"font.family": "DejaVu Sans", "mathtext.fontset": "dejavusans"})
+# ───────────────────────── fonts ─────────────────────────
+_FONT_DIR = os.path.join(HERE, "fonts")
+_found = False
+for _f in ("LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf",
+           "LiberationSans-Italic.ttf", "LiberationSans-BoldItalic.ttf"):
+    _p = os.path.join(_FONT_DIR, _f)
+    if os.path.exists(_p):
+        fm.fontManager.addfont(_p)
+        _found = True
+if _found:
+    rcParams["font.family"] = "Liberation Sans"
+    rcParams["mathtext.fontset"] = "custom"
+    rcParams["mathtext.rm"] = "Liberation Sans"
+    rcParams["mathtext.it"] = "Liberation Sans:italic"
+    rcParams["mathtext.bf"] = "Liberation Sans:bold"
+    rcParams["mathtext.fallback"] = "stixsans"
+else:
+    warnings.warn("paper/fonts/LiberationSans-*.ttf 없음 → DejaVu Sans 폴백")
+    rcParams["font.family"] = "DejaVu Sans"
+    rcParams["mathtext.fontset"] = "dejavusans"
+rcParams["pdf.fonttype"] = 42
+rcParams["ps.fonttype"] = 42
 
-INK, INK2, MUTED = "#0b0b0b", "#3f3e3b", "#7d7b75"
-BLUE, RED, GREEN = "#2a78d6", "#e34948", "#2e9e6b"
-FILL_N, EDGE_N = "#f1f0ed", "#b9b8ae"
-FILL_B, FILL_R, FILL_G = "#e3eefb", "#fbe7e7", "#e2f3ea"
-W = 3.15  # column width (in)
-MIN_FS = 4.6
+# ───────────────────────── style ─────────────────────────
+W = 3.15                      # column width (in)
+DPI = 600
+INK = "#000000"
+INK2 = "#444444"
+MUTED = "#6b6b6b"
+FILL = "#f2f2f2"              # shared / identical blocks
+EDGE = "#3a3a3a"
+FILL_R, EDGE_R = "#fbe9e8", "#c0392b"   # bi-GRU
+FILL_B, EDGE_B = "#e4eefb", "#2a6fc9"   # SS2D
+FILL_G, EDGE_G = "#e3f3ea", "#2a8f5f"   # enhanced SS2D
+FS = 6.5                      # block label
+FS_S = 5.5                    # annotations (tensor sizes, sub-labels)
+FS_P = 7.5                    # panel letters
+LW_BOX = 0.6
+LW_ARR = 0.7
 
-_FIG = None
-
-
-def _fit(t, max_w):
-    """shrink a Text until its rendered width (in) <= max_w."""
-    r = _FIG.canvas.get_renderer()
-    for _ in range(40):
-        w = t.get_window_extent(renderer=r).width / _FIG.dpi
-        if w <= max_w or t.get_fontsize() <= MIN_FS:
-            if w > max_w:
-                print(f"  ! overflow ({w:.2f} > {max_w:.2f} in): {t.get_text()[:50]!r}", file=sys.stderr)
-            return
-        t.set_fontsize(t.get_fontsize() - 0.2)
-
-
-def text(ax, x, y, s, fs=6.0, color=INK2, ha="center", va="center", max_w=None, z=3, **kw):
-    t = ax.text(x, y, s, fontsize=fs, color=color, ha=ha, va=va, zorder=z, **kw)
-    if max_w is not None:
-        _fit(t, max_w)
-    return t
-
-
-def box(ax, x, y, w, h, title=None, lines=(), fc=FILL_N, ec=EDGE_N, lw=0.7,
-        fs=5.6, tfs=6.2, tc=INK, ls="-", pad=0.02, z=2):
-    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad={pad}",
-                                fc=fc, ec=ec, lw=lw, ls=ls, zorder=z))
-    rows = ([] if title is None else [(title, tfs, tc, "bold")]) + \
-           [(t, fs, INK2, "normal") for t in lines]
-    n = len(rows)
-    if n == 0:
-        return
-    lh = h / n
-    for i, (s, size, c, wgt) in enumerate(rows):
-        yy = y + h - lh * (i + 0.5)
-        text(ax, x + w / 2, yy, s, fs=size, color=c, fontweight=wgt, max_w=w - 0.05, z=z + 1)
-
-
-def arrow(ax, p1, p2, color=INK2, lw=0.8, ms=6, z=1, ls="-"):
-    ax.add_patch(FancyArrowPatch(p1, p2, zorder=z, ls=ls, arrowstyle="-|>", mutation_scale=ms,
-                                 color=color, lw=lw, shrinkA=0.3, shrinkB=0.3))
+_OVERFLOW = []
 
 
-def line(ax, p1, p2, color=INK2, lw=0.8, z=1, ls="-"):
-    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color=color, lw=lw, zorder=z, ls=ls,
-            solid_capstyle="round")
-
-
-def elbow(ax, pts, color=INK2, lw=0.8, z=1, ls="-"):
-    """polyline through pts, arrowhead on the last segment."""
-    for a, b in zip(pts[:-2], pts[1:-1]):
-        line(ax, a, b, color=color, lw=lw, z=z, ls=ls)
-    arrow(ax, pts[-2], pts[-1], color=color, lw=lw, z=z, ls=ls)
-
-
-def circ(ax, x, y, sym, r=0.075, fs=7):
-    ax.add_patch(Circle((x, y), r, fc="white", ec=INK2, lw=0.8, zorder=2))
-    ax.text(x, y, sym, ha="center", va="center", fontsize=fs, color=INK, zorder=3,
-            fontweight="bold" if sym.isalpha() else "normal")
-
-
-def header(ax, y, text_, color, sub=None):
-    ax.add_patch(Rectangle((0.04, y - 0.02), 0.05, 0.16, fc=color, ec="none", zorder=2))
-    text(ax, 0.13, y + 0.06, text_, fs=6.6, color=INK, ha="left", fontweight="bold", max_w=2.95)
-    if sub:
-        text(ax, 0.13, y - 0.085, sub, fs=5.4, color=MUTED, ha="left", max_w=2.95)
-
-
-def canvas(h):
-    global _FIG
-    fig = plt.figure(figsize=(W, h), facecolor="white", dpi=300)
-    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, h)
+def canvas(h, y_lo=0.0):
+    """폭 W 고정 캔버스(단위 inch). y_lo > 0 이면 아래쪽 y_lo 만큼 잘라낸다(여백 정리)."""
+    fig = plt.figure(figsize=(W, h - y_lo))
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, W)
+    ax.set_ylim(y_lo, h)
+    ax.set_aspect("equal")
     ax.axis("off")
-    _FIG = fig
     return fig, ax
 
 
+def text(ax, x, y, s, fs=FS, color=INK, ha="center", va="center", max_w=None, z=5, **kw):
+    """텍스트 배치. max_w(in) 를 넘으면 4.6 pt 까지 자동 축소(렌더러 실측)."""
+    t = ax.text(x, y, s, fontsize=fs, color=color, ha=ha, va=va, zorder=z, **kw)
+    if max_w is not None:
+        fig = ax.figure
+        r = fig.canvas.get_renderer()
+        while True:
+            w_in = t.get_window_extent(renderer=r).width / fig.dpi
+            if w_in <= max_w or t.get_fontsize() <= 4.6:
+                break
+            t.set_fontsize(t.get_fontsize() - 0.25)
+        if w_in > max_w + 1e-3:
+            _OVERFLOW.append((s, w_in, max_w))
+    return t
+
+
+def box(ax, x, y, w, h, label, fc=FILL, ec=EDGE, lw=LW_BOX, ls="-", fs=FS, tc=INK,
+        sub=None, sub_fs=FS_S, sub_color=INK2, weight="normal", z=3, r=0.035):
+    """균일 둥근 사각형 + 가운데 한 줄 라벨(+ 선택적 작은 부라벨)."""
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}",
+                                fc=fc, ec=ec, lw=lw, ls=ls, zorder=z))
+    if sub is None:
+        text(ax, x + w / 2, y + h / 2, label, fs=fs, color=tc, max_w=w - 0.04, weight=weight, z=z + 1)
+    else:
+        text(ax, x + w / 2, y + h * 0.66, label, fs=fs, color=tc, max_w=w - 0.04, weight=weight, z=z + 1)
+        text(ax, x + w / 2, y + h * 0.30, sub, fs=sub_fs, color=sub_color, max_w=w - 0.04, z=z + 1)
+    return (x, y, w, h)
+
+
+def thumb(ax, x, y, s, img, label=None, label_fs=FS_S, label_dy=0.045, vmin=None, vmax=None,
+          cmap="gray", frame=EDGE, z=3):
+    """실제 영상 썸네일(정사각 s in) + 아래 라벨. 작은 배열(마스크 축소판)은 nearest 로 계단 유지."""
+    interp = "nearest" if max(img.shape) <= 64 else "antialiased"
+    ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, extent=(x, x + s, y, y + s),
+              interpolation=interp, zorder=z, aspect="auto")
+    ax.add_patch(Rectangle((x, y), s, s, fc="none", ec=frame, lw=0.5, zorder=z + 1))
+    if label:
+        text(ax, x + s / 2, y - label_dy, label, fs=label_fs, color=INK, va="top", z=z + 1)
+    return (x, y, s, s)
+
+
+def arrow(ax, p1, p2, color=INK, lw=LW_ARR, ls="-", head=True, z=4, mutation=6):
+    style = "-|>" if head else "-"
+    ax.add_patch(FancyArrowPatch(p1, p2, arrowstyle=style, mutation_scale=mutation, lw=lw,
+                                 color=color, ls=ls, shrinkA=0, shrinkB=0, zorder=z,
+                                 capstyle="butt", joinstyle="miter"))
+
+
+def polyline(ax, pts, color=INK, lw=LW_ARR, ls="-", head=True, z=4):
+    """꺾은선 경로, 마지막 구간에만 화살촉."""
+    for a, b in zip(pts[:-2], pts[1:-1]):
+        ax.add_line(Line2D([a[0], b[0]], [a[1], b[1]], color=color, lw=lw, ls=ls, zorder=z,
+                           solid_capstyle="projecting"))
+    arrow(ax, pts[-2], pts[-1], color=color, lw=lw, ls=ls, head=head, z=z)
+
+
+def dot(ax, x, y, r=0.017, color=INK, z=5):
+    ax.add_patch(Circle((x, y), r, fc=color, ec="none", zorder=z))
+
+
+def op(ax, x, y, sym, r=0.055, fs=6.5, fc="white", ec=INK, z=5):
+    ax.add_patch(Circle((x, y), r, fc=fc, ec=ec, lw=LW_BOX, zorder=z))
+    text(ax, x, y - 0.002, sym, fs=fs, color=INK, z=z + 1)
+
+
+def lab(ax, x, y, s, fs=FS_S, color=MUTED, ha="center", va="bottom", max_w=None, z=5, **kw):
+    """화살표 위 텐서 크기 등 작은 회색 주석."""
+    return text(ax, x, y, s, fs=fs, color=color, ha=ha, va=va, max_w=max_w, z=z, **kw)
+
+
 def save(fig, name):
-    png = os.path.join(OUT, name + ".png"); pdf = os.path.join(OUT, name + ".pdf")
-    fig.savefig(png, dpi=600, facecolor="white"); fig.savefig(pdf, facecolor="white")
-    print("saved:", os.path.relpath(png, ROOT))
+    for ext in ("png", "pdf"):
+        p = os.path.join(FIG_DIR, f"{name}.{ext}")
+        fig.savefig(p, dpi=DPI, facecolor="white")
+    plt.close(fig)
+    print(f"saved {name}.png/.pdf")
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# 그림 1 — 통제 비교 파이프라인 (f_θ 만 변수)
-# ══════════════════════════════════════════════════════════════════════════
-H1 = 3.90
-fig, ax = canvas(H1)
-T = lambda v: H1 - v          # top-down coordinate helper
-cx = 1.22                      # main-flow center x
-RM = 3.02                      # right edge of boxes (GT rail runs at 3.09)
-
-# fully-sampled k-space + ground truth
-box(ax, cx - 0.80, T(0.42), 1.60, 0.36, title=r"Fully-sampled multicoil k-space  $y_c$",
-    lines=["16 coils, 384² (crop/pad)"])
-box(ax, 2.14, T(0.42), RM - 2.14, 0.36, title="Ground truth", lines=[r"RSS($F^{-1}y_c$), 384²"])
-arrow(ax, (cx + 0.80, T(0.24)), (2.14, T(0.24)))
-
-# mask ⊙
-my = T(0.70)
-circ(ax, cx, my, "⊙")
-arrow(ax, (cx, T(0.42)), (cx, my + 0.08))
-box(ax, 0.06, my - 0.18, 0.96, 0.36, title="Undersampling mask  $M$",
-    lines=["R = 4 equispaced, 8 % ACS"])
-arrow(ax, (1.02, my), (cx - 0.08, my))
-
-# undersampled k-space
-box(ax, cx - 0.80, T(1.30), 1.60, 0.36, title=r"Undersampled k-space  $\tilde{y}=M\odot y_c$",
-    lines=["32 ch = 16 coils × (Re, Im), 384²"])
-arrow(ax, (cx, my - 0.08), (cx, T(0.94)))
-
-# split: left → f_θ, right → zero-filled
-fx, fy, fw, fh = 0.06, T(2.36), 1.80, 0.90        # f_θ frame
-zx, zy, zw, zh = 2.02, T(2.02), RM - 2.02, 0.46   # zero-filled box
-line(ax, (cx, T(1.30)), (cx, T(1.38)))
-line(ax, (fx + fw / 2, T(1.38)), (zx + zw / 2, T(1.38)))
-arrow(ax, (fx + fw / 2, T(1.38)), (fx + fw / 2, fy + fh + 0.02))
-arrow(ax, (zx + zw / 2, T(1.38)), (zx + zw / 2, zy + zh + 0.02))
-text(ax, zx + zw / 2 + 0.04, T(1.46), r"$F^{-1}$ per coil", fs=5.4, color=MUTED, ha="left")
-
-# f_θ frame (dashed = the only variable)
-ax.add_patch(FancyBboxPatch((fx, fy), fw, fh, boxstyle="round,pad=0.02", fc="white",
-                            ec=INK, lw=0.9, ls=(0, (3, 1.5)), zorder=2))
-text(ax, fx + fw / 2, fy + fh - 0.08, r"Sequence model  $f_\theta$", fs=6.5, color=INK,
-     fontweight="bold", max_w=fw - 0.1)
-text(ax, fx + fw / 2, fy + fh - 0.19, "the only variable between the arms", fs=5.4, color=INK2,
-     style="italic", max_w=fw - 0.1)
-bw_ = 0.74
-box(ax, fx + 0.07, fy + 0.20, bw_, 0.36, title="bi-GRU", lines=["ETER-Net original", "arm 668.2M"],
-    fc=FILL_R, ec=RED, fs=5.4, tfs=6.2)
-box(ax, fx + fw - 0.07 - bw_, fy + 0.20, bw_, 0.36, title="SS2D", lines=["selective state space", "arm 31.2M"],
-    fc=FILL_B, ec=BLUE, fs=5.4, tfs=6.2)
-text(ax, fx + fw / 2, fy + 0.38, "or", fs=6, color=MUTED, style="italic")
-text(ax, fx + fw / 2, fy + 0.09, "→ image-domain features, 20 ch, 384²  (Fig. 2)", fs=5.2,
-     color=INK2, max_w=fw - 0.08)
-
-# zero-filled
-box(ax, zx, zy, zw, zh, title="Zero-filled coil images", lines=[r"$F^{-1}\tilde{y}$,  32 ch, 384²"])
-
-# concat
-ccx, ccy = 1.94, T(2.66)
-circ(ax, ccx, ccy, "C", r=0.085)
-line(ax, (fx + fw / 2, fy - 0.02), (fx + fw / 2, ccy))
-arrow(ax, (fx + fw / 2, ccy), (ccx - 0.09, ccy))
-line(ax, (zx + zw / 2, zy - 0.02), (zx + zw / 2, ccy))
-arrow(ax, (zx + zw / 2, ccy), (ccx + 0.09, ccy))
-text(ax, ccx + 0.12, ccy - 0.13, "channel concat → 52 ch", fs=5.2, color=MUTED, ha="left")
-
-# U-Net
-ux, uy, uw, uh = 0.24, T(3.24), 2.62, 0.40
-box(ax, ux, uy, uw, uh, title=r"De-aliasing U-Net  $g_\phi$  (dual-frame skip)",
-    lines=["depth 5, 64 → 1024 ch, 31.1M  ·  identical in both arms"])
-arrow(ax, (ccx, ccy - 0.09), (ccx, uy + uh + 0.02))
-
-# output + loss
-ox, oy, ow, oh = 0.24, T(3.70), 1.20, 0.34
-lx, ly, lw_, lh_ = 1.58, T(3.70), RM - 1.58, 0.34
-box(ax, ox, oy, ow, oh, title=r"Reconstruction  $\hat{x}$", lines=["magnitude, 1 × 384²"])
-box(ax, lx, ly, lw_, lh_, title="Training loss  /  metrics",
-    lines=["L1 + (1 − SSIM) in brain mask", "SSIM · PSNR · nMSE  vs. GT"], fs=5.3, tfs=6.0)
-arrow(ax, (ox + 0.60, uy - 0.02), (ox + 0.60, oy + oh + 0.02))
-arrow(ax, (ox + ow + 0.02, oy + oh / 2), (lx - 0.02, oy + oh / 2))
-# GT rail down the right margin
-elbow(ax, [(RM + 0.02, T(0.24)), (3.09, T(0.24)), (3.09, ly + lh_ / 2), (RM + 0.02, ly + lh_ / 2)],
-      color=MUTED, ls=(0, (2, 1.5)))
-text(ax, 3.09, T(2.5), "GT", fs=5.0, color=MUTED, rotation=90,
-     bbox=dict(fc="white", ec="none", pad=0.6))
-
-text(ax, W / 2, T(3.83), "gray = shared by both arms   ·   dashed = the only difference between the arms",
-     fs=5.2, color=MUTED, max_w=3.05)
-save(fig, "conf_fig1_pipeline")
-
-# ══════════════════════════════════════════════════════════════════════════
-# 그림 2 — 두 팔의 내부 구조
-# ══════════════════════════════════════════════════════════════════════════
-H2 = 4.05
-fig, ax = canvas(H2)
-T = lambda v: H2 - v
-G = 0.12  # horizontal gap between boxes
+# ───────────────────────── data thumbnails ─────────────────────────
+SLICE_FILE = os.path.join(ROOT, "fastMRI_data", "multicoil_val", "file_brain_AXT2_203_2030309.h5")
+SLICE_NO = 7
+NPZ = os.path.join(ROOT, "results", "vis", "multimodel_compare", "recon_4689.npz")
 
 
-def row(ax, y, specs, h=0.34, x0=0.06, gap=G):
-    """place boxes left→right with arrows between; specs = [(w, kwargs), ...]; returns centers."""
-    xs, x = [], x0
-    for i, (w, kw) in enumerate(specs):
-        box(ax, x, y, w, h, **kw)
-        xs.append((x, x + w))
-        if i:
-            arrow(ax, (xs[i - 1][1] + 0.02, y + h / 2), (x - 0.02, y + h / 2))
-        x += w + gap
-    return xs
+def load_thumbs():
+    """정본 슬라이스 4689 의 실제 영상. dict(ksp_full, mask2d, ksp_und, zf, recon, gt)."""
+    out = {}
+    try:
+        sys.path.insert(0, ROOT)
+        import h5py
+        from dataloaders.dataloader_h5_v5 import build_r4_mask, crop_or_pad_to, fft2c, ifft2c
+        with h5py.File(SLICE_FILE, "r") as f:
+            ksp = np.asarray(f["kspace"][SLICE_NO])                    # (coil, H, W) complex
+        img = crop_or_pad_to(ifft2c(ksp), (384, 384))
+        ksp = fft2c(img)
+        m1 = build_r4_mask(384)                                          # 결정적 offset(=3), ACS 8 %
+        ms = build_r4_mask(40)                                           # 같은 규칙의 40열 축소판(썸네일 가독용)
+        m2 = np.repeat(ms[None, :], 40, axis=0)
+        rss = lambda k: np.sqrt(np.sum(np.abs(k) ** 2, axis=0))
+        kf = np.log1p(rss(ksp) / rss(ksp).max() * 2e3)
+        ku = np.log1p(rss(ksp * m1[None, None, :]) / rss(ksp).max() * 2e3)
+        out.update(ksp_full=(kf / kf.max()) ** 0.8, ksp_und=(ku / kf.max()) ** 0.8, mask2d=m2)
+    except Exception as e:                                             # pragma: no cover
+        warnings.warn(f"k-space 썸네일 생성 실패({e!r}) → 합성 자리표시")
+        yy, xx = np.mgrid[0:384, 0:384]
+        rr = np.hypot(yy - 192, xx - 192) + 1
+        kf = np.clip(1 - np.log(rr) / np.log(280), 0, 1)
+        m1 = np.zeros(384, np.float32); m1[3::4] = 1; m1[177:207] = 1
+        ms = np.zeros(40, np.float32); ms[3::4] = 1; ms[18:21] = 1
+        out.update(ksp_full=kf, ksp_und=kf * m1[None, :], mask2d=np.repeat(ms[None, :], 40, 0))
+    try:
+        d = np.load(NPZ)
+        out.update(zf=d["rec_zf"], recon=d["rec_ss2d"], gt=d["gt"])
+    except Exception as e:                                             # pragma: no cover
+        warnings.warn(f"복원 썸네일 로드 실패({e!r}) → 합성 자리표시")
+        yy, xx = np.mgrid[0:384, 0:384]
+        disk = (np.hypot(yy - 192, xx - 192) < 140).astype(np.float32)
+        out.update(zf=disk * 0.7, recon=disk, gt=disk)
+    return out
 
 
-# ---------- (a) bi-GRU ----------
-header(ax, T(0.20), "(a)  bi-GRU  —  original ETER-Net arm", RED,
-       sub="arm 668.2M parameters, of which GRU stack 637.1M")
-r1 = T(0.76)
-xa = row(ax, r1, [(0.62, dict(title="k-space", lines=["32 × 384 × 384"])),
-                  (1.06, dict(title="flatten → sequence", lines=["384 steps × 12,288-dim"])),
-                  (1.10, dict(title="bi-GRU ①   ⇄", lines=["hidden 3,840 × 2 dir."], fc=FILL_R, ec=RED))])
-r2 = T(1.26)
-xb = row(ax, r2, [(1.00, dict(title="transpose", lines=["384 steps × 7,680-dim"])),
-                  (1.10, dict(title="bi-GRU ②   ⇅", lines=["hidden 3,840 × 2 dir."], fc=FILL_R, ec=RED)),
-                  (0.66, dict(title="reshape", lines=["20 × 384 × 384"]))])
-cx1 = (xa[2][0] + xa[2][1]) / 2; cx2 = (xb[0][0] + xb[0][1]) / 2
-elbow(ax, [(cx1, r1 - 0.02), (cx1, r1 - 0.08), (cx2, r1 - 0.08), (cx2, r2 + 0.34 + 0.02)])
-text(ax, 0.06, T(1.34),
-     "Each step consumes a 12,288-dim (7,680-dim) slice of the flattened\n"
-     "k-space tensor, so the input-to-hidden matrices alone are 12,288 × 11,520\n"
-     "and 7,680 × 11,520 per direction (→ 637M), and the 384 steps run strictly\n"
-     "sequentially.",
-     fs=5.2, color=MUTED, ha="left", va="top", max_w=3.03, linespacing=1.15)
+# ═════════════════════════ Fig. 1 — shared pipeline ═════════════════════════
+def fig1(th):
+    H, Y_LO = 2.30, 0.16                      # 아래 0.16 in 은 잘라냄 → 그림 높이 2.14 in
+    fig, ax = canvas(H, y_lo=Y_LO)
+    T = 0.38                      # thumbnail size (main row)
+    vmax = float(th["gt"].max())
+    y1 = 1.08                     # bottom of main-row thumbs
+    yc = y1 + T / 2               # main-row centre line
 
-# ---------- (b) SS2D ----------
-header(ax, T(1.92), "(b)  SS2D  —  controlled substitution", BLUE,
-       sub="arm 31.2M parameters, of which SSM stack 0.117M (same 20-ch output as bi-GRU)")
-s1 = T(2.50)
-xs_ = row(ax, s1, [(0.62, dict(title="k-space", lines=["32 × 384 × 384"])),
-                   (0.98, dict(title="Linear 32 → 128", lines=["LN · SiLU, per pixel"])),
-                   (1.18, dict(title="Depthwise conv 3×3", lines=["local context, 128 ch"]))])
+    # ── data preparation: y_c ⊙ M → ỹ (vertical chain, top-left) ──
+    thumb(ax, 0.07, 1.90, 0.32, th["ksp_full"])
+    text(ax, 0.44, 2.11, "fully-sampled k-space $y_c$", fs=6.0, ha="left")
+    lab(ax, 0.44, 1.98, "16 coils, 384$^2$ (crop/pad), Re/Im", ha="left", va="center", fs=5.0)
+    arrow(ax, (0.23, 1.90), (0.23, 1.775))
+    op(ax, 0.23, 1.72, r"$\odot$")
+    thumb(ax, 0.46, 1.595, 0.25, th["mask2d"], vmin=0, vmax=1)
+    arrow(ax, (0.46, 1.72), (0.285, 1.72))
+    text(ax, 0.75, 1.77, "mask $M$", fs=6.0, ha="left")
+    lab(ax, 0.75, 1.66, "R = 4 equispaced, 8 % ACS", ha="left", va="center", fs=5.0)
+    arrow(ax, (0.23, 1.665), (0.23, y1 + T))
 
-# four-scan pictogram: 2×2 tiny maps, one scan direction each (VMamba-style cross scan)
-gx, gy, gs, gg = 0.16, T(3.34), 0.27, 0.06
-ts = gs
-tiles = {"→": (gx, gy + ts + gg), "←": (gx + ts + gg, gy + ts + gg), "↓": (gx, gy), "↑": (gx + ts + gg, gy)}
-for sym, (tx, ty) in tiles.items():
-    ax.add_patch(Rectangle((tx, ty), ts, ts, fc="white", ec=EDGE_N, lw=0.5, zorder=2))
-    for k in (1, 2):
-        line(ax, (tx + ts * k / 3, ty), (tx + ts * k / 3, ty + ts), color="#e2e1db", lw=0.35, z=2)
-        line(ax, (tx, ty + ts * k / 3), (tx + ts, ty + ts * k / 3), color="#e2e1db", lw=0.35, z=2)
-    for k in range(3):
-        c = ts * (k + 0.5) / 3
-        if sym == "→":
-            arrow(ax, (tx + 0.02, ty + c), (tx + ts - 0.02, ty + c), color=BLUE, lw=0.7, ms=4, z=3)
-        elif sym == "←":
-            arrow(ax, (tx + ts - 0.02, ty + c), (tx + 0.02, ty + c), color=BLUE, lw=0.7, ms=4, z=3)
-        elif sym == "↓":
-            arrow(ax, (tx + c, ty + ts - 0.02), (tx + c, ty + 0.02), color=BLUE, lw=0.7, ms=4, z=3)
+    # ── main row ──
+    thumb(ax, 0.04, y1, T, th["ksp_und"])
+    text(ax, 0.23, y1 - 0.045, r"$\tilde{y} = M \odot y_c$", fs=6.0, va="top")
+    lab(ax, 0.23, y1 - 0.15, "undersampled", va="top", fs=4.9)
+    dot(ax, 0.46, yc)
+    arrow(ax, (0.42, yc), (0.46, yc), head=False)
+    # sequence-model slot (the only variable)
+    sx, sw, sh = 0.56, 0.72, 0.50
+    sy = yc - sh / 2
+    ax.add_patch(FancyBboxPatch((sx, sy), sw, sh, boxstyle="round,pad=0,rounding_size=0.035",
+                                fc="white", ec=INK, lw=0.7, ls=(0, (2.2, 1.4)), zorder=3))
+    text(ax, sx + sw / 2, sy + sh - 0.08, "sequence model $f_\\theta$", fs=FS, max_w=sw - 0.04, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.165, "(the only variable)", fs=4.9, color=MUTED, max_w=sw - 0.04, z=4)
+    bw, bh = 0.28, 0.15
+    box(ax, sx + 0.03, sy + 0.05, bw, bh, "bi-GRU", fc=FILL_R, ec=EDGE_R, fs=5.4)
+    text(ax, sx + sw / 2, sy + 0.05 + bh / 2, "or", fs=5.0, color=MUTED, z=4)
+    box(ax, sx + sw - 0.03 - bw, sy + 0.05, bw, bh, "SS2D", fc=FILL_B, ec=EDGE_B, fs=5.4)
+    arrow(ax, (0.46, yc), (sx, yc))
+    lab(ax, 0.505, yc + 0.03, "32", fs=4.8)
+    # concat
+    cx = 1.42
+    arrow(ax, (sx + sw, yc), (cx - 0.055, yc))
+    lab(ax, (sx + sw + cx - 0.055) / 2, yc + 0.03, "20", fs=5.0)
+    op(ax, cx, yc, "C", fs=6.0)
+    # U-Net
+    ux, uw = 1.55, 0.48
+    box(ax, ux, sy + 0.05, uw, sh - 0.10, "U-Net $g_\\phi$", sub="31.1M, shared")
+    arrow(ax, (cx + 0.055, yc), (ux, yc))
+    lab(ax, (cx + 0.055 + ux) / 2, yc + 0.03, "52", fs=5.0)
+    # reconstruction / ground truth
+    rx, gx = 2.12, 2.68
+    arrow(ax, (ux + uw, yc), (rx, yc))
+    thumb(ax, rx, y1, T, th["recon"], vmin=0, vmax=vmax)
+    text(ax, rx + T / 2, y1 - 0.045, r"reconstruction $\hat{x}$", fs=5.6, va="top")
+    lab(ax, rx + T / 2, y1 - 0.15, "magnitude", va="top", fs=4.9)
+    thumb(ax, gx, y1, T, th["gt"], vmin=0, vmax=vmax)
+    text(ax, gx + T / 2, y1 - 0.045, "ground truth $x$", fs=5.6, va="top")
+    lab(ax, gx + T / 2, y1 - 0.15, "RSS($F^{-1} y_c$)", va="top", fs=4.9)
+    # loss bracket above the two images
+    yl = y1 + T + 0.10
+    for xx in (rx + T / 2, gx + T / 2):
+        ax.add_line(Line2D([xx, xx], [y1 + T, yl], color=INK2, lw=LW_ARR, ls=(0, (1.2, 1.2)), zorder=4))
+    ax.add_line(Line2D([rx + T / 2, gx + T / 2], [yl, yl], color=INK2, lw=LW_ARR, ls=(0, (1.2, 1.2)), zorder=4))
+    text(ax, (rx + gx + T) / 2, yl + 0.03, "loss: $L_1 + (1-\\mathrm{SSIM})$, brain mask", fs=5.0, va="bottom",
+         max_w=0.96)
+
+    # ── zero-filled branch (row below) ──
+    zs, zx, zy = 0.36, 0.70, 0.54
+    zc = zy + zs / 2
+    polyline(ax, [(0.46, yc), (0.46, zc), (zx, zc)])
+    lab(ax, 0.59, zc + 0.03, "$F^{-1}$", fs=6.0, color=INK)
+    thumb(ax, zx, zy, zs, th["zf"], vmin=0, vmax=vmax)
+    text(ax, zx + zs / 2, zy - 0.045, "zero-filled coil images", fs=5.8, va="top")
+    polyline(ax, [(zx + zs, zc), (cx, zc), (cx, yc - 0.055)])
+    lab(ax, (zx + zs + cx) / 2, zc + 0.03, "32", fs=5.0)
+    lab(ax, W - 0.05, Y_LO + 0.05, "numbers on arrows: channels (384$^2$)", fs=4.9, ha="right", va="bottom")
+    save(fig, "conf_fig1_pipeline")
+
+
+# ═════════════════════════ Fig. 2 — the two arms ═════════════════════════
+def unrolled_birnn(ax, x0, y0, n=4, cw=0.19, ch=0.13, gap=0.10, fc=FILL_R, ec=EDGE_R, ell_after=2):
+    """펼친 양방향 순환 체인: 입력 x_t(아래) → 역방향 셀 · 순방향 셀 → 출력 y_t(위).
+    한 수직선이 두 셀을 모두 관통(입력은 두 방향에 공급, 출력은 두 방향을 결합)."""
+    xs = [x0 + i * (cw + gap) for i in range(n)]
+    yb, yf = y0 + 0.16, y0 + 0.34                 # backward / forward rows (cell bottoms)
+    idx = [str(i + 1) for i in range(n - 1)] + ["L"]
+    for i, x in enumerate(xs):
+        xc = x + cw / 2
+        if i == ell_after:
+            text(ax, xc, yf + ch / 2, "…", fs=7, color=INK2)
+            text(ax, xc, yb + ch / 2, "…", fs=7, color=INK2)
+            continue
+        ax.add_line(Line2D([xc, xc], [y0 + 0.10, yf + ch + 0.04], color=INK, lw=LW_ARR, zorder=2))
+        for yy in (yb, yf):
+            arrow(ax, (xc, yy - 0.03), (xc, yy), mutation=4, z=2)
+        arrow(ax, (xc, yf + ch), (xc, yf + ch + 0.05), mutation=4, z=2)
+        box(ax, x, yf, cw, ch, r"$\vec{h}$", fc=fc, ec=ec, fs=6.0, r=0.02)
+        box(ax, x, yb, cw, ch, r"$\overleftarrow{h}$", fc=fc, ec=ec, fs=6.0, r=0.02)
+        text(ax, xc, y0 + 0.02, f"$x_{{{idx[i]}}}$", fs=5.5, va="bottom")
+        text(ax, xc, yf + ch + 0.065, f"$y_{{{idx[i]}}}$", fs=5.5, va="bottom")
+    for i in range(n - 1):
+        xa, xb = xs[i] + cw, xs[i + 1]
+        arrow(ax, (xa, yf + ch / 2), (xb, yf + ch / 2), mutation=4)      # forward →
+        arrow(ax, (xb, yb + ch / 2), (xa, yb + ch / 2), mutation=4)      # backward ←
+    return xs[-1] + cw, yf + ch / 2, yf + ch + 0.14
+
+
+def scan_grid(ax, x, y, s, direction, n=4, color=EDGE_B):
+    """n×n 격자 + 각 행/열의 독립 스캔 방향."""
+    ax.add_patch(Rectangle((x, y), s, s, fc="white", ec=EDGE, lw=0.4, zorder=3))
+    for i in range(1, n):
+        ax.add_line(Line2D([x, x + s], [y + i * s / n] * 2, color="#c8c8c8", lw=0.3, zorder=3))
+        ax.add_line(Line2D([x + i * s / n] * 2, [y, y + s], color="#c8c8c8", lw=0.3, zorder=3))
+    c = [(i + 0.5) * s / n for i in range(n)]
+    for v in c:
+        if direction == "r":
+            arrow(ax, (x + 0.02, y + v), (x + s - 0.02, y + v), color=color, lw=0.6, mutation=3.5)
+        elif direction == "l":
+            arrow(ax, (x + s - 0.02, y + v), (x + 0.02, y + v), color=color, lw=0.6, mutation=3.5)
+        elif direction == "d":
+            arrow(ax, (x + v, y + s - 0.02), (x + v, y + 0.02), color=color, lw=0.6, mutation=3.5)
         else:
-            arrow(ax, (tx + c, ty + 0.02), (tx + c, ty + ts - 0.02), color=BLUE, lw=0.7, ms=4, z=3)
-GS = 2 * ts + gg                                   # pictogram side
-text(ax, gx + GS / 2, gy - 0.05, "4 scans of the map:\nrows →, ←  ·  cols ↓, ↑", fs=5.0, color=INK2,
-     va="top", linespacing=1.15, max_w=0.90)
-cxd = (xs_[2][0] + xs_[2][1]) / 2
-elbow(ax, [(cxd, s1 - 0.02), (cxd, s1 - 0.08), (gx + GS / 2, s1 - 0.08), (gx + GS / 2, gy + GS + 0.02)])
+            arrow(ax, (x + v, y + 0.02), (x + v, y + s - 0.02), color=color, lw=0.6, mutation=3.5)
 
-bx, by, bw, bh = 0.98, T(3.46), 2.10, 0.84
-box(ax, bx, by, bw, bh, title="Selective scan (S6), one per direction",
-    lines=[r"$h_t = \bar{A}_t\, h_{t-1} + \bar{B}_t\, x_t, \quad y_t = C_t\, h_t + D\, x_t$",
-           r"$(\Delta_t, B_t, C_t) = \mathrm{Linear}(x_t)$ : input-dependent",
-           "d_inner 128, N = 16 · weights shared by all lines",
-           "parallel scan, linear in the length L = 384",
-           "merge: concat 4 × 128 → LN · Linear → 128",
-           "1×1 conv → 20 ch (= bi-GRU output)"],
-    fc=FILL_B, ec=BLUE, fs=5.3, tfs=6.0)
-arrow(ax, (gx + GS + 0.02, gy + GS / 2), (bx - 0.02, gy + GS / 2))
-fbx = 2.46
-box(ax, fbx, T(3.90), 3.08 - fbx, 0.32, title="features", lines=["20 × 384 × 384"])
-arrow(ax, (fbx + 0.31, by - 0.02), (fbx + 0.31, T(3.90) + 0.32 + 0.02))
-text(ax, 0.06, T(3.66),
-     "Cost does not grow with the line length: every pixel\n"
-     "is projected to 128 dims and the recurrence state is\n"
-     "128 × 16, hence 0.117M for the whole stack.",
-     fs=5.2, color=MUTED, ha="left", va="top", max_w=2.32, linespacing=1.15)
-save(fig, "conf_fig2_arms")
 
-# ══════════════════════════════════════════════════════════════════════════
-# 그림 3 — 강화 SS2D
-# ══════════════════════════════════════════════════════════════════════════
-H3 = 3.22
-fig, ax = canvas(H3)
-T = lambda v: H3 - v
-header(ax, T(0.20), r"Enhanced SS2D  —  drop-in replacement for  $f_\theta$", GREEN,
-       sub="arm 34.2M parameters, of which SSM stack 3.1M  ·  2.84 h/epoch, 80 epochs")
-r1 = T(0.76)
-xr = row(ax, r1, [(0.50, dict(title="k-space", lines=["32 ch, 384²"])),
-                  (1.14, dict(title="Stem", lines=["LN · Linear 32 → 256 · SiLU"])),
-                  (1.14, dict(title="Downsample ×3", lines=["3×3 conv, stride 3 → 128²"]))], h=0.34)
-r2 = T(1.34)
-for off in (0.05, 0.025):
-    ax.add_patch(FancyBboxPatch((0.06 + off, r2 + off), 1.16, 0.42, boxstyle="round,pad=0.02",
-                                fc="white", ec=GREEN, lw=0.6, zorder=1))
-xq = row(ax, r2, [(1.16, dict(title="Gated SS2D block  ×3", lines=["residual, 256 ch", "128² grid, fp16 scan"],
-                              fc=FILL_G, ec=GREEN)),
-                  (1.04, dict(title="LN · Upsample", lines=["bilinear 128² → 384²", "3×3 conv · SiLU"])),
-                  (0.60, dict(title="Head", lines=["1×1 conv", "→ 64 ch"]))], h=0.42, gap=0.115)
-c1 = (xr[2][0] + xr[2][1]) / 2; c2 = (xq[0][0] + xq[0][1]) / 2
-elbow(ax, [(c1, r1 - 0.02), (c1, r1 - 0.08), (c2, r1 - 0.08), (c2, r2 + 0.42 + 0.07)])
-text(ax, 3.08, r2 - 0.07, "→ concat with zero-filled images & U-Net (Fig. 1)", fs=5.2, color=MUTED,
-     ha="right", max_w=2.4)
+def fig2(th):
+    H = 2.30
+    fig, ax = canvas(H)
+    y0 = 1.40                                  # (a) chain baseline
+    yr = 0.66                                  # (b) main-row box bottom
 
-# block detail frame
-dx, dy, dw, dh = 0.06, T(2.80), 3.02, 1.27
-ax.add_patch(FancyBboxPatch((dx, dy), dw, dh, boxstyle="round,pad=0.02", fc="white",
-                            ec=GREEN, lw=0.8, ls=(0, (3, 1.5)), zorder=1))
-text(ax, dx + 0.08, dy + dh - 0.09, "Inside one block  (256 → 256 ch)", fs=6.2, color=INK, ha="left",
-     fontweight="bold")
-b1 = dy + dh - 0.50
-xk = row(ax, b1, [(0.98, dict(title="LN · Linear 256 → 512", lines=["split → x_ssm | z"], fs=5.2, tfs=5.8)),
-                  (0.86, dict(title="DWConv 3×3 · SiLU", lines=["on x_ssm"], fs=5.2, tfs=5.8)),
-                  (0.86, dict(title="4-dir scan (S6)", lines=["d_inner 256, N = 32"], fc=FILL_B, ec=BLUE,
-                              fs=5.2, tfs=5.8))], h=0.30, x0=dx + 0.08, gap=0.08)
-yB = b1 - 0.22                    # gate row
-yC = yB - 0.30                    # output row
-mx = (xk[2][0] + xk[2][1]) / 2
-circ(ax, mx, yB, "⊗", r=0.07)
-arrow(ax, (mx, b1 - 0.02), (mx, yB + 0.075))                                     # scan → ⊗
-zx0 = xk[0][0] + 0.84
-elbow(ax, [(zx0, b1 - 0.02), (zx0, yB), (mx - 0.075, yB)])                      # z → ⊗ (from the left)
-text(ax, (zx0 + mx) / 2, yB + 0.035, "gate:  z → SiLU(z)", fs=5.2, color=INK2, va="bottom")
-lbx, lbw = dx + 1.16, 0.66
-box(ax, lbx, yC - 0.15, lbw, 0.30, title="Linear 256 → 256", lines=["dropout 0.05"], fs=5.2, tfs=5.8)
-elbow(ax, [(mx, yB - 0.075), (mx, yC), (lbx + lbw + 0.02, yC)])                  # ⊗ → Linear
-px = dx + 0.66
-circ(ax, px, yC, "⊕", r=0.07)
-arrow(ax, (lbx - 0.02, yC), (px + 0.075, yC))
-arrow(ax, (px - 0.075, yC), (dx + 0.12, yC))
-text(ax, dx + 0.12, yC + 0.10, "out", fs=5.2, color=INK2, ha="left")
-rx = xk[0][0] + 0.14                                                             # residual tap (block input)
-elbow(ax, [(rx, b1 - 0.02), (rx, yC + 0.19), (px, yC + 0.19), (px, yC + 0.075)], color=MUTED,
-      ls=(0, (2, 1.5)))
-text(ax, rx + 0.04, yC + 0.21, "residual", fs=5.0, color=MUTED, ha="left", va="bottom")
+    # ─────────── (a) bi-GRU arm ───────────
+    text(ax, 0.04, H - 0.05, "(a)", fs=FS_P, weight="bold", ha="left", va="top")
+    text(ax, 0.28, H - 0.05, "bi-GRU (original ETER-Net)", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, H - 0.05, "668.2M (GRU stack 637.1M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    ts, tx, ty = 0.34, 0.06, y0 + 0.20
+    thumb(ax, tx, ty, ts, th["ksp_und"])
+    ax.add_line(Line2D([tx, tx + ts], [ty + ts * 0.5] * 2, color=EDGE_R, lw=0.9, zorder=5))
+    lab(ax, 0.04, ty - 0.03, "$x_t$ = k-space row $t$", ha="left", va="top", fs=5.0, color=INK, max_w=0.56)
+    lab(ax, 0.04, ty - 0.12, "12,288-d (32×384)", ha="left", va="top", fs=5.0, max_w=0.54)
+    arrow(ax, (tx + ts + 0.01, ty + ts * 0.5), (0.58, ty + ts * 0.5))
+    x_end, y_mid, y_top = unrolled_birnn(ax, 0.60, y0, cw=0.16, gap=0.085)
+    y_mid = y0 + 0.315                         # centre of the two-row block (= layer output)
+    text(ax, 1.05, y_top, "pass 1: rows — 384 steps, hidden 3,840 per direction", fs=5.0, color=INK2,
+         va="bottom", max_w=1.6)
+    bx, bw2 = 1.84, 0.54
+    arrow(ax, (x_end + 0.01, y_mid), (bx, y_mid))
+    lab(ax, (x_end + bx) / 2, y_mid + 0.03, "transpose", fs=4.8, max_w=bx - x_end - 0.03)
+    box(ax, bx, y_mid - 0.125, bw2, 0.25, "pass 2: bi-GRU", sub="columns, 7,680-d", fc=FILL_R, ec=EDGE_R,
+        fs=5.4, sub_fs=4.7)
+    arrow(ax, (bx + bw2, y_mid), (bx + bw2 + 0.28, y_mid))
+    lab(ax, bx + bw2 + 0.14, y_mid + 0.03, "reshape", fs=4.8, max_w=0.25)
+    text(ax, bx + bw2 + 0.30, y_mid, "20×384$^2$", fs=5.2, ha="left")
+    lab(ax, 0.04, y0 - 0.03, "recurrence sequential in $t$; input–hidden matrices 12,288×11,520 and 7,680×11,520 per direction",
+        ha="left", va="top", fs=4.8, max_w=W - 0.08)
 
-text(ax, W / 2, T(3.04),
-     "vs. controlled SS2D (Fig. 2b): gating y ⊙ SiLU(z) restored · 3 residual blocks\n"
-     "· bottleneck lifted (20 → 64 ch, d_inner 128 → 256, d_state 16 → 32)\n"
-     "· coarse 128² scan keeps the epoch time (2.84 h vs. 3.07 h)",
-     fs=5.2, color=MUTED, max_w=3.05, linespacing=1.15)
-save(fig, "conf_fig3_enhanced")
+    # ─────────── (b) SS2D arm ───────────
+    ptop = y0 - 0.18
+    text(ax, 0.04, ptop, "(b)", fs=FS_P, weight="bold", ha="left", va="top")
+    text(ax, 0.28, ptop, "SS2D (controlled substitution)", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, ptop, "31.2M (SSM stack 0.117M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    bh = 0.22
+    ym = yr + bh / 2
+    box(ax, 0.04, yr, 0.52, bh, "LN·Linear·SiLU", sub="32 → 128", fs=5.6, sub_fs=4.8)
+    lab(ax, 0.04, yr + bh + 0.03, "k-space 32×384$^2$", ha="left", fs=5.0)
+    arrow(ax, (0.56, ym), (0.62, ym))
+    box(ax, 0.62, yr, 0.44, bh, "DWConv 3×3", sub="SiLU, 128", fs=5.6, sub_fs=4.8)
+    # cross-scan: four grids
+    gs, gg = 0.20, 0.05
+    gx0, gy0 = 1.18, yr - 0.14
+    for d, i, j in (("r", 0, 1), ("l", 1, 1), ("d", 0, 0), ("u", 1, 0)):
+        scan_grid(ax, gx0 + i * (gs + gg), gy0 + j * (gs + gg), gs, d)
+    gxc = gx0 + gs + gg / 2
+    text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "cross-scan", fs=5.2, va="bottom")
+    lab(ax, gxc, gy0 - 0.03, "rows →←, cols ↓↑, $L$=384", va="top", fs=4.8)
+    arrow(ax, (1.06, ym), (gx0 - 0.005, ym))
+    # four S6 scans (one weight set)
+    s6x, s6w, s6h, pitch = 1.74, 0.36, 0.10, 0.115
+    ys6 = [gy0 + 0.005 + k * pitch for k in range(4)]
+    for yy in ys6:
+        box(ax, s6x, yy, s6w, s6h, "S6", fc=FILL_B, ec=EDGE_B, fs=5.8, r=0.02)
+        arrow(ax, (gx0 + 2 * gs + gg + 0.005, yy + s6h / 2), (s6x, yy + s6h / 2), mutation=4)
+    text(ax, s6x + s6w / 2, gy0 + 2 * gs + gg + 0.04, "S6 ×4 (parallel)", fs=5.2, va="bottom")
+    # concat merge
+    mx = 2.20
+    for yy in ys6:
+        polyline(ax, [(s6x + s6w, yy + s6h / 2), (mx, yy + s6h / 2), (mx, ym)], head=False)
+    op(ax, mx, ym, "C", fs=6.0)
+    box(ax, 2.28, yr, 0.40, bh, "LN·Linear", sub="512 → 128", fs=5.6, sub_fs=4.8)
+    arrow(ax, (mx + 0.055, ym), (2.28, ym))
+    arrow(ax, (2.68, ym), (2.74, ym))
+    box(ax, 2.74, yr, 0.36, bh, "1×1 conv", sub="128 → 20", fs=5.6, sub_fs=4.8)
+    lab(ax, 2.92, yr - 0.03, "20×384$^2$", va="top", fs=5.0, color=INK)
+    # S6 recurrence + hyper-parameters
+    text(ax, 0.04, 0.30, "S6:  $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t$,   $y_t = C_t h_t$,   "
+         "$(\\Delta_t, B_t, C_t) = \\mathrm{Linear}(x_t)$", fs=5.6, ha="left", va="center", max_w=W - 0.08)
+    lab(ax, 0.04, 0.15, "d_inner 128, d_state 16; one weight set shared by all rows and columns",
+        ha="left", va="center", fs=4.9)
+    save(fig, "conf_fig2_arms")
+
+
+# ═════════════════════════ Fig. 3 — enhanced SS2D ═════════════════════════
+def fig3(th):
+    H = 1.88
+    fig, ax = canvas(H)
+    text(ax, 0.04, H - 0.05, "enhanced SS2D (replaces $f_\\theta$ in Fig. 1)", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, H - 0.05, "34.2M (SSM stack 3.1M), fp16 scan", fs=FS_S, color=MUTED, ha="right", va="top")
+
+    # ── top chain ──
+    bh, yt = 0.24, H - 0.62
+    specs = [("stem", "32 → 256", FILL, EDGE),
+             ("conv ↓3", "256, stride 3", FILL, EDGE),
+             ("SS2D block", "×3, 256", FILL_G, EDGE_G),
+             ("upsample ↑3", "256, bilinear", FILL, EDGE),
+             ("1×1 conv", "256 → 64", FILL, EDGE)]
+    dims = ["32×384$^2$", "256×384$^2$", "256×128$^2$", "256×128$^2$", "256×384$^2$", "64×384$^2$"]
+    bw, gap, x = 0.42, 0.20, 0.04
+    xs = []
+    for k, (lbl, sub, fc, ec) in enumerate(specs):
+        if k == 2:
+            for off in (0.05, 0.025):
+                ax.add_patch(FancyBboxPatch((x + off, yt + off), bw, bh, boxstyle="round,pad=0,rounding_size=0.035",
+                                            fc=fc, ec=ec, lw=LW_BOX, zorder=2))
+        box(ax, x, yt, bw, bh, lbl, sub=sub, fc=fc, ec=ec, fs=5.8, sub_fs=4.5)
+        xs.append(x)
+        x += bw + gap
+    for k in range(len(specs) - 1):
+        xa, xb = xs[k] + bw + (0.05 if k == 2 else 0), xs[k + 1]
+        arrow(ax, (xa, yt + bh / 2), (xb, yt + bh / 2))
+        lab(ax, (xa + xb) / 2, yt + bh / 2 + 0.03, dims[k + 1].split("×")[1], fs=4.7)
+    lab(ax, xs[0], yt + bh + 0.03, dims[0], ha="left", fs=4.7)
+    x_out = xs[-1] + bw
+    arrow(ax, (x_out, yt + bh / 2), (W - 0.04, yt + bh / 2))
+    lab(ax, W - 0.04, yt + bh + 0.03, dims[-1], ha="right", fs=4.7)                   # output tensor
+    lab(ax, W - 0.04, yt - 0.03, "to concat · U-Net (Fig. 1)", ha="right", va="top", fs=4.7)
+    lab(ax, 0.04, yt - 0.03, "stem = LN · Linear · SiLU; arrows: spatial size", ha="left", va="top", fs=4.5)
+
+    # ── one block (bottom panel) ──
+    py = 0.06
+    ph = yt - 0.20 - py
+    ax.add_patch(FancyBboxPatch((0.04, py), W - 0.08, ph, boxstyle="round,pad=0,rounding_size=0.04",
+                                fc="white", ec=EDGE_G, lw=0.7, ls=(0, (2.2, 1.4)), zorder=1))
+    text(ax, 0.10, py + ph - 0.045, "one SS2D block: 256 channels on the 128$^2$ grid", fs=FS, ha="left", va="top")
+    hb = 0.20
+    c = py + 0.50                       # main line
+    cu, cl = c + 0.24, c - 0.24         # upper (SSM) / lower (gate) branches
+    text(ax, 0.08, c, "$x$", fs=6.5, ha="left")
+    dot(ax, 0.19, c)
+    ax.add_line(Line2D([0.15, 0.19], [c, c], color=INK, lw=LW_ARR, zorder=4))
+    box(ax, 0.26, c - hb / 2, 0.38, hb, "LN · Linear", sub="256 → 512", fs=5.6, sub_fs=4.8)
+    arrow(ax, (0.19, c), (0.26, c))
+    dot(ax, 0.72, c)
+    arrow(ax, (0.64, c), (0.72, c), head=False)
+    polyline(ax, [(0.72, c), (0.72, cu), (0.90, cu)])
+    lab(ax, 0.81, cu + 0.03, "$x_{\\mathrm{ssm}}$", fs=5.0, color=INK)
+    polyline(ax, [(0.72, c), (0.72, cl), (0.90, cl)])
+    lab(ax, 0.81, cl + 0.03, "$z$", fs=5.0, color=INK)
+    box(ax, 0.90, cu - hb / 2, 0.46, hb, "DWConv 3×3", sub="SiLU, 256", fs=5.4, sub_fs=4.8)
+    arrow(ax, (1.36, cu), (1.42, cu))
+    box(ax, 1.42, cu - hb / 2, 0.56, hb, "4-dir scan · merge", sub="d_inner 256, N 32", fc=FILL_B, ec=EDGE_B,
+        fs=5.4, sub_fs=4.6)
+    box(ax, 0.90, cl - hb / 2, 0.46, hb, "SiLU", sub="gate", fs=5.6, sub_fs=4.8)
+    gx = 2.10
+    polyline(ax, [(1.98, cu), (gx, cu), (gx, c + 0.055)])
+    polyline(ax, [(1.36, cl), (gx, cl), (gx, c - 0.055)])
+    op(ax, gx, c, r"$\otimes$")
+    box(ax, 2.20, c - hb / 2, 0.42, hb, "Linear", sub="drop 0.05", fs=5.6, sub_fs=4.8)
+    arrow(ax, (gx + 0.055, c), (2.20, c))
+    ox = 2.74
+    arrow(ax, (2.62, c), (ox - 0.055, c))
+    op(ax, ox, c, r"$\oplus$")
+    arrow(ax, (ox + 0.055, c), (ox + 0.14, c))
+    text(ax, ox + 0.15, c, "out", fs=5.8, ha="left")
+    yres = py + 0.09
+    polyline(ax, [(0.19, c), (0.19, yres), (ox, yres), (ox, c - 0.055)], ls=(0, (1.6, 1.2)), color=INK2)
+    lab(ax, 1.95, yres + 0.02, "residual", fs=4.8)
+    save(fig, "conf_fig3_enhanced")
+
+
+if __name__ == "__main__":
+    th = load_thumbs()
+    fig1(th)
+    fig2(th)
+    fig3(th)
+    if _OVERFLOW:
+        for s, w_in, mw in _OVERFLOW:
+            print(f"  ! overflow ({w_in:.2f} > {mw:.2f} in): {s!r}")
+    else:
+        print("no text overflow")
