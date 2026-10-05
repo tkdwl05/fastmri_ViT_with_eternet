@@ -204,8 +204,10 @@ class DocxConf:
         self.eq_no += 1
         # display 수식도 본문 9pt(sz 18) — 09-14 이전엔 docDefaults 10pt 로 본문보다 크게 렌더됐음(의도적 정정)
         inner = latex_to_omml(latex, rpr=math_rpr(18)) + crun(f"  ({self.eq_no})", sz=18)
-        self.body.append(cpara(inner, jc="center", mark=PFONT + '<w:sz w:val="18"/>'))
-        self.h_body += 26
+        # 10-05: 수식 위아래 문단 간격 4 pt(빈 줄 대신 — 교수님 C93, 수정 목록 권장 3~6 pt). 바탕글 스타일은 before/after 0.
+        eq_spacing = '<w:spacing w:before="80" w:after="80" w:line="288" w:lineRule="auto"/>'
+        self.body.append(cpara(inner, jc="center", mark=PFONT + '<w:sz w:val="18"/>', spacing=eq_spacing))
+        self.h_body += 26 + 8
         self._last = "eq"
         return self.eq_no
 

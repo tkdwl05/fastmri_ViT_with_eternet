@@ -97,7 +97,7 @@
 | inferred under the protocol of this paper | evaluated under our protocol | |
 | once GPU0 is free·GPU 큐·E1·1b(원고·캡션·답글) | 추후 보고([TBD])·실험 내용으로 풀어 씀 | 계획서·CLAUDE.md의 번호는 유지 |
 | 내부 코드명(radapt·unleashed·v7_titan·v8_eter_pure·no-DC)이 원고·캡션에 노출 | 강화 SS2D·가속화 계수 적응형 강화 SS2D·ViT 하이브리드 실험(v7)·모델 라벨에서 no-DC 제거 | 내부 문서는 첫 등장에 병기한 뒤 코드명 허용 |
-| ep50·50ep·h/ep(원고·그림) | 50번째 epoch·50 epoch·epoch당 학습 시간(h) | 내부 문서·표 머리·폴더명은 허용 |
+| ep50·50ep·h/ep(원고·그림) | 50번째 epoch·50 epochs(개수는 복수 — 교수님 10-01 교정)·2 epoch마다·epoch당 학습 시간(h) | 내부 문서·표 머리·폴더명은 허용 |
 | NMSE·nMSE·nmse 혼용 | 원고마다 한 표기(IEIE는 nMSE(%) 유지), 문서 산문은 nMSE. 표 열 머리에 단위(비율 또는 %) 명시 | CSV·log 키는 유지 |
 | fastmri·UNet·U-net(산문)·leaderboard/리더보드 혼용 | fastMRI·U-Net·국문은 리더보드(leaderboard) 첫 등장 병기 뒤 한 표기 | 패키지·클래스명은 유지 |
 | 게이팅을 복원한·통제 해제·병목 해제·coarse-scan·학습 위생·상한 탐색·구성 복원 | 게이팅을 포함한(추가한)·통제 조건을 완화한·채널 폭 확대(출력 20→64, 내부 128→256, 상태 16→32)·3배 다운샘플링한 격자에서의 스캔·상태 파라미터를 weight decay에서 제외·강화 변형의 추가 이득 확인·원 설정 재도입 | 강화 SS2D 서술 |

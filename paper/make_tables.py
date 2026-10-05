@@ -5,6 +5,8 @@
        paper/tables/tableC{1_main_volume,1_main_slice,2_paired,3_efficiency,S1_contrast}.{md,tex}
        paper/tables/ieie_table1_block.md                     — IEIE .src.md 에 붙여넣는 @table 블록
        paper/tables/tableC4_reference.{md,tex} · ieie_table_ref_block.md — 공개 모델 참고 결과(전체 val 본 연구 프로토콜, 09-08; 평가 미완료 방법 [TBD])
+       paper/tables/ieie_table1_block_v8.md                  — IEIE v8 표 1 블록(10-05): 두 학습 회차(run 1·run 2)·U-Net only 추가,
+                                                               공개 모델 행 제외, 순위 표시 없음. 기존 출력(v7 이 쓰는 ieie_table1_block.md 등)은 그대로
        - .md  : 한국어 헤더 (현행 draft_ko_v2 와 동일 표기) / C 계열은 관례형 영문
        - .tex : 영문 헤더 + booktabs
        관례형(C 계열, 2026-09-03): 표 내용 영문·L1 제외·nMSE %·볼륨 단위 mean±SD·Params (M)·Zero-filled 행·
@@ -557,6 +559,73 @@ blk_ref += [f"@note: {REF_NOTE}", "@end"]
 open(os.path.join(OUT, "ieie_table_ref_block.md"), "w", encoding="utf-8").write("\n".join(blk_ref) + "\n")
 print("  wrote ieie_table_ref_block.md")
 
+# ---- IEIE v8 표 1 블록 (2026-10-05): 1b(run 2, 시드 1)·U-Net 단독 모델 결과 반영 — 교수님 10-01 검토 대응 수정 목록 4-2절 (A)안
+#      행 = Zero-filled · U-Net only · ETER-net run 1/2 · SS2D(controlled) run 1/2 · SS2D(enhanced). 공개 모델 행·관련 주석 문장 제외.
+#      run 1 = 위 M 의 gru/ss2d(v9 CSV) — results/eval/v8_nodc/per_slice_paired.csv 와 값이 정확히 같음을 아래에서 검사.
+#      run 2 = results/eval/v8_nodc_s1_50ep/per_slice_paired.csv (gru_*/ss2d_*), U-Net only = results/eval/v8_unet_only/per_slice_unet_only.csv.
+#      순위 표시(굵게/밑줄) 없음 — 두 회차의 우열 방향이 반대라 순위 표시가 오해를 부른다. 셀 계산은 ms()/ms_arr() 와 같은 식(볼륨 단위, ddof=1).
+#      Params (M) 는 소수 첫째 자리(U-Net only 31.1 과 SS2D(controlled) 31.2 의 시퀀스 모듈 0.1M 차이가 보이도록).
+#      열 폭: 행 이름이 길어져(「SS2D(controlled), run 1」) Method 열을 넓히고 숫자 열을 줄임 — 합 4535 = 학술대회판 단 폭 4535 twips
+#      (build_ieie_conf_docx.py COL_W; 학술지판 단 폭 4563 보다 좁아 두 판 모두 통과).
+#      머리·캡션·주석 첫 문장은 교수님 10-01 추적 변경(수락)을 따른다: 머리 ↑↓ 화살표 삭제(C1174), 캡션 「mean ± standard deviation」·
+#      「multicoil」, Zero-filled 문장의 「RSS」(2.1절에서 이미 풀어 씀).
+V8_RUN1_CSV = os.path.join(ROOT, "results/eval/v8_nodc/per_slice_paired.csv")
+V8_RUN2_CSV = os.path.join(ROOT, "results/eval/v8_nodc_s1_50ep/per_slice_paired.csv")
+V8_UNET_CSV = os.path.join(ROOT, "results/eval/v8_unet_only/per_slice_unet_only.csv")
+
+
+def load_aligned(path, cols):
+    """per-slice CSV 를 (file, slice_idx) 로 조인해 본 연구 CSV 행 순서의 {name: array} 로 반환 — 슬라이스 집합이 정확히 같아야 한다."""
+    got = {}
+    for r in csv.DictReader(open(path)):
+        k = (r["file"], int(r["slice_idx"]))
+        assert k not in got, f"{path}: 중복 슬라이스 {k}"
+        got[k] = r
+    missing = [k for k in keys_ours if k not in got]
+    assert len(got) == n and not missing, f"{path}: 슬라이스 정렬 불일치 ({len(got):,}/{n:,}, 누락 {len(missing)})"
+    return {name: np.array([float(got[k][col]) for k in keys_ours]) for name, col in cols.items()}
+
+
+_pair_cols = {f"{p}_{m}": f"{p}_{m}" for p in ["gru", "ss2d"] for m in CM}
+_run1_chk = load_aligned(V8_RUN1_CSV, _pair_cols)
+for _k, _a in _run1_chk.items():
+    assert np.array_equal(_a, M[_k]), f"run 1 원천 불일치: {_k} (v8_nodc vs v9_unleashed CSV)"
+R2 = load_aligned(V8_RUN2_CSV, _pair_cols)
+UO = load_aligned(V8_UNET_CSV, {m: m for m in CM})
+print(f"  v8 표 1: run 1(v8_nodc = v9 CSV 값 일치)·run 2·U-Net only 조인 완료 ({n:,} 슬라이스, {V} 볼륨)")
+
+V8_T1_ROWS = [  # (Method, Params (M), {metric: per-slice array} 또는 None)
+    ("Zero-filled", "–", ZF),
+    ("U-Net only", "31.1", UO),
+    ("ETER-net, run 1", "668.2", {m: M[f"gru_{m}"] for m in CM}),
+    ("ETER-net, run 2", "668.2", {m: R2[f"gru_{m}"] for m in CM}),
+    ("SS2D(controlled), run 1", "31.2", {m: M[f"ss2d_{m}"] for m in CM}),
+    ("SS2D(controlled), run 2", "31.2", {m: R2[f"ss2d_{m}"] for m in CM}),
+    ("SS2D(enhanced)", "34.2", {m: M[f"v9_{m}"] for m in CM}),
+]
+V8_T1_CELLS = {name: ([ms_arr(arr[m], m, "volume") for m in CM] if arr is not None else ["[TBD]"] * len(CM))
+               for name, _, arr in V8_T1_ROWS}
+V8_T1_CAP_EN = (f"Volume-level results (mean ± standard deviation) on the fastMRI brain multicoil validation subset "
+                f"({V} volumes/{n:,} slices, R=4, brain-masked)")
+#   주석 문장(10-05 감사 반영): Zero-filled 는 데이터로더 입력과 같은 처음 16개 코일의 RSS(eval_zero_filled_v8.py 의 raw — 강도 배율
+#   보정 없음; 참조 영상은 데이터셋의 전체 코일 RSS), U-Net only·run 문장은 수정 목록 4-2절 주석안 그대로.
+V8_T1_NOTE = ("Note. Zero-filled는 언더샘플링된 k-space에 코일별 역 푸리에 변환을 적용한 코일 영상(처음 16개 코일)의 RSS 영상이며, "
+              "강도 배율 보정은 적용하지 않았다. "
+              "U-Net only는 시퀀스 모듈의 출력 20채널을 0으로 대체하고, 다른 모델과 같은 구조의 U-Net을 처음부터 학습한 모델이다. "
+              "run 1(1회차)은 난수 시드를 고정하지 않은 학습, run 2(2회차)와 U-Net only는 난수 시드를 1로 고정한 학습이며(모두 50 epochs), "
+              "SS2D(enhanced)는 난수 시드를 고정하지 않고 80 epochs 동안 한 번 학습하였다. "
+              "본문의 SSIM 차이는 같은 볼륨끼리 짝지은 차이의 평균(반올림 전 값)이므로, 표의 반올림한 평균끼리 뺀 값과 마지막 자리에서 "
+              "0.0001 다를 수 있다.")
+blk_v8 = ["%% IEIE .src.md 붙여넣기용 — v8 표 1 (볼륨 단위, 순위 표시 없음; run 1 = 시드 미고정, run 2 = 시드 1, U-Net only = 시드 1; 공개 모델 행 제외)",
+          "@table: col | 1180,540,1015,870,930",
+          f"@cap_en: {V8_T1_CAP_EN}",
+          "| Method | Params (M) | " + " | ".join(CM_HEAD_MD[m].rstrip(" ↑↓") for m in CM) + " |",  # 화살표 없음(C1174)
+          "|---|---|" + "---|" * len(CM)]
+blk_v8 += [f"| {name} | {params} | " + " | ".join(V8_T1_CELLS[name]) + " |" for name, params, _ in V8_T1_ROWS]
+blk_v8 += [f"@note: {V8_T1_NOTE}", "@end"]
+open(os.path.join(OUT, "ieie_table1_block_v8.md"), "w", encoding="utf-8").write("\n".join(blk_v8) + "\n")
+print("  wrote ieie_table1_block_v8.md")
+
 # ---------------------------------------------------------------- 자가 검증
 checks = [
     ("Table1 SS2D SSIM", f_mean("ss2d", "ssim"), "0.9140"),
@@ -571,6 +640,16 @@ checks = [
     ("TableC1 volume v9 SSIM", mean_only("v9", "ssim", "volume"), "0.9146"),
     ("TableC1 volume SS2D nMSE%", mean_only("ss2d", "nmse", "volume"), "0.438"),
 ]
+for name, want in [  # IEIE v8 표 1 — results/eval/v8_unet_only/summary_unet_only.md · v8_nodc_s1_50ep/volume_paired_summary.md (10-02/10-04)
+        ("U-Net only", ["0.9127±0.0366", "33.76±1.88", "0.452±0.285"]),
+        ("ETER-net, run 1", ["0.9127±0.0366", "33.78±1.86", "0.448±0.274"]),
+        ("ETER-net, run 2", ["0.9136±0.0364", "33.86±1.86", "0.442±0.286"]),
+        ("SS2D(controlled), run 1", ["0.9141±0.0365", "33.91±1.90", "0.438±0.283"]),
+        ("SS2D(controlled), run 2", ["0.9133±0.0364", "33.82±1.87", "0.444±0.277"]),
+        ("SS2D(enhanced)", ["0.9146±0.0361", "33.92±1.90", "0.439±0.304"])]:
+    checks.append((f"IEIE v8 표 1 {name}", " / ".join(V8_T1_CELLS[name]), " / ".join(want)))
+if ZF is not None:
+    checks.append(("IEIE v8 표 1 Zero-filled", " / ".join(V8_T1_CELLS["Zero-filled"]), "0.7523±0.0410 / 24.76±2.11 / 3.935±2.166"))
 for meth, want in [("varnet", "0.9181"), ("unet", "0.8971")]:     # baseline_summary_full.md (09-06 / 09-08)
     if PUB_DATA.get(meth) is not None:
         checks.append((f"TableC4 volume {meth} SSIM", ms_arr(PUB_DATA[meth]["ssim"], "ssim", "volume").split("±")[0], want))
