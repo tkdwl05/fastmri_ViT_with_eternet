@@ -2,7 +2,7 @@
 v8 Pure ETER-Net 4-way 공정 비교 시각화: GT / U-Net / GRU(no-DC) / SS2D(no-DC) (384×384).
 
 `visualize_v7_titan_compare.py` 클론 — ViT 트랙(ETER v7_titan/SS2D v7_titan) 대신
-교수님 순수 ETER-Net(ViT 없음, DC 없음)의 GRU/SS2D no-DC arm 을 비교한다
+교수님 순수 ETER-Net(ViT 없음, DC 없음)의 GRU/SS2D no-DC 모델을 비교한다
 (docs/v8_eter_pure_rnn_vs_ss2d.md, aggregate composite: SS2D 0.9200 > GRU 0.9182).
 
 핵심 = **단일 파이프라인 공정 비교**:
@@ -147,7 +147,7 @@ def load_unet(ckpt, device):
 # ──────────────────────────────────────────────
 
 def run_ss2d(model, sample, device):
-    """GRU/SS2D pure arm 공용 — forward(x_img, x_ksp, mask, sens) 시그니처 동일."""
+    """GRU/SS2D 모델 공용 — forward(x_img, x_ksp, mask, sens) 시그니처 동일."""
     d  = sample['data'].unsqueeze(0).float().to(device)
     di = sample['data_img'].unsqueeze(0).float().to(device)
     mk = sample['mask'].unsqueeze(0).float().to(device)
@@ -362,10 +362,10 @@ def main():
     lines += [
         '',
         '[해석 / 주의]',
-        '- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
-        '  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.',
-        '- GRU/SS2D = 교수님 순수 ETER-Net(ViT 없음) no-DC arm. aggregate 는 SS2D 완승',
-        '  (composite 0.9200 vs 0.9182, docs/v8_eter_pure_rnn_vs_ss2d.md). 각 PNG 패널 제목에',
+        '- U-Net = fastMRI brain 리더보드(leaderboard) 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
+        '  → fastMRI 원 학습분포(전 coil·native)와 도메인 차이(domain shift) → 참고 결과(순위 비교 제외).',
+        '- GRU/SS2D = 교수님 순수 ETER-Net(ViT 없음) no-DC 실험 조건. 전체 평균은 SS2D 우위',
+        '  (체크포인트 선택용 내부 점수(composite, 보고 제외) 0.9200 vs 0.9182, docs/v8_eter_pure_rnn_vs_ss2d.md). 각 PNG 패널 제목에',
         '  슬라이스별 실제 지표 표기 — sulci/혈관 detail 은 육안으로 직접 비교할 것.',
     ]
     if failed:

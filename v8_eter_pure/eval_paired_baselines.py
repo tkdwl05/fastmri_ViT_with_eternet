@@ -1,17 +1,17 @@
 """
-기준선(fastMRI brain leaderboard U-Net / E2E-VarNet) per-slice 평가 + v9 CSV 조인.
+기준선(fastMRI brain 리더보드(leaderboard) U-Net / E2E-VarNet) per-slice 평가 + v9 CSV 조인.
 
 논문 §5.4 기준선 표용. `eval_paired_v9.py` 의 기준선 확장 — 사전학습 U-Net·VarNet 을
-우리 val 파이프라인(같은 슬라이스·R4/cf0.08 mask·GT·brain mask·masked 지표)에서 추론하고,
+본 연구 val 프로토콜(같은 슬라이스·R4/cf0.08 mask·GT·brain mask·masked 지표)에서 추론하고,
 `results/eval/v9_unleashed/per_slice_paired_v9.csv`(gru/ss2d/v9 per-slice, 7334) 와
 (file, slice_idx) 키로 조인해 우위 슬라이스 비율 + Wilcoxon 을 산출한다.
 
-베이스라인 캐비엇 (visualize_v7_titan_compare.py 와 동일):
-  - U-Net/VarNet 출력은 자체 정규화 스케일 → 지표 계산 전 per-slice LS scale 로 GT 정합
-    (우리 모델은 α≈1 이라 미적용 — 3모델 수치는 v9 CSV 재사용).
-  - leaderboard 가중치는 전체 코일·native 해상도 학습 → 우리 16-coil·384 전처리와
-    domain shift 존재. 절대 우열이 아닌 "동일 측정값에 대한 참고 기준선".
-  - VarNet: k-space true ortho scale(~1e-4)이 sens 추정 발산을 유발했던 전례 → unit-max
+베이스라인 주의 사항 (visualize_v7_titan_compare.py 와 동일):
+  - U-Net/VarNet 출력은 자체 정규화 스케일 → 지표 계산 전 GT 에 맞춘 슬라이스별 최소제곱 강도 배율 보정
+    (본 연구 모델은 α≈1 이라 미적용 — 3모델 수치는 v9 CSV 재사용).
+  - 리더보드 가중치는 전체 코일·native 해상도 학습 → 본 연구의 16-coil·384 전처리와
+    도메인 차이(domain shift) 존재. 절대 우열이 아닌 "동일 측정값에 대한 참고 기준선".
+  - VarNet: k-space true ortho scale(~1e-4)이 코일 감도 지도(sens) 추정 발산을 유발했던 전례 → unit-max
     정규화로 완화(viz 스크립트 주석 참조). 잔여 non-finite 출력은 제외하되 개수를 보고.
 
 실행 (GPU ~2h 예상; radapt 학습 중에는 실행 금지 — GPU0 단독 정책):
@@ -59,7 +59,7 @@ def unpack_complex(packed):
 
 
 def ls_scale(recon, gt, mask):
-    """brain-mask 안에서 α = ⟨recon,gt⟩/⟨recon,recon⟩ 최소제곱 scale 정합."""
+    """brain-mask 안에서 α = ⟨recon,gt⟩/⟨recon,recon⟩ 최소제곱 강도 배율 보정."""
     m = mask > 0.5
     if not m.any():
         return recon
@@ -129,8 +129,8 @@ def run_varnet(model, s, device):
 
     unit-max 정규화는 안전장치로 유지하되 지표에는 영향이 없다 — VarNet 은
     NormUnet(mean/std 정규화 후 복원) + 선형 DC + RSS 구조라 양의 스칼라에 대해
-    positively homogeneous: VarNet(a·k) = a·VarNet(k). 이후 per-slice LS scale
-    정합까지 거치므로 스케일 선택은 결과를 바꾸지 않는다.
+    positively homogeneous: VarNet(a·k) = a·VarNet(k). 이후 슬라이스별 최소제곱 강도 배율
+    보정까지 거치므로 스케일 선택은 결과를 바꾸지 않는다.
     """
     ksp_c = unpack_complex(s['data'])                        # (16,H,W) complex masked k-space
     keep = np.abs(ksp_c).reshape(ksp_c.shape[0], -1).sum(1) > 0
@@ -161,9 +161,9 @@ def load_v9_csv(path):
 
 
 def pair_table(title, a_name, a_vals, b_name, b_vals, total):
-    """b 관점 우위 슬라이스 비율(proportion of slices favoring) 표."""
+    """b 관점 우위 슬라이스 비율(proportion of slices on which b outperforms a) 표."""
     lines = [f'## {title}', '',
-             f'| 지표 | {a_name} mean±std | {b_name} mean±std | {b_name} 우위 슬라이스 비율 | {a_name} 우위 | tie | Wilcoxon p |',
+             f'| 지표 | {a_name} 평균±표준편차(SD) | {b_name} 평균±표준편차(SD) | {b_name} 우위 슬라이스 비율 | {a_name} 우위 | tie | Wilcoxon p |',
              '|---|---|---|---|---|---|---|']
     for k in METRICS:
         a = np.array(a_vals[k])
@@ -213,18 +213,18 @@ def stratified_indices(ds, n, seed=0):
 
 
 def main():
-    p = argparse.ArgumentParser(description='기준선(U-Net/VarNet leaderboard) per-slice 평가 + v9 CSV 조인')
+    p = argparse.ArgumentParser(description='기준선(U-Net/VarNet 리더보드(leaderboard)) per-slice 평가 + v9 CSV 조인')
     p.add_argument('--unet-ckpt', default='models/pretrained/brain_leaderboard_state_dict.pt')
     p.add_argument('--varnet-ckpt', default='models/pretrained/varnet_brain_leaderboard_state_dict.pt')
     p.add_argument('--v9-csv', default='results/eval/v9_unleashed/per_slice_paired_v9.csv')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--out-dir', default='results/eval/baselines_384')
-    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 전체 val set (앞에서부터)')
+    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 검증 집합 전체 (앞에서부터)')
     p.add_argument('--sample-n', type=int, default=-1,
                    help='층화 표본 크기 (contrast × 코일수 구간). -1 = 미사용')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--no-native', action='store_true',
-                   help='네이티브 프로토콜(전체 코일·native 해상도·공식 crop) 행 생략')
+                   help='원래(공식) 프로토콜(전체 코일·native 해상도·공식 crop) 행 생략')
     p.add_argument('--num-workers', type=int, default=4)
     p.add_argument('--torch-threads', type=int, default=0, help='>0 이면 torch CPU 스레드 제한')
     args = p.parse_args()
@@ -234,7 +234,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     do_native = not args.no_native
     print('=' * 64)
-    print(' 기준선 per-slice 평가 — U-Net / E2E-VarNet (leaderboard 사전학습)')
+    print(' 기준선 per-slice 평가 — U-Net / E2E-VarNet (리더보드(leaderboard) 사전학습)')
     print(f'  device={device}  native-protocol={do_native}  threads={torch.get_num_threads()}')
     print('=' * 64)
     if not torch.cuda.is_available():
@@ -280,7 +280,7 @@ def main():
     csv_w = csv.DictWriter(csv_f, fieldnames=fieldnames, extrasaction='ignore')
     csv_w.writeheader()
     vals = {m: {k: [] for k in METRICS} for m in ARMS}
-    # 네이티브 VarNet 이 finite 인 슬라이스만 모은 우리 모델 값 (paired 비교용)
+    # 원래(공식) 프로토콜 VarNet 이 finite 인 슬라이스만 모은 본 연구 모델 값 (paired 비교용)
     paired_nat = {m: {k: [] for k in METRICS} for m in ('ss2d', 'v9', 'varnet_native')}
     rows = []
     unmatched = 0
@@ -304,7 +304,7 @@ def main():
         row = {'idx': idx, 'file': key[0], 'slice_idx': slice_idx, 'acquisition': acq, 'coils': coils}
         per_slice = {}
 
-        # ── (1) 우리 파이프라인 (16코일 절단 · 384 재-FFT · 384 프레임 지표)
+        # ── (1) 본 연구 프로토콜 (16코일 절단 · 384 재-FFT · 384 프레임 지표)
         u_out = run_unet(unet, s, device)
         per_slice['unet'] = slice_metrics_np(ls_scale(u_out, gt, brain), gt, brain)
 
@@ -315,7 +315,7 @@ def main():
             varnet_nonfinite += 1
 
         # ── (2) 같은 재구성을 native recon 프레임으로 crop 한 지표 (프레임 효과 분리용)
-        # ── (3) 네이티브 프로토콜: 전체 코일 · native k-space · 공식 crop
+        # ── (3) 원래(공식) 프로토콜: 전체 코일 · native k-space · 공식 crop
         if do_native:
             try:
                 vn_out, vn_gt, vn_mask = NP.run_varnet_native(varnet, file_path, slice_idx, device,
@@ -340,7 +340,7 @@ def main():
             except Exception as e:                     # 개별 슬라이스 실패는 건너뛰고 기록
                 row['native_error'] = repr(e)[:120]
 
-        # ── 우리 3모델 (v9 CSV 재사용, 384 프레임)
+        # ── 본 연구 3모델 (v9 CSV 재사용, 384 프레임)
         for arm in ('gru', 'ss2d', 'v9'):
             per_slice[arm] = {k: v9row[f'{arm}_{k}'] for k in METRICS}
 
@@ -365,25 +365,25 @@ def main():
     matched = len(rows)
 
     n_nat = len(vals['varnet_native']['ssim'])
-    lines = ['# 기준선 per-slice 비교 — U-Net / E2E-VarNet (leaderboard) vs GRU / v8-SS2D / v9', '',
+    lines = ['# 기준선 per-slice 비교 — U-Net / E2E-VarNet (리더보드(leaderboard)) vs GRU / v8-SS2D / v9', '',
              f'- 평가 슬라이스: {matched} (미매칭 {unmatched})'
              + (f' · 층화 표본 n={args.sample_n} 요청, seed={args.seed}' if args.sample_n > 0 else ''),
-             f'- VarNet non-finite: 우리 파이프라인 {varnet_nonfinite} · 네이티브 {varnet_nat_nonfinite} 슬라이스',
-             '- 기준선 출력은 per-slice LS scale 로 GT 정합 후 지표 계산 (우리 3모델은 α≈1, v9 CSV 재사용)',
+             f'- VarNet non-finite: 본 연구 프로토콜 {varnet_nonfinite} · 원래(공식) 프로토콜 {varnet_nat_nonfinite} 슬라이스',
+             '- 기준선 출력은 GT 에 맞춘 슬라이스별 최소제곱 강도 배율 보정 후 지표 계산 (본 연구 3모델은 α≈1, v9 CSV 재사용)',
              '',
              '## 행 정의',
              '',
              '| 행 | 입력 | 프레임 | 비고 |',
              '|---|---|---|---|',
-             '| `unet` / `varnet` | 우리 파이프라인(16코일 절단 · 384² 재-FFT) | 384² | 우리 모델과 **완전히 동일한 측정값** |',
+             '| `unet` / `varnet` | 본 연구 프로토콜(16코일 절단 · 384² 재-FFT) | 384² | 본 연구 모델과 **완전히 동일한 측정값** |',
              '| `varnet_natframe` | 위와 같은 재구성 | native recon crop | 프레임 효과만 분리 (`varnet` 과의 차이 = 프레임) |',
-             '| `unet_native` / `varnet_native` | **공식 규약**(전체 코일 · native k-space · 헤더 crop) | native recon | leaderboard 가중치의 학습 조건에 가장 가까움 |',
-             '| `gru` / `ss2d` / `v9` | 우리 파이프라인 | 384² | v9 per-slice CSV |',
+             '| `unet_native` / `varnet_native` | **공식 규약**(전체 코일 · native k-space · 헤더 crop) | native recon | 리더보드 가중치의 학습 조건에 가장 가까움 |',
+             '| `gru` / `ss2d` / `v9` | 본 연구 프로토콜 | 384² | v9 per-slice CSV |',
              '',
-             '- ⚠ **leaderboard 가중치는 train+val 합본으로 학습**(fastMRI 공식 README: "The leaderboard',
+             '- ⚠ **리더보드 가중치는 학습·검증 통합 데이터(train+val)로 학습**(fastMRI 공식 README: "The leaderboard',
              '  model was trained where the `train` split included both the `train` and `val` splits from',
-             '  the public data") — 즉 **본 검증셋 전체가 두 기준선의 학습 데이터**다. 기준선 수치는',
-             '  낙관적으로 편향돼 있으며, 우리 모델(train 만 학습)과의 직접 우열 판정은 성립하지 않는다.',
+             '  the public data") — 즉 **본 검증 집합 전체가 두 기준선의 학습 데이터**다. 기준선 수치는',
+             '  낙관적으로 편향돼 있으며, 본 연구 모델(학습 분할만으로 학습)과의 직접 우열 판정은 성립하지 않는다.',
              '',
              '## 전체 평균', '',
              '| 모델 | n | ' + ' | '.join(METRICS) + ' |',
@@ -404,19 +404,19 @@ def main():
                 for arm in ('ss2d', 'v9'):
                     for k in METRICS:
                         ours[arm][k].append(r[f'{arm}_{k}'])
-        lines += pair_table(f'v9 vs VarNet — 우리 파이프라인 (n={n_varnet})', 'VarNet', vals['varnet'],
+        lines += pair_table(f'v9 vs VarNet — 본 연구 프로토콜 (n={n_varnet})', 'VarNet', vals['varnet'],
                             'v9', ours['v9'], n_varnet) + ['']
-        lines += pair_table(f'v8-SS2D vs VarNet — 우리 파이프라인 (n={n_varnet})', 'VarNet', vals['varnet'],
+        lines += pair_table(f'v8-SS2D vs VarNet — 본 연구 프로토콜 (n={n_varnet})', 'VarNet', vals['varnet'],
                             'v8-SS2D', ours['ss2d'], n_varnet) + ['']
     if n_nat:
-        lines += pair_table(f'v9 vs VarNet — 네이티브 프로토콜 (n={n_nat})', 'VarNet_native',
+        lines += pair_table(f'v9 vs VarNet — 원래(공식) 프로토콜 (n={n_nat})', 'VarNet_native',
                             paired_nat['varnet_native'], 'v9', paired_nat['v9'], n_nat) + ['']
-        lines += pair_table(f'v8-SS2D vs VarNet — 네이티브 프로토콜 (n={n_nat})', 'VarNet_native',
+        lines += pair_table(f'v8-SS2D vs VarNet — 원래(공식) 프로토콜 (n={n_nat})', 'VarNet_native',
                             paired_nat['varnet_native'], 'v8-SS2D', paired_nat['ss2d'], n_nat) + ['']
-    lines += pair_table(f'v9 vs U-Net — 우리 파이프라인 (n={matched})', 'U-Net', vals['unet'],
+    lines += pair_table(f'v9 vs U-Net — 본 연구 프로토콜 (n={matched})', 'U-Net', vals['unet'],
                         'v9', vals['v9'], matched)
-    lines += ['', '(우위 슬라이스 비율 = proportion of slices favoring, probabilistic index — '
-              'nmse/l1 은 낮을수록 승리. 논문 표기는 p<0.001 관례, 원값은 본 파일 보존)']
+    lines += ['', '(우위 슬라이스 비율 = proportion of slices on which a model outperforms its counterpart, probabilistic index — '
+              'nmse/l1 은 낮을수록 우위. 논문 표기는 p<0.001 관례, 원값은 본 파일 보존)']
 
     msg = '\n'.join(lines)
     print('\n' + msg)

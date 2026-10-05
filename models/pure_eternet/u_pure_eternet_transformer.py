@@ -1,5 +1,5 @@
 """
-Pure ETER-Net (Transformer) — v8 통제비교의 3번째 팔 (2026-09-02).
+Pure ETER-Net (Transformer) — v8 통제비교의 3번째 비교 모델 (2026-09-02).
 구현 = axial attention(행/열 MHSA).
 
 교수님 ETER-net 의 양방향 GRU 를 Transformer(axial attention, 행/열 MHSA)로 치환한 arm.

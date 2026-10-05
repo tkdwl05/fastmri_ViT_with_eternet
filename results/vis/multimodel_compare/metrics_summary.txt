@@ -1,4 +1,4 @@
-# 다중 모델 정성 비교 — per-slice 지표 (brain-masked, per-slice LS 정합, 384·R4)
+# 다중 모델 정성 비교 — per-slice 지표 (brain-masked, 슬라이스별 최소제곱 강도 배율 보정, 384·R4)
 slices: [0, 660, 1321, 1982, 2643, 3368, 4028, 4689, 5350, 6011, 6672, 7333]
 device: cpu, threads: 8
 

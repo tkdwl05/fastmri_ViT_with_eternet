@@ -1,12 +1,12 @@
 """
-v8 Pure ETER-Net (no-DC) — 가속률(R) 일반화 cross-eval.
+v8 Pure ETER-Net (no-DC) — 다른 가속화 계수(R)에 대한 일반화(교차 가속화 계수 평가).
 
 R4 로 학습한 GRU/SS2D(no-DC) 를 **재학습 없이** R∈{2,4,6,8}에서 평가해 일반화 곡선을
-뽑는다. 질문(docs/v8_ss2d_kspace_domain_review.md §4): SS2D 의 R4 우위가 가속률 전반에서
+뽑는다. 질문(docs/v8_ss2d_kspace_domain_review.md §4): SS2D 의 R4 우위가 가속화 계수 전반에서
 유지/확대/축소되나? 어느 쪽이 더 완만하게 무너지나(§4.2-④ Mamba 전역성)?
 
-메트릭 공식은 eval_paired_v8_nodc.slice_metrics 를 그대로 재사용(=R4 결과와 동일 좌표계).
-모델은 R 무관이라 1회 로드 후 R 만 바꿔 dataloader 재생성. DC 축은 폐기(§7)라 no-DC 2모델만.
+지표 공식은 eval_paired_v8_nodc.slice_metrics 를 그대로 재사용(=R4 결과와 동일 평가 프로토콜(평가 영역·해상도)).
+모델은 R 무관이라 1회 로드 후 R 만 바꿔 dataloader 재생성. DC 요인은 폐기(§7)라 no-DC 2모델만.
 """
 import os
 import sys
@@ -91,7 +91,7 @@ def eval_at_R(gru, ss2d, data_path, R, cf, max_samples, device, scale=1.0, strid
 
 
 def main():
-    p = argparse.ArgumentParser(description='v8 no-DC GRU vs SS2D 가속률(R) 일반화 cross-eval')
+    p = argparse.ArgumentParser(description='v8 no-DC GRU vs SS2D 다른 가속화 계수(R)에 대한 일반화(교차 가속화 계수 평가)')
     p.add_argument('--gru-ckpt', default='logs/PureETER_GRU_noDC_R4_brain384_v8/pure_gru_best.pt')
     p.add_argument('--ss2d-ckpt', default='logs/PureETER_SS2D_noDC_R4_brain384_v8/pure_ss2d_best.pt')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
@@ -109,7 +109,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     accels = [int(x) for x in args.accels.split(',')]
     print('=' * 64)
-    print(' v8 Pure ETER-Net (no-DC) — 가속률(R) 일반화 cross-eval')
+    print(' v8 Pure ETER-Net (no-DC) — 다른 가속화 계수(R)에 대한 일반화(교차 가속화 계수 평가)')
     print(f'  device={device}  R={accels}  max_samples={args.max_samples}  cf={args.center_fraction}')
     print('=' * 64)
 
@@ -140,14 +140,14 @@ def main():
     os.makedirs(args.out_dir, exist_ok=True)
 
     # ── 표 ──
-    L = ['# v8 Pure ETER-Net (no-DC) — 가속률(R) 일반화 cross-eval', '',
+    L = ['# v8 Pure ETER-Net (no-DC) — 다른 가속화 계수(R)에 대한 일반화(교차 가속화 계수 평가)', '',
          f'R4 학습 모델을 재학습 없이 R∈{accels} 평가. n={results[0]["n"]}/R'
          + (f' (stride={args.stride} 대표샘플, 파일 전반)' if args.stride > 1
-            else (' (전체 val set)' if args.max_samples <= 0 else ' (앞쪽 subsample)')),
+            else (' (검증 집합 전체)' if args.max_samples <= 0 else ' (앞쪽 subsample)')),
          (f'**R-불변 정규화 ON** (기준 R={args.r_ref}): 입력 magnitude 를 R 무관하게 맞춤 → R 열화가 aliasing 순수효과인지 확인.'
           if args.r_invariant_norm else '(입력 정규화 없음 = val_amp 고정, 원본 파이프라인)'), '',
-         '## composite (핵심)', '',
-         '| R | GRU comp | SS2D comp | Δ(SS2D−GRU) | SS2D win% |', '|---:|---:|---:|---:|---:|']
+         '## 체크포인트 선택용 내부 점수(composite, 보고 제외)', '',
+         '| R | GRU comp | SS2D comp | Δ(SS2D−GRU) | SS2D 우위 슬라이스 비율 |', '|---:|---:|---:|---:|---:|']
     for r in results:
         d = r['ss2d']['composite'] - r['gru']['composite']
         L.append(f"| {r['R']} | {r['gru']['composite']:.4f} | {r['ss2d']['composite']:.4f} "

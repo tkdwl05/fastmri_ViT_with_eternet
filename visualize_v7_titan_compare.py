@@ -422,11 +422,11 @@ def main():
     lines += [
         '',
         '[해석 / 주의]',
-        '- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
-        '  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.',
-        '- ETER/SS2D v7_titan = 본 학습 모델. near-tie (학습 full-val 0.9084/0.9083 과 정합).',
+        '- U-Net = fastMRI brain 리더보드(leaderboard) 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
+        '  → fastMRI 원 학습분포(전 coil·native)와 도메인 차이(domain shift) → 참고 결과(순위 비교 제외).',
+        '- ETER/SS2D v7_titan = 본 학습 모델. 사실상 동등 (학습 full-val 0.9084/0.9083 과 정합).',
         '  각 PNG 패널 제목에 슬라이스별 실제 지표 표기.',
-        '- VarNet 은 동일-파이프라인(16-coil·384)에서 sens 추정 발산이 잦아 본 4-way 비교에서 제외.',
+        '- VarNet 은 동일-파이프라인(16-coil·384)에서 코일 감도 지도(sens) 추정 발산이 잦아 본 4-way 비교에서 제외.',
     ]
     if failed:
         lines.append('')

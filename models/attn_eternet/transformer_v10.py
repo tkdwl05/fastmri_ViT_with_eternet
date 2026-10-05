@@ -1,7 +1,7 @@
 """
-Transformer 스택 — 도메인 변환 슬롯의 3번째 팔 모듈 (2026-09-02).
+Transformer 스택 — 도메인 변환 슬롯의 3번째 후보 모듈 (2026-09-02).
 
-구현 방식 = axial attention(행/열 축별 MHSA) — 팔 명칭은 'Transformer'(사용자 지시 09-02),
+구현 방식 = axial attention(행/열 축별 MHSA) — 모델 명칭은 'Transformer'(사용자 지시 09-02),
 axial 은 구현 세부를 가리키는 말로만 사용.
 
 설계 근거: docs/axial_transformer_arm_design.md.

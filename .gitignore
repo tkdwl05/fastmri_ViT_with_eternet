@@ -109,3 +109,6 @@ results/vis/multimodel_compare/*
 
 # 외부 최전선 모델 클론 (Table 4 참조행용, 로컬 전용 — 2026-09-01)
 external/
+
+# 교수님/사용자 검토본(실명·소속·e-mail 포함) — 로컬 보관 전용, push 금지 (2026-09-15)
+paper/ieie/reviews/

@@ -182,7 +182,7 @@ v6_1 가 import 하지 않는 옛 버전들. 버전 진화 방향은 [docs/scrip
 | `v9_mamba_radapt/runs/pre_outage_report_2026-08-07.md` 원복 + `clean_stop_report_2026-09-02_ep57.md` 신설 | 09-02 ep57 clean-stop 때 `snapshot_pre_outage.sh` 가 08-07 보고를 덮어씀(파일명 고정). 08-07 원본은 git 에서 복원, 09-02 내용은 새 파일로 분리 |
 | `snapshot_pre_outage.sh` OUT 경로를 실행일 스탬프(`OUT` env 재지정 가능)로 변경 | 위 덮어쓰기 재발 방지 |
 | `docs/INDEX.md` 08-07 이후 5행 추가(draft v2·worklog·frontier·fairness·transformer arm) + 현재 운영 문구 | 09-01~02 신규 문서 미등재 |
-| `CLAUDE.md` 갱신(`/init`) | 표준 prefix 추가, 정체된 상태 서술 정정(radapt "08-18 재개 ETA 08-25" → 09-02 ep57 정지, "v9 화이트리스트 미추가" → 추가됨), §작업 규칙(교수님 파일 무수정·표준 지표·기준점=원본 GRU·"Transformer" 표기·GPU0 단독·활성 런 보호·git 관례) 신설, v8 4팔 env var(`SEQ_MODEL`·`SEED`…)·E1 런처·검증/스모크 명령·Docker `mri:v1`/NVML cgroup 항목 추가, 신규 docs(fairness·transformer arm·frontier·worklog) 등재 |
+| `CLAUDE.md` 갱신(`/init`) | 표준 prefix 추가, 정체된 상태 서술 정정(radapt "08-18 재개 ETA 08-25" → 09-02 ep57 정지, "v9 화이트리스트 미추가" → 추가됨), §작업 규칙(교수님 파일 무수정·표준 지표·기준점=원본 GRU·"Transformer" 표기·GPU0 단독·활성 런 보호·git 관례) 신설, v8 네 모델 env var(`SEQ_MODEL`·`SEED`…)·E1 런처·검증/스모크 명령·Docker `mri:v1`/NVML cgroup 항목 추가, 신규 docs(fairness·transformer arm·frontier·worklog) 등재 |
 | `CLAUDE.md` 의 2026-06-01 루트 `results/` 역사 트리 → `docs/logs_archive.md` 부록으로 이관 | 현재 디스크에 없는 폴더 트리 28행이 운영 지침을 희석 — 기록은 옛 머신 아카이브 문서가 제자리 |
 
 ### 4) 사용자 승인 후 실행 (비가역·대용량) — 09-03 (승인: 3개 질문 전 항목)
@@ -207,3 +207,9 @@ v6_1 가 import 하지 않는 옛 버전들. 버전 진화 방향은 [docs/scrip
 | 후보 | 크기 | 비고 |
 |---|---|---|
 | `logs/SS2D_ViT_R4_brain384_v7_titan/_ddp_archive/` | 1.3 GB | 05-31 폐기된 DDP 시도(`log.txt`·`log_ddp.txt`·best·epoch_5/10). 이번 승인 목록에 없어 보존 |
+
+## 2026-10-01 — 그림 파일 이름 정리
+
+| 대상 | 내용 |
+|---|---|
+| `paper/figs/conf_fig2_arms.{png,pdf}` → `paper/figs/conf_fig2_modules.{png,pdf}` | 금지어 'arm'이 남은 그림 파일 이름 변경(사용자 요청). 그림 내용에는 해당 단어 없음. 생성 스크립트 `paper/make_figs_conf_arch.py`의 저장 이름과 docstring, `paper/ieie/draft_ieie_v7.src.md`의 `@figure` 경로, `docs/paper_table_conventions.md`를 갱신하고 v7 두 판을 다시 빌드. 옛 PNG·PDF는 디스크에서 지움(git 이력에 보존). 구판 원고(IEIE v2·v3·archive)의 옛 경로 참조는 원문 보존 원칙에 따라 그대로 둠 |

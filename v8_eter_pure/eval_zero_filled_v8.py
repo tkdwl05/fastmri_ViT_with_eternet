@@ -1,14 +1,14 @@
 """
 Zero-filled 기준선 per-slice 평가 (CPU 전용, 모델 없음).
 
-논문 표 관례(MMR-Mamba·HiFi-Mamba 등)의 "Zero-filling" 행을 우리 파이프라인과 **완전히 동일한
-좌표계**(384² crop/pad · 16코일 · R=4 equispaced ACS 8% · brain-mask · eval_paired_v8_nodc 와
-동일 지표식)로 계산한다. 재구성 = 마스크된 k-space 의 iFFT 코일 영상 RSS(데이터로더의
+논문 표 관례(MMR-Mamba·HiFi-Mamba 등)의 "Zero-filling" 행을 본 연구 프로토콜과 **완전히 동일한
+평가 프로토콜**(384² crop/pad · 16코일 · R=4 equispaced ACS 8% · brain-mask · eval_paired_v8_nodc 와
+동일 지표식)로 계산한다. 재구성 = 언더샘플링된 k-space 의 iFFT 코일 영상 RSS(데이터로더의
 `data_img` 그대로). 학습·GPU 불필요 → 실행 중인 GPU0 런에 영향 없음.
 
 두 변형을 모두 기록한다:
-  - raw     : 스케일 보정 없음 (R=4 undersampling 으로 강도가 ~1/R 로 눌린 상태)
-  - ls      : brain-mask 내 per-slice 최소제곱 강도 정합(α=⟨r,g⟩/⟨r,r⟩) — leaderboard 기준선
+  - raw     : 스케일 보정 없음 (R=4 undersampling 으로 강도가 ~1/R 로 낮아진 상태)
+  - ls      : brain-mask 내 슬라이스별 최소제곱 강도 배율 보정(α=⟨r,g⟩/⟨r,r⟩) — 리더보드(leaderboard) 기준선
               (`eval_paired_baselines.py`)과 동일 처리. 논문 표에는 ls 를 쓰고 각주로 명시.
 
 출력: results/eval/zero_filled/per_slice_zero_filled.csv (idx,file,slice_idx,{raw,ls}_{ssim,psnr,nmse,l1})
@@ -111,17 +111,17 @@ def main():
 
     files = np.array([r['file'] for r in rows])
     uf = np.unique(files)
-    lines = ['# Zero-filled 기준선 (CPU, 모델 없음) — 우리 파이프라인 좌표계',
+    lines = ['# Zero-filled 기준선 (CPU, 모델 없음) — 본 연구 평가 프로토콜(평가 영역·해상도)',
              f'- 슬라이스 {len(rows):,} / 볼륨 {len(uf)} · R=4 equispaced ACS 8% · 384² · 16코일 · brain-masked',
-             '- raw = 스케일 보정 없음, ls = brain-mask 내 per-slice 최소제곱 강도 정합(leaderboard 기준선과 동일 처리)',
-             '', '| 변형 | 단위 | SSIM | PSNR (dB) | NMSE | L1 (×10⁻⁶) |', '|---|---|---:|---:|---:|---:|']
+             '- raw = 스케일 보정 없음, ls = brain-mask 내 슬라이스별 최소제곱 강도 배율 보정(리더보드(leaderboard) 기준선과 동일 처리)',
+             '', '| 변형 | 단위 | SSIM | PSNR (dB) | nMSE (비율) | L1 (×10⁻⁶) |', '|---|---|---:|---:|---:|---:|']
     for var in ['raw', 'ls']:
         a = {k: np.array([r[f'{var}_{k}'] for r in rows]) for k in METRICS}
-        lines.append(f'| {var} | slice mean±std | ' + ' | '.join(
+        lines.append(f'| {var} | slice 평균±표준편차(SD) | ' + ' | '.join(
             f'{a[k].mean():.4f}±{a[k].std():.4f}' if k in ('ssim', 'nmse') else f'{a[k].mean():.2f}±{a[k].std():.2f}'
             for k in METRICS) + ' |')
         v = {k: np.array([a[k][files == f].mean() for f in uf]) for k in METRICS}
-        lines.append(f'| {var} | volume mean±std | ' + ' | '.join(
+        lines.append(f'| {var} | volume 평균±표준편차(SD) | ' + ' | '.join(
             f'{v[k].mean():.4f}±{v[k].std():.4f}' if k in ('ssim', 'nmse') else f'{v[k].mean():.2f}±{v[k].std():.2f}'
             for k in METRICS) + ' |')
     open(os.path.join(args.out_dir, 'zero_filled_summary.md'), 'w').write('\n'.join(lines) + '\n')

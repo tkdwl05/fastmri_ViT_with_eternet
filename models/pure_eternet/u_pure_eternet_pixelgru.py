@@ -1,5 +1,5 @@
 """
-Pure ETER-Net (Pixel-GRU) — v8 통제비교의 4번째 팔: 가중치 공유 재귀 (2026-09-02).
+Pure ETER-Net (Pixel-GRU) — v8 통제비교의 4번째 비교 모델: 가중치 공유 재귀 (2026-09-02).
 
 원본 ETER-GRU(flatten-reshape, 668M)와 달리 픽셀 단위 가중치 공유 bi-GRU 를 같은 슬롯에
 넣어 "재귀 메커니즘 vs 파라미터화" confound 를 분리한다 (docs/v8_fairness_followup_plan.md ③).

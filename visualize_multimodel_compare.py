@@ -6,7 +6,7 @@ PromptMR+ / bi-GRU (original) / SS2D (controlled) / Enhanced SS2D, 384×384 · R
   - 모든 방법이 같은 슬라이스 · 같은 R4/cf0.08 equispaced mask · 같은 GT(384 RSS) · 같은
     brain mask(Otsu×0.4 + largest CC) · 같은 16-coil 절단 측정값을 받는다.
   - 표시·지표 전에 모든 재구성을 brain-mask 안 per-slice LS 강도 정합(α=⟨r,g⟩/⟨r,r⟩)한다
-    (leaderboard/PromptMR+ 출력 스케일이 제각각이라 필수; 우리 팔은 α≈1).
+    (leaderboard/PromptMR+ 출력 스케일이 제각각이라 필수; 우리 모델은 α≈1).
   - 지표식은 `v8_eter_pure/eval_paired_v8_nodc.py` / `eval_zero_filled_v8.py` 와 동일.
 
 † U-Net / E2E-VarNet = fastMRI brain leaderboard 공개 가중치(train+val 학습 → 우리 val 이 학습셋에
@@ -500,7 +500,7 @@ def main():
         plt.close(fig)
 
     # 5) 요약
-    lines = ['# 다중 모델 정성 비교 — per-slice 지표 (brain-masked, per-slice LS 정합, 384·R4)',
+    lines = ['# 다중 모델 정성 비교 — per-slice 지표 (brain-masked, 슬라이스별 최소제곱 강도 배율 보정, 384·R4)',
              f'slices: {indices}', f'device: {device}, threads: {args.threads}', '',
              '| idx | file | slice | ' + ' | '.join(names[k] for k, _, _ in METHODS) + ' |',
              '|---|---|---|' + '---:|' * len(METHODS)]

@@ -1,18 +1,18 @@
 """
-공개 모델 기준선 — 전체 검증셋(7,334 슬라이스 / 464 볼륨) 추론-only 평가 (CPU 가능 · 재개 가능).
+공개 모델 기준선 — 검증 집합 전체(7,334 슬라이스 / 464 볼륨) 추론-only 평가 (CPU 가능 · 재개 가능).
 
-U-Net† / E2E-VarNet†(fastMRI leaderboard 가중치, train+val 학습 → 누수 참고선) / PromptMR+(train 구획만
-학습된 공개 가중치, 인접 5슬라이스 입력)를 **우리 프로토콜 행**(384² 재-FFT · 16코일 절단 · 동일 R4 마스크 ·
-동일 GT · brain-masked 지표 · per-slice LS 강도 정합)으로 평가한다 — 즉 `visualize_multimodel_compare.py` 의
-정본 12 슬라이스 추론을 전체 val 로 확장한 것(러너·지표 공식을 그 스크립트에서 import, 수치 동일성 확인 완료).
+U-Net† / E2E-VarNet†(fastMRI 리더보드(leaderboard) 가중치, train+val 학습 → 누수가 있는 참고 결과) / PromptMR+(학습 분할만으로
+학습된 공개 가중치, 인접 5슬라이스 입력)를 **본 연구 프로토콜 행**(384² 재-FFT · 16코일 절단 · 동일 R4 마스크 ·
+동일 GT · brain-masked 지표 · 슬라이스별 최소제곱 강도 배율 보정)으로 평가한다 — 즉 `visualize_multimodel_compare.py` 의
+고정 대표 슬라이스 12개 추론을 전체 val 로 확장한 것(러너·지표 공식을 그 스크립트에서 import, 수치 동일성 확인 완료).
 
 설계:
   - 방법별(outer) → 슬라이스(inner) 루프, 모델 1개씩만 메모리에. 입력 준비(재-FFT·코일 절단·이웃 스택)는
     DataLoader 워커가, forward 는 메인 프로세스가 맡는다(PromptMR+ 는 워커가 z±2 이웃 5장을 함께 로드).
   - 결과는 `per_slice_<method>.csv` 에 슬라이스마다 append+flush → 중단 후 같은 명령으로 재개(완료 idx skip).
-  - `--summary` : 방법별 CSV + 우리 3모델 CSV(v9 paired) + zero-filled CSV 를 (file, slice) 로 조인해
+  - `--summary` : 방법별 CSV + 본 연구 3모델 CSV(v9 paired) + zero-filled CSV 를 (file, slice) 로 조인해
     슬라이스/볼륨 단위 mean±SD, non-finite 수, SS2D·v9 대비 우위 비율(슬라이스·볼륨)·Wilcoxon(볼륨) 을 md 로.
-  - native 프로토콜 행(전체 코일·native 해상도)은 여기서 다루지 않는다 — `eval_paired_baselines.py`(GPU) 몫.
+  - 원래(공식) 프로토콜 행(전체 코일·native 해상도)은 여기서 다루지 않는다 — `eval_paired_baselines.py`(GPU) 몫.
 
 실행 (CPU, GPU0 은 학습 점유 — nice 19 · 스레드 제한). 방법별 CSV 가 독립이므로 **방법마다 별도 프로세스**로 띄우면
 호스트 유휴 코어를 더 쓴다(09-06 실측: 호스트 외부 부하 ~10코어 상황에서 프로세스당 4~6 스레드가 12 스레드보다 빠름):
@@ -21,7 +21,7 @@ U-Net† / E2E-VarNet†(fastMRI leaderboard 가중치, train+val 학습 → 누
     --methods promptmr --threads 5 --num-workers 1 > results/eval/baselines_384_full/run_promptmr.log 2>&1 < /dev/null & disown
   CUDA_VISIBLE_DEVICES="" nice -n 19 setsid nohup python v8_eter_pure/eval_baselines_full.py \
     --methods varnet,unet --threads 3 --num-workers 1 > results/eval/baselines_384_full/run_varnet_unet.log 2>&1 < /dev/null & disown
-  (처리 순서는 기본 interleaved — 중단 시점의 완료 prefix 가 전 볼륨에 고른 층화 표본이라 `--summary` 중간 집계가 편향 없음)
+  (처리 순서는 기본 interleaved — 중단 시점의 완료 prefix 가 전 볼륨에 고르게 분산된 부분 집합(계통 추출)이라 `--summary` 중간 집계가 편향 없음)
 요약만 재생성:  CUDA_VISIBLE_DEVICES="" python v8_eter_pure/eval_baselines_full.py --summary
 스모크:         CUDA_VISIBLE_DEVICES="" python v8_eter_pure/eval_baselines_full.py --methods varnet --max-samples 3 --out-dir <scratch>
 """
@@ -44,7 +44,7 @@ import visualize_multimodel_compare as VM        # noqa: E402  (import 시 cwd �
 METRICS = ['ssim', 'psnr', 'nmse', 'l1']
 LOWER_IS_BETTER = {'nmse', 'l1'}
 METHOD_NAMES = {'unet': 'U-Net†', 'varnet': 'E2E-VarNet†', 'promptmr': 'PromptMR+'}
-OURS = {'gru': 'bi-GRU (original)', 'ss2d': 'SS2D (controlled)', 'v9': 'Enhanced SS2D'}
+OURS = {'gru': 'bi-GRU (original)', 'ss2d': 'SS2D (controlled)', 'v9': 'SS2D (enhanced)'}
 
 
 # ──────────────────────────────────────────────
@@ -103,8 +103,8 @@ def file_meta(fp):
 
 
 def interleaved_order(indices, period=64):
-    """idx % period 의 비트반전 순으로 정렬 — 어느 시점에 중단해도 완료 prefix 가 전 볼륨에 고르게 퍼진 층화 표본이
-    되도록(중간 요약을 편향 없이 쓰기 위함). period=64 ≈ 볼륨 4개마다 1 슬라이스씩 먼저 훑는다."""
+    """idx % period 의 비트반전 순으로 정렬 — 어느 시점에 중단해도 완료 prefix 가 전 볼륨에 고르게 분산된 부분 집합(계통 추출)이
+    되도록(중간 요약을 편향 없이 쓰기 위함). period=64 ≈ 볼륨 4개마다 1 슬라이스씩 먼저 순차 처리한다."""
     bits = period.bit_length() - 1
     def rev(r):
         return int(format(r, f'0{bits}b')[::-1], 2)
@@ -246,7 +246,7 @@ def _ms(k, a):
 
 
 def _stats_block(lines, title, keys, per_arms, arm_arr_fn, names):
-    """keys 위에서 arms 의 슬라이스/볼륨 단위 mean±SD 표 두 개를 lines 에 추가."""
+    """keys 위에서 각 방법(per_arms)의 슬라이스/볼륨 단위 mean±SD 표 두 개를 lines 에 추가."""
     files = sorted({k[0] for k in keys})
     vol_of = np.array([files.index(k[0]) for k in keys])
 
@@ -279,13 +279,13 @@ def write_summary(args, h5):
     per = {m: read_done(csv_path(args.out_dir, m)) for m in ('unet', 'varnet', 'promptmr')}
     per = {m: d for m, d in per.items() if d}
     per_keyed = {m: {(r['file'], int(r['slice_idx'])): r for r in d.values()} for m, d in per.items()}
-    names = {'zf': 'Zero-filled (raw)', **METHOD_NAMES, **OURS}
-    lines = ['# 공개 모델 기준선 — 전체 검증셋 (우리 프로토콜 행: 384² 재-FFT · 16코일 절단 · R4 · brain-masked · per-slice LS 정합)', '',
+    names = {'zf': 'Zero-filled (보정 없음)', **METHOD_NAMES, **OURS}
+    lines = ['# 공개 모델 기준선 — 검증 집합(공식 검증 분할 중 464볼륨) (본 연구 프로토콜 행: 384² 재-FFT · 16코일 절단 · R4 · brain-masked · 슬라이스별 최소제곱 강도 배율 보정)', '',
              f'- 생성: `v8_eter_pure/eval_baselines_full.py --summary` ({time.strftime("%Y-%m-%d %H:%M")})',
-             f'- 우리 3모델: `{args.v9_csv}` (GPU fp16 평가, LS 정합 없음 α≈1) · zero-filled: `{args.zf_csv}` (raw)',
-             '- 공개 모델은 CPU fp32 추론(정본 12 슬라이스에서 GPU 와 SSIM ≤0.003 · PSNR ≤0.3 dB 차이 확인) · non-finite 출력은 0 으로 치환 후 집계(개수 별도 표기)',
-             '- † = fastMRI leaderboard 공개 가중치(train+val 합본 학습 → 본 검증셋이 학습 데이터에 포함, 누수 참고선). PromptMR+ = train 구획만 학습(누수 없음)·인접 5슬라이스 입력(정보량 다름)',
-             '- 처리 순서가 interleaved 라 미완 상태의 완료 집합도 전 볼륨에 고른 층화 표본이다(중간 집계는 n 을 반드시 함께 인용).',
+             f'- 본 연구 3모델: `{args.v9_csv}` (GPU fp16 평가, 최소제곱 강도 배율 보정 없음 α≈1) · zero-filled: `{args.zf_csv}` (보정 없음)',
+             '- 공개 모델은 CPU fp32 추론(고정 대표 슬라이스 12개에서 GPU 와 SSIM ≤0.003 · PSNR ≤0.3 dB 차이 확인) · non-finite 출력은 0 으로 치환 후 집계(개수 별도 표기)',
+             '- † = fastMRI 리더보드(leaderboard) 공개 가중치(학습·검증 통합 데이터(train+val)로 학습 → 본 검증 집합이 학습 데이터에 포함, 누수가 있는 참고 결과). PromptMR+ = 학습 분할만으로 학습(누수 없음)·인접 5슬라이스 입력(정보량 다름)',
+             '- 처리 순서가 interleaved 라 미완 상태의 완료 집합도 전 볼륨에 고르게 분산된 부분 집합(계통 추출)이다(중간 집계는 n 을 반드시 함께 인용).',
              '']
     lines += ['## 진행 상황', '', '| 방법 | 완료 슬라이스 | non-finite | 평균 s/slice |', '|---|---|---|---|']
     for m, d in per.items():
@@ -301,14 +301,14 @@ def write_summary(args, h5):
             return np.array([zf[key][f'zf_{k}'] for key in keys]) if zf and all(key in zf for key in keys) else None
         return np.array([ours[key][f'{arm}_{k}'] for key in keys])
 
-    # A. 방법별 — 각 공개 모델의 완료 집합 위에서 우리 3모델과 같은 슬라이스로 비교
-    lines += ['## A. 방법별 비교 (각 공개 모델의 완료 집합; 우리 모델도 같은 슬라이스로 재평균)', '']
+    # A. 방법별 — 각 공개 모델의 완료 집합 위에서 본 연구 3모델과 같은 슬라이스로 비교
+    lines += ['## A. 방법별 비교 (각 공개 모델의 완료 집합; 본 연구 모델도 같은 슬라이스로 재평균)', '']
     for m in per:
         keys = sorted(set(per_keyed[m]) & set(ours), key=lambda k: (k[0], k[1]))
         if not keys:
             continue
         files, vol_of, vol_mean = _stats_block(lines, f'### {METHOD_NAMES[m]}', keys, ['zf', m] + list(OURS), arm_arr, names)
-        lines += [f'{METHOD_NAMES[m]} 우위 비율 (슬라이스 / 볼륨) · Δ 볼륨평균(공개−우리) · Wilcoxon(볼륨 paired)', '',
+        lines += [f'{METHOD_NAMES[m]} 우위 비율 (슬라이스 / 볼륨) · Δ 볼륨평균(공개−본 연구) · Wilcoxon(볼륨 paired)', '',
                   '| 대비 | 지표 | 우위 슬라이스 % | 우위 볼륨 % | Δ 볼륨 평균 | p (볼륨) |', '|---|---|---|---|---|---|']
         for ref in ('gru', 'ss2d', 'v9'):
             for k in METRICS:
@@ -324,7 +324,7 @@ def write_summary(args, h5):
                 lines.append(f'| vs {OURS[ref]} | {k} | {100*better.mean():.1f} | {100*vbetter.mean():.1f} | {dv:+.4f} | {pval:.2e} |')
         lines.append('')
 
-    # B. 전 방법 공통 집합 (모두 완주하면 = 전체 검증셋) + contrast 별
+    # B. 전 방법 공통 집합 (모두 평가 완료하면 = 검증 집합 전체) + contrast 별
     common = set(ours)
     for m in per_keyed:
         common &= set(per_keyed[m])
@@ -351,7 +351,7 @@ def write_summary(args, h5):
         lines.append('')
     else:
         lines += [f'## B. 전 방법 공통 집합 — 아직 {len(common)} 슬라이스(<50) 라 생략', '']
-    lines += ['(우위 비율 = proportion favoring the public model; nMSE·L1 은 낮을수록 우위. 이 표는 참고선이며 순위 판정에 쓰지 않는다 — '
+    lines += ['(우위 비율 = proportion of slices/volumes on which the public model outperforms the compared model; nMSE·L1 은 낮을수록 우위. 이 표는 참고 결과이며 순위 판정에 쓰지 않는다 — '
               '†는 누수, PromptMR+ 는 다중 슬라이스 입력·물리 모델 계열.)']
     msg = '\n'.join(lines)
     out = os.path.join(args.out_dir, 'baseline_summary_full.md')
@@ -364,7 +364,7 @@ def write_summary(args, h5):
 # ──────────────────────────────────────────────
 
 def main():
-    p = argparse.ArgumentParser(description='공개 모델 기준선 전체 검증셋 평가 (CPU 가능·재개 가능)')
+    p = argparse.ArgumentParser(description='공개 모델 기준선 검증 집합 전체 평가 (CPU 가능·재개 가능)')
     p.add_argument('--methods', default='varnet,unet,promptmr')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--unet-ckpt', default='models/pretrained/brain_leaderboard_state_dict.pt')
@@ -374,9 +374,9 @@ def main():
     p.add_argument('--zf-csv', default='results/eval/zero_filled/per_slice_zero_filled.csv')
     p.add_argument('--out-dir', default='results/eval/baselines_384_full')
     p.add_argument('--max-samples', type=int, default=-1)
-    p.add_argument('--indices', default='', help='스모크용: 평가할 idx 목록(쉼표) — 정본 슬라이스 대조 등')
+    p.add_argument('--indices', default='', help='스모크용: 평가할 idx 목록(쉼표) — 고정 대표 슬라이스 대조 등')
     p.add_argument('--order', choices=['interleaved', 'sequential'], default='interleaved',
-                   help='interleaved(기본): 완료 prefix 가 항상 층화 표본이 되는 순서 / sequential: idx 순')
+                   help='interleaved(기본): 완료 prefix 가 항상 전 볼륨에 고르게 분산된 부분 집합(계통 추출)이 되는 순서 / sequential: idx 순')
     p.add_argument('--threads', type=int, default=8)
     p.add_argument('--num-workers', type=int, default=3)
     p.add_argument('--log-every', type=int, default=50)
@@ -387,7 +387,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     os.makedirs(args.out_dir, exist_ok=True)
     print('=' * 72)
-    print(' 공개 모델 기준선 전체 검증셋 평가 — ' + ', '.join(METHOD_NAMES[m] for m in args.methods.split(',') if m))
+    print(' 공개 모델 기준선 검증 집합 전체 평가 — ' + ', '.join(METHOD_NAMES[m] for m in args.methods.split(',') if m))
     print(f'  device={device}  threads={torch.get_num_threads()}  workers={args.num_workers}  out={args.out_dir}')
     print('=' * 72, flush=True)
 

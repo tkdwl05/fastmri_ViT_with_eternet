@@ -1,11 +1,11 @@
-# v8 Pure ETER-Net (no-DC) — 가속률(R) 일반화 cross-eval
+# v8 Pure ETER-Net (no-DC) — 다른 가속화 계수(R)에 대한 일반화(교차 가속화 계수 평가)
 
 R4 학습 모델을 재학습 없이 R∈[2, 4, 6, 8] 평가. n=1834/R (stride=4 대표샘플, 파일 전반)
 **R-불변 정규화 ON** (기준 R=4): 입력 magnitude 를 R 무관하게 맞춤 → R 열화가 aliasing 순수효과인지 확인.
 
-## composite (핵심)
+## 체크포인트 선택용 내부 점수(composite, 보고 제외)
 
-| R | GRU comp | SS2D comp | Δ(SS2D−GRU) | SS2D win% |
+| R | GRU comp | SS2D comp | Δ(SS2D−GRU) | SS2D 우위 슬라이스 비율 |
 |---:|---:|---:|---:|---:|
 | 2 | 0.8508 | 0.8490 | -0.0019 | 27% |
 | 4 | 0.9136 | 0.9153 | +0.0017 | 78% |

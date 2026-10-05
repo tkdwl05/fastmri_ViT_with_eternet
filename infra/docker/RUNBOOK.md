@@ -32,7 +32,7 @@ pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel     ← 공식 베이스 (여기까�
 ```
 
 **핵심 문제는 마지막 두 줄이다.** 현재 이미지는 빌드 산출물이 아니라 *돌던 컨테이너를
-통째로 찍어낸 스냅샷을 다시 찍어낸 것*이다. 그래서:
+통째로 찍어낸 스냅숏을 다시 찍어낸 것*이다. 그래서:
 
 - 무엇이 언제 왜 설치됐는지 이미지만 봐서는 알 수 없다 (감사 불가)
 - 학습 중 생긴 임시파일·캐시·손상된 상태가 그대로 이미지에 굳어 있다
@@ -100,7 +100,7 @@ DataLoader `num_workers=16` 이 bus error 없이 도는 근거이므로 새 컨�
 
 그래서 이번 재구성은 두 가지를 같이 한다:
 
-1. **깨끗한 이미지** — commit 스냅샷 체인을 끊고 Dockerfile 로 정의 (재현성·감사성)
+1. **깨끗한 이미지** — commit 스냅숏 체인을 끊고 Dockerfile 로 정의 (재현성·감사성)
 2. **`--device` 를 명시한 컨테이너 기동** — nvidia 디바이스를 도커 자신의
    `HostConfig.Devices` 에 등록시킨다. 그러면 systemd 가 cgroup 을 재적용해도
    도커가 아는 목록에 nvidia 노드가 포함되어 있으므로 규칙이 **다시 복원된다.**
@@ -126,7 +126,7 @@ DataLoader `num_workers=16` 이 bus error 없이 도는 근거이므로 새 컨�
 | 항목 | 값 | 이유 |
 |---|---|---|
 | 베이스 | `pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel` | 현재와 **동일** 조합. 공식 이미지라 재현 가능 |
-| torch | 2.3.1 **고정** | mamba_ssm/causal_conv1d wheel 이 `cu122torch2.3cxx11abiFALSE-cp310` 전용. 올리면 SS2D 커널이 깨지고 v7/v8/v9 완주 런과의 수치 비교가 무효 |
+| torch | 2.3.1 **고정** | mamba_ssm/causal_conv1d wheel 이 `cu122torch2.3cxx11abiFALSE-cp310` 전용. 올리면 SS2D 커널이 깨지고 v7/v8/v9 학습 완료 런과의 수치 비교가 무효 |
 | numpy | 1.26.4 고정 | 2.x 는 torch 2.3.1·mamba 바이너리와 ABI 충돌 |
 | SS2D 커널 | prebuilt wheel URL | 소스 빌드 30분+ & ABI 실패 위험 회피 |
 | fastmri | `--no-deps` | 현행과 동일. 의존성을 끌면 torch 재설치 위험 |
@@ -160,7 +160,7 @@ DataLoader `num_workers=16` 이 bus error 없이 도는 근거이므로 새 컨�
 
 각 스크립트는 앞 단계 산출물을 확인하고, 되돌릴 수 없는 지점 전에 멈춰 확인을 받는다.
 
-### [1] 상태 백업 — **현재(옛) 컨테이너 안에서**
+### [1] 상태 백업 — **현재(이전) 컨테이너 안에서**
 
 ```bash
 bash infra/docker/00_backup_state.sh
@@ -200,8 +200,8 @@ bash 20_host_build.sh          # 15~40분
 ```bash
 bash 30_host_run.sh            # YES 입력 게이트 있음
 ```
-> ⚠ **이 시점에 현재 Claude Code 세션이 끊긴다** (세션이 옛 컨테이너 안에서 돌고 있음).
-> ⚠ 옛 컨테이너는 **삭제하지 않고 stop 만** 한다 → 언제든 롤백 가능.
+> ⚠ **이 시점에 현재 Claude Code 세션이 끊긴다** (세션이 이전 컨테이너 안에서 돌고 있음).
+> ⚠ 이전 컨테이너는 **삭제하지 않고 stop 만** 한다 → 언제든 롤백 가능.
 
 ### [5] 상태 복원 — **새 컨테이너 안에서**
 
@@ -227,7 +227,7 @@ import 확인이 아니라 실제 동작을 본다: 디바이스 `open()`, CUDA 
 ### [7] 학습 재개
 
 ```bash
-bash v9_mamba_radapt/runs/post_reboot_rearm.sh     # radapt ep43 부터 true-resume
+bash v9_mamba_radapt/runs/post_reboot_rearm.sh     # radapt ep43 부터 전체 상태 재개(true-resume)
 ```
 
 ---
@@ -238,16 +238,16 @@ bash v9_mamba_radapt/runs/post_reboot_rearm.sh     # radapt ep43 부터 true-res
 
 ```bash
 docker stop mri_gpu0
-docker start <옛 컨테이너 이름>        # 10_host_preflight.sh 가 출력해 준다
+docker start <이전 컨테이너 이름>        # 10_host_preflight.sh 가 출력해 준다
 ```
-옛 컨테이너와 옛 이미지는 재구성이 안정화될 때까지 지우지 말 것.
+이전 컨테이너와 이전 이미지는 재구성이 안정화될 때까지 지우지 말 것.
 
 ## 6. 정리 (안정화 확인 후)
 
 새 환경에서 학습 1 epoch 이상 정상 완료를 확인한 뒤에만:
 
 ```bash
-docker rm <옛 컨테이너>
+docker rm <이전 컨테이너>
 docker rmi snorlax_gpu0:v2_bigmem_snapshot     # 누적 commit 이미지들
 docker image prune
 ```
@@ -262,5 +262,5 @@ docker image prune
    인증·설정도 마운트로 옮기는 편이 낫다(향후 개선 항목).
 3. **torch/CUDA 조합은 논문 트랙이 끝날 때까지 동결.** 올려야 할 이유가 생기면 v7/v8/v9
    재평가 비용을 먼저 계산할 것.
-4. GPU 가 또 죽으면 진단 순서: 호스트 `nvidia-smi` → 컨테이너 안 `/dev/nvidia0` `open()`
+4. GPU 를 또 쓸 수 없게 되면 진단 순서: 호스트 `nvidia-smi` → 컨테이너 안 `/dev/nvidia0` `open()`
    → EPERM 이면 cgroup 문제(§2), 호스트도 실패하면 드라이버 문제.

@@ -1,5 +1,5 @@
 """
-Pixel-scan bi-GRU 스택 — 도메인 변환 슬롯의 4번째 팔(가중치 공유 재귀) 모듈 (2026-09-02).
+Pixel-scan bi-GRU 스택 — 도메인 변환 슬롯의 4번째 후보(가중치 공유 재귀) 모듈 (2026-09-02).
 
 목적(공정성 — docs/v8_fairness_followup_plan.md ③): v8 원본 ETER-GRU 는
 (i) 재귀 메커니즘과 (ii) flatten-reshape 파라미터화(한 줄 12,288차원 입력·hidden 384 양자화·
