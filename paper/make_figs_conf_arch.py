@@ -3,20 +3,20 @@
 """
 IEIE 학술대회판 전용 세부 아키텍처 그림 3장 — 고전적 블록 다이어그램 양식(v2, 2026-09-08).
 
-  paper/figs/conf_fig1_pipeline.{png,pdf}   그림 1  두 팔이 공유하는 통제 파이프라인(데이터 노드는 실제 썸네일)
-  paper/figs/conf_fig2_arms.{png,pdf}       그림 2  (a) bi-GRU 팔 = 펼친(unrolled) 양방향 순환 체인, (b) SS2D 팔 = 4방향 cross-scan → S6 → merge
+  paper/figs/conf_fig1_pipeline.{png,pdf}   그림 1  두 모델에 공통인 파이프라인(가중치 공유 없음)(데이터 노드는 실제 썸네일)
+  paper/figs/conf_fig2_modules.{png,pdf}       그림 2  (a) bi-GRU 모듈 = 펼친(unrolled) 양방향 순환 체인, (b) SS2D 모듈 = 행·열 4방향 스캔 → S6 → merge
   paper/figs/conf_fig3_enhanced.{png,pdf}   그림 3  강화 SS2D: 위 = 블록 체인(화살표 위 텐서 크기), 아래 = Mamba 블록 내부(게이트·잔차)
 
 양식 규칙(v1 의 "슬라이드" 인상을 고친 지점):
   - 블록 = 균일한 크기의 둥근 사각형에 한 줄 라벨만. 텐서 크기·채널 수는 블록 안이 아니라 화살표 위 작은 회색 글자.
   - 설명 문장은 그림 안에 넣지 않는다(캡션·본문 몫). 굵은 제목·색 막대·각주 없음.
-  - 데이터 노드(k-space·마스크·zero-filled·복원·GT)는 정본 슬라이스의 실제 영상 썸네일.
-  - RNN 은 펼친 셀 체인(→/← 두 줄), SS2D 는 cross-scan(4 격자) → S6 ×4 → merge, Mamba 블록은 원 논문의 게이트 분기 형태로 그린다.
+  - 데이터 노드(k-space·마스크·zero-filled·복원·GT)는 고정 대표 슬라이스의 실제 영상 썸네일.
+  - RNN 은 펼친 셀 체인(→/← 두 줄), SS2D 는 행·열 4방향 스캔(4 격자) → S6 ×4 → merge, Mamba 블록은 원 논문의 게이트 분기 형태로 그린다.
   - 글꼴 Liberation Sans(Arial metric 호환, paper/fonts/) 6.5 pt 본문 / 5.5 pt 주석; 없으면 DejaVu Sans 폴백.
-  - 단 폭 3.15 in, 600 dpi PNG + PDF. 색은 팔 식별용 3색(bi-GRU 빨강·SS2D 파랑·강화 초록)만 옅게.
+  - 단 폭 3.15 in, 600 dpi PNG + PDF. 색은 모델 식별용 3색(bi-GRU 빨강·SS2D 파랑·강화 초록)만 옅게.
 
-데이터(로컬 전용): 정본 슬라이스 index 4689 = fastMRI_data/multicoil_val/file_brain_AXT2_203_2030309.h5 slice 7
-(visualize_slices_canonical.json) 의 k-space 를 dataloader_h5_v5 와 같은 전처리(코일 영상 384² crop/pad → re-FFT →
+데이터(로컬 전용): 고정 대표 슬라이스 index 4689 = fastMRI_data/multicoil_val/file_brain_AXT2_203_2030309.h5 slice 7
+(visualize_slices_canonical.json) 의 k-space 를 dataloader_h5_v5 와 같은 전처리(코일 영상 384×384 크롭 및 패딩 → 다시 푸리에 변환 →
 R=4 equispaced 마스크, offset 3)로 만들고, zero-filled·SS2D 복원·GT 는 results/vis/multimodel_compare/recon_4689.npz 에서 읽는다.
 둘 중 하나라도 없으면 합성 자리표시 썸네일로 대체하고 경고를 출력한다.
 
@@ -181,7 +181,7 @@ NPZ = os.path.join(ROOT, "results", "vis", "multimodel_compare", "recon_4689.npz
 
 
 def load_thumbs():
-    """정본 슬라이스 4689 의 실제 영상. dict(ksp_full, mask2d, ksp_und, zf, recon, gt)."""
+    """고정 대표 슬라이스 4689 의 실제 영상. dict(ksp_full, mask2d, ksp_und, zf, recon, gt)."""
     out = {}
     try:
         sys.path.insert(0, ROOT)
@@ -217,7 +217,7 @@ def load_thumbs():
     return out
 
 
-# ═════════════════════════ Fig. 1 — shared pipeline ═════════════════════════
+# ═════════════════════════ Fig. 1 — common pipeline (no weight sharing) ═════════════════════════
 def fig1(th):
     H, Y_LO = 2.30, 0.16                      # 아래 0.16 in 은 잘라냄 → 그림 높이 2.14 in
     fig, ax = canvas(H, y_lo=Y_LO)
@@ -240,17 +240,17 @@ def fig1(th):
 
     # ── main row ──
     thumb(ax, 0.04, y1, T, th["ksp_und"])
-    text(ax, 0.23, y1 - 0.045, r"$\tilde{y} = M \odot y_c$", fs=6.0, va="top")
+    text(ax, 0.23, y1 - 0.045, r"$\tilde{y}_c = M \odot y_c$", fs=6.0, va="top")
     lab(ax, 0.23, y1 - 0.15, "undersampled", va="top", fs=4.9)
     dot(ax, 0.46, yc)
     arrow(ax, (0.42, yc), (0.46, yc), head=False)
-    # sequence-model slot (the only variable)
+    # sequence-module box (the only part replaced)
     sx, sw, sh = 0.56, 0.72, 0.50
     sy = yc - sh / 2
     ax.add_patch(FancyBboxPatch((sx, sy), sw, sh, boxstyle="round,pad=0,rounding_size=0.035",
                                 fc="white", ec=INK, lw=0.7, ls=(0, (2.2, 1.4)), zorder=3))
-    text(ax, sx + sw / 2, sy + sh - 0.08, "sequence model $f_\\theta$", fs=FS, max_w=sw - 0.04, z=4)
-    text(ax, sx + sw / 2, sy + sh - 0.165, "(the only variable)", fs=4.9, color=MUTED, max_w=sw - 0.04, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.08, "sequence module $f_\\theta$", fs=FS, max_w=sw - 0.04, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.165, "(only part replaced)", fs=4.9, color=MUTED, max_w=sw - 0.04, z=4)
     bw, bh = 0.28, 0.15
     box(ax, sx + 0.03, sy + 0.05, bw, bh, "bi-GRU", fc=FILL_R, ec=EDGE_R, fs=5.4)
     text(ax, sx + sw / 2, sy + 0.05 + bh / 2, "or", fs=5.0, color=MUTED, z=4)
@@ -264,7 +264,7 @@ def fig1(th):
     op(ax, cx, yc, "C", fs=6.0)
     # U-Net
     ux, uw = 1.55, 0.48
-    box(ax, ux, sy + 0.05, uw, sh - 0.10, "U-Net $g_\\phi$", sub="31.1M, shared")
+    box(ax, ux, sy + 0.05, uw, sh - 0.10, "U-Net $g_\\varphi$", sub="31.1M, same\narchitecture")
     arrow(ax, (cx + 0.055, yc), (ux, yc))
     lab(ax, (cx + 0.055 + ux) / 2, yc + 0.03, "52", fs=5.0)
     # reconstruction / ground truth
@@ -274,8 +274,8 @@ def fig1(th):
     text(ax, rx + T / 2, y1 - 0.045, r"reconstruction $\hat{x}$", fs=5.6, va="top")
     lab(ax, rx + T / 2, y1 - 0.15, "magnitude", va="top", fs=4.9)
     thumb(ax, gx, y1, T, th["gt"], vmin=0, vmax=vmax)
-    text(ax, gx + T / 2, y1 - 0.045, "ground truth $x$", fs=5.6, va="top")
-    lab(ax, gx + T / 2, y1 - 0.15, "RSS($F^{-1} y_c$)", va="top", fs=4.9)
+    text(ax, gx + T / 2, y1 - 0.045, "ground truth $x^{*}$", fs=5.6, va="top")
+    lab(ax, gx + T / 2, y1 - 0.15, "dataset RSS", va="top", fs=4.9, max_w=T + 0.14)   # full-coil RSS shipped with fastMRI, crop/pad to 384² (not derived from the 16-coil y_c)
     # loss bracket above the two images
     yl = y1 + T + 0.10
     for xx in (rx + T / 2, gx + T / 2):
@@ -288,7 +288,7 @@ def fig1(th):
     zs, zx, zy = 0.36, 0.70, 0.54
     zc = zy + zs / 2
     polyline(ax, [(0.46, yc), (0.46, zc), (zx, zc)])
-    lab(ax, 0.59, zc + 0.03, "$F^{-1}$", fs=6.0, color=INK)
+    lab(ax, 0.59, zc + 0.03, "$ℱ^{-1}$", fs=6.0, color=INK)
     thumb(ax, zx, zy, zs, th["zf"], vmin=0, vmax=vmax)
     text(ax, zx + zs / 2, zy - 0.045, "zero-filled coil images", fs=5.8, va="top")
     polyline(ax, [(zx + zs, zc), (cx, zc), (cx, yc - 0.055)])
@@ -297,7 +297,7 @@ def fig1(th):
     save(fig, "conf_fig1_pipeline")
 
 
-# ═════════════════════════ Fig. 2 — the two arms ═════════════════════════
+# ═════════════════════════ Fig. 2 — the two sequence modules ═════════════════════════
 def unrolled_birnn(ax, x0, y0, n=4, cw=0.19, ch=0.13, gap=0.10, fc=FILL_R, ec=EDGE_R, ell_after=2):
     """펼친 양방향 순환 체인: 입력 x_t(아래) → 역방향 셀 · 순방향 셀 → 출력 y_t(위).
     한 수직선이 두 셀을 모두 관통(입력은 두 방향에 공급, 출력은 두 방향을 결합)."""
@@ -345,14 +345,14 @@ def scan_grid(ax, x, y, s, direction, n=4, color=EDGE_B):
 
 def fig2(th):
     H = 2.30
-    fig, ax = canvas(H)
+    fig, ax = canvas(H, y_lo=0.50)             # 10-01: 하단 설명 두 줄 삭제 → 아래 0.50 in 잘라냄(높이 1.80 in)
     y0 = 1.40                                  # (a) chain baseline
-    yr = 0.66                                  # (b) main-row box bottom
+    yr = 0.78                                  # (b) main-row box bottom
 
-    # ─────────── (a) bi-GRU arm ───────────
+    # ─────────── (a) bi-GRU module ───────────
     text(ax, 0.04, H - 0.05, "(a)", fs=FS_P, weight="bold", ha="left", va="top")
-    text(ax, 0.28, H - 0.05, "bi-GRU (original ETER-Net)", fs=FS, ha="left", va="top")
-    text(ax, W - 0.04, H - 0.05, "668.2M (GRU stack 637.1M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, 0.28, H - 0.05, "bi-GRU module (ETER-net)", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, H - 0.05, "637.1M (model 668.2M)", fs=FS_S, color=MUTED, ha="right", va="top")
     ts, tx, ty = 0.34, 0.06, y0 + 0.20
     thumb(ax, tx, ty, ts, th["ksp_und"])
     ax.add_line(Line2D([tx, tx + ts], [ty + ts * 0.5] * 2, color=EDGE_R, lw=0.9, zorder=5))
@@ -361,38 +361,36 @@ def fig2(th):
     arrow(ax, (tx + ts + 0.01, ty + ts * 0.5), (0.58, ty + ts * 0.5))
     x_end, y_mid, y_top = unrolled_birnn(ax, 0.60, y0, cw=0.16, gap=0.085)
     y_mid = y0 + 0.315                         # centre of the two-row block (= layer output)
-    text(ax, 1.05, y_top, "pass 1: rows — 384 steps, hidden 3,840 per direction", fs=5.0, color=INK2,
+    text(ax, 1.05, y_top, "stage 1: rows — 384 steps", fs=5.0, color=INK2,
          va="bottom", max_w=1.6)
-    bx, bw2 = 1.84, 0.54
+    bx, bw2 = 1.84, 0.62
     arrow(ax, (x_end + 0.01, y_mid), (bx, y_mid))
     lab(ax, (x_end + bx) / 2, y_mid + 0.03, "transpose", fs=4.8, max_w=bx - x_end - 0.03)
-    box(ax, bx, y_mid - 0.125, bw2, 0.25, "pass 2: bi-GRU", sub="columns, 7,680-d", fc=FILL_R, ec=EDGE_R,
+    box(ax, bx, y_mid - 0.125, bw2, 0.25, "stage 2: columns", sub="384 steps", fc=FILL_R, ec=EDGE_R,
         fs=5.4, sub_fs=4.7)
     arrow(ax, (bx + bw2, y_mid), (bx + bw2 + 0.28, y_mid))
     lab(ax, bx + bw2 + 0.14, y_mid + 0.03, "reshape", fs=4.8, max_w=0.25)
     text(ax, bx + bw2 + 0.30, y_mid, "20×384$^2$", fs=5.2, ha="left")
-    lab(ax, 0.04, y0 - 0.03, "recurrence sequential in $t$; input–hidden matrices 12,288×11,520 and 7,680×11,520 per direction",
-        ha="left", va="top", fs=4.8, max_w=W - 0.08)
 
-    # ─────────── (b) SS2D arm ───────────
-    ptop = y0 - 0.18
+    # ─────────── (b) SS2D module ───────────
+    ptop = y0 - 0.06
     text(ax, 0.04, ptop, "(b)", fs=FS_P, weight="bold", ha="left", va="top")
-    text(ax, 0.28, ptop, "SS2D (controlled substitution)", fs=FS, ha="left", va="top")
-    text(ax, W - 0.04, ptop, "31.2M (SSM stack 0.117M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, 0.28, ptop, "SS2D module", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, ptop, "0.12M (model 31.2M)", fs=FS_S, color=MUTED, ha="right", va="top")
     bh = 0.22
     ym = yr + bh / 2
-    box(ax, 0.04, yr, 0.52, bh, "LN·Linear·SiLU", sub="32 → 128", fs=5.6, sub_fs=4.8)
+    box(ax, 0.04, yr, 0.52, bh, "LN·Linear·SiLU", sub="32 → 128", fs=5.6, sub_fs=5.2)
     lab(ax, 0.04, yr + bh + 0.03, "k-space 32×384$^2$", ha="left", fs=5.0)
     arrow(ax, (0.56, ym), (0.62, ym))
-    box(ax, 0.62, yr, 0.44, bh, "DWConv 3×3", sub="SiLU, 128", fs=5.6, sub_fs=4.8)
-    # cross-scan: four grids
+    box(ax, 0.62, yr, 0.44, bh, "DWConv 3×3", sub="SiLU, 128", fs=5.6, sub_fs=5.2)
+    # 4-way row/column scan: four grids
     gs, gg = 0.20, 0.05
     gx0, gy0 = 1.18, yr - 0.14
     for d, i, j in (("r", 0, 1), ("l", 1, 1), ("d", 0, 0), ("u", 1, 0)):
         scan_grid(ax, gx0 + i * (gs + gg), gy0 + j * (gs + gg), gs, d)
     gxc = gx0 + gs + gg / 2
-    text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "cross-scan", fs=5.2, va="bottom")
-    lab(ax, gxc, gy0 - 0.03, "rows →←, cols ↓↑, $L$=384", va="top", fs=4.8)
+    text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "4-way scan", fs=5.2, va="bottom")
+    lab(ax, gxc, gy0 - 0.03, "rows →←, columns ↓↑", va="top", fs=5.0)
     arrow(ax, (1.06, ym), (gx0 - 0.005, ym))
     # four S6 scans — independent weights per direction (ss2d.py: ssm_h_fwd/h_bwd/v_fwd/v_bwd), each shared by all its rows/columns
     s6x, s6w, s6h, pitch = 1.74, 0.36, 0.10, 0.115
@@ -406,25 +404,21 @@ def fig2(th):
     for yy in ys6:
         polyline(ax, [(s6x + s6w, yy + s6h / 2), (mx, yy + s6h / 2), (mx, ym)], head=False)
     op(ax, mx, ym, "C", fs=6.0)
-    box(ax, 2.28, yr, 0.40, bh, "LN·Linear", sub="512 → 128", fs=5.6, sub_fs=4.8)
+    box(ax, 2.28, yr, 0.40, bh, "LN·Linear", sub="512 → 128", fs=5.6, sub_fs=5.2)
     arrow(ax, (mx + 0.055, ym), (2.28, ym))
     arrow(ax, (2.68, ym), (2.74, ym))
-    box(ax, 2.74, yr, 0.36, bh, "1×1 conv", sub="128 → 20", fs=5.6, sub_fs=4.8)
+    box(ax, 2.74, yr, 0.36, bh, "1×1 conv", sub="128 → 20", fs=5.6, sub_fs=5.2)
     lab(ax, 2.92, yr - 0.03, "20×384$^2$", va="top", fs=5.0, color=INK)
-    # S6 recurrence + hyper-parameters
-    text(ax, 0.04, 0.30, "S6:  $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t$,   $y_t = C_t h_t + D x_t$,   "
-         "$(\\Delta_t, B_t, C_t)$ from $x_t$", fs=5.6, ha="left", va="center", max_w=W - 0.08)
-    lab(ax, 0.04, 0.15, "d_inner 128, d_state 16; one S6 weight set per direction, shared by all its rows (columns)",
-        ha="left", va="center", fs=4.9, max_w=W - 0.08)
-    save(fig, "conf_fig2_arms")
+    # 10-01 교수님 검토: 식은 본문 식 (2)에 있으므로 그림에서 빼고, 작은 변수 설명 줄도 뺀다.
+    save(fig, "conf_fig2_modules")
 
 
 # ═════════════════════════ Fig. 3 — enhanced SS2D ═════════════════════════
 def fig3(th):
     H = 1.88
     fig, ax = canvas(H)
-    text(ax, 0.04, H - 0.05, "enhanced SS2D (replaces $f_\\theta$ in Fig. 1)", fs=FS, ha="left", va="top")
-    text(ax, W - 0.04, H - 0.05, "34.2M (SSM stack 3.1M), fp16 scan", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, 0.04, H - 0.05, "SS2D (enhanced) — replaces $f_\\theta$ in Fig. 1", fs=FS, ha="left", va="top")
+    text(ax, W - 0.04, H - 0.05, "34.2M (SS2D module 3.1M), fp16 scan", fs=FS_S, color=MUTED, ha="right", va="top")
 
     # ── top chain ──
     bh, yt = 0.24, H - 0.62
@@ -478,14 +472,14 @@ def fig3(th):
     lab(ax, 0.81, cl + 0.03, "$z$", fs=5.0, color=INK)
     box(ax, 0.90, cu - hb / 2, 0.46, hb, "DWConv 3×3", sub="SiLU, 256", fs=5.4, sub_fs=4.8)
     arrow(ax, (1.36, cu), (1.42, cu))
-    box(ax, 1.42, cu - hb / 2, 0.56, hb, "4-dir scan · merge", sub="d_inner 256, N 32", fc=FILL_B, ec=EDGE_B,
+    box(ax, 1.42, cu - hb / 2, 0.56, hb, "4-dir scan · merge", sub="256 ch., $N$ = 32", fc=FILL_B, ec=EDGE_B,
         fs=5.4, sub_fs=4.6)
     box(ax, 0.90, cl - hb / 2, 0.46, hb, "SiLU", sub="gate", fs=5.6, sub_fs=4.8)
     gx = 2.10
     polyline(ax, [(1.98, cu), (gx, cu), (gx, c + 0.055)])
     polyline(ax, [(1.36, cl), (gx, cl), (gx, c - 0.055)])
     op(ax, gx, c, r"$\otimes$")
-    box(ax, 2.20, c - hb / 2, 0.42, hb, "Linear", sub="drop 0.05", fs=5.6, sub_fs=4.8)
+    box(ax, 2.20, c - hb / 2, 0.42, hb, "Linear", sub="dropout 0.05", fs=5.6, sub_fs=4.8)
     arrow(ax, (gx + 0.055, c), (2.20, c))
     ox = 2.74
     arrow(ax, (2.62, c), (ox - 0.055, c))

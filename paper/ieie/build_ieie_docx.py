@@ -1,25 +1,29 @@
 #!/usr/bin/env python
 """IEIE(대한전자공학회) 투고용 양식 초안 빌더 — stdlib 만 사용 (python-docx/pandoc 불필요).
 
-입력  : paper/ieie/draft_ieie_v2.src.md         (본문 소스: 디렉티브 + 마크다운 일부 — 학술대회 빌더와 **같은 소스**)
+입력  : paper/ieie/draft_ieie_v7.src.md         (본문 소스: 디렉티브 + 마크다운 일부 — 학술대회 빌더와 **같은 소스**)
         paper/references.bib                    (서지 — [@key] 인용을 IEIE 영문 형식 [n] 으로 변환)
         paper/ieie/template_ieie_2021.docx      (학회 투고용 논문 양식 2021 — 스타일/머리글/섹션 설정을 그대로 재사용)
         paper/figs/*.png                        (그림)
-출력  : paper/ieie/draft_ieie_v2.md             (읽기용 마크다운, 번호·참고문헌 확정본)
-        paper/ieie/draft_ieie_v2.docx           (양식 적용 docx = 서면 심사용. 논문지 양식엔 저자란이 없고, 본문의
+출력  : paper/ieie/draft_ieie_v7.md             (읽기용 마크다운, 번호·참고문헌 확정본)
+        paper/ieie/draft_ieie_v7.docx           (양식 적용 docx = 서면 심사용. 논문지 양식엔 저자란이 없고, 본문의
                                                  저자·소속 단서는 check_blind() 가 막는다 — 발견 시 탈락 규정)
 
 실행  : CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_docx.py [--src <x.src.md>] [--out <stem>] [--no-blind-check]
         (09-09 교수님 지시: 프로시딩 게재용과 내용 동일, 저자·소속만 삭제 → 같은 소스를 build_ieie_conf_docx.py 로도 빌드.
-         캡션은 국문만·간결하게(@cap_en 은 선택, 있으면 병기). 옛 v1 소스·산출물은 paper/ieie/archive/.)
+         옛 v1 소스·산출물은 paper/ieie/archive/.
+         09-14 교수님 지시(v7): 캡션은 **영문**(@cap_en 필수, @cap_ko 는 선택 — 있으면 국문 줄을 앞에 병기), 본문의 수식 기호는
+         인라인 수식 $…$ 로 써서 첨자를 Word 수식 객체(OMML)로 낸다(교수님이 y_c 를 직접 수식 객체로 고친 방식과 동일),
+         표 주석은 본문 크기.)
 
-소스 디렉티브 (draft_ieie_v2.src.md):
+소스 디렉티브 (draft_ieie_v7.src.md):
   %% 주석                       빌더가 무시
   @title_ko: / @title_en: / @keywords:
   @abstract_ko: / @abstract_en:   다음 @ 디렉티브 전까지의 블록
   @body:                          이후 본문
   # 장 제목   ## 절 제목   ### 항 제목   (장 = Ⅰ. Ⅱ. …, 절 = 1. 2. …, 항 = 가. 나. …;  "# REFERENCES" 는 자동 목록)
   $$ latex $$                     한 줄 display 수식 → OMML (LaTeX 부분집합)
+  $latex$                         본문 안 인라인 수식(첨자·기호: $\tilde{y}_c$, $f_\theta$, $d_{\mathrm{inner}}$) → 인라인 OMML
   @figure: path | page|col | scale   + @cap_ko: / @cap_en:
   @table: page|col | w1,w2,...(twips) + @cap_ko: / @cap_en: + 마크다운 표 행 + (@note:) + @end
   [@key; @key2]                   서지 인용 → 첫 등장 순 [n] (본문은 위첨자, 표 안은 일반)
@@ -37,11 +41,11 @@ from xml.etree import ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 IEIE = os.path.join(ROOT, "paper", "ieie")
-SRC = os.path.join(IEIE, "draft_ieie_v2.src.md")
+SRC = os.path.join(IEIE, "draft_ieie_v7.src.md")
 BIB = os.path.join(ROOT, "paper", "references.bib")
 TEMPLATE = os.path.join(IEIE, "template_ieie_2021.docx")
-OUT_MD = os.path.join(IEIE, "draft_ieie_v2.md")
-OUT_DOCX = os.path.join(IEIE, "draft_ieie_v2.docx")
+OUT_MD = os.path.join(IEIE, "draft_ieie_v7.md")
+OUT_DOCX = os.path.join(IEIE, "draft_ieie_v7.docx")
 
 PAGE_W = 9637   # 본문 폭 (twips): 11906 - 1134 - 1135
 COL_W = 4563    # 2단 한 단 폭 (twips): (9637 - 510) / 2
@@ -162,8 +166,31 @@ def fmt_authors(field: str) -> str:
 
 
 def fmt_pages(p: str) -> str:
+    # v3(사용자 편집본) 서지 표기: 쪽 범위는 en dash — "pp. 64–73"
     p = clean_tex(p)
-    return f"pp. {p}" if "-" in p else f"Art. no. {p}"
+    if "-" in p:
+        return "pp. " + re.sub(r"\s*-+\s*", "\u2013", p)
+    return f"Art. no. {p}"
+
+
+# 09-09 감사 반영: IEIE 참고문헌 관례(약어 저널명·Proc. 학회명)로만 축약. 공유 bib(references.bib) 는 MDPI 초안이
+# 함께 쓰므로 손대지 않고 이 빌더(학술대회판도 import) 에서만 치환한다. clean_tex 뒤의 문자열 기준, 미등록 = 원문 유지.
+VENUE_ABBR = {
+    "Medical Physics": "Med. Phys.",
+    "Medical Image Analysis": "Med. Image Anal.",
+    "Magnetic Resonance in Medicine": "Magn. Reson. Med.",
+    "Journal of Imaging": "J. Imaging",
+    "Medical Image Computing and Computer Assisted Intervention (MICCAI 2020)": "Proc. MICCAI",
+    "Advances in Neural Information Processing Systems (NeurIPS)": "Proc. NeurIPS",
+    "IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)": "Proc. IEEE/CVF WACV",
+    "Computer Vision - ECCV 2024": "Proc. ECCV",
+    "Computer Vision -- ECCV 2024": "Proc. ECCV",
+}
+
+
+def abbr_venue(name: str) -> str:
+    name = clean_tex(name)
+    return VENUE_ABBR.get(name, VENUE_ABBR.get(name.replace("\u2013", "-").replace("\u2014", "-"), name))
 
 
 def fmt_reference(typ: str, f: dict) -> list:
@@ -176,24 +203,24 @@ def fmt_reference(typ: str, f: dict) -> list:
     runs.append((head, False))
     tail = []
     if typ == "article":
-        journal = clean_tex(f.get("journal", ""))
+        journal = abbr_venue(f.get("journal", ""))
         if journal:
             runs.append((journal, True))
         if f.get("volume"):
-            tail.append("Vol. " + clean_tex(f["volume"]))
+            tail.append("vol. " + clean_tex(f["volume"]))
         if f.get("number"):
             tail.append("no. " + clean_tex(f["number"]))
         if f.get("pages"):
             tail.append(fmt_pages(f["pages"]))
     elif typ in ("inproceedings", "incollection", "conference"):
-        book = clean_tex(f.get("booktitle", ""))
+        book = abbr_venue(f.get("booktitle", ""))
         runs.append(("in ", False))
         if book:
             runs.append((book, True))
         if f.get("series"):
             tail.append(clean_tex(f["series"]))
         if f.get("volume"):
-            tail.append("Vol. " + clean_tex(f["volume"]))
+            tail.append("vol. " + clean_tex(f["volume"]))
         if f.get("pages"):
             tail.append(fmt_pages(f["pages"]))
     elif typ == "misc":
@@ -208,7 +235,7 @@ def fmt_reference(typ: str, f: dict) -> list:
             runs.append((clean_tex(f["publisher"]), False))
     else:
         if f.get("journal") or f.get("booktitle"):
-            runs.append((clean_tex(f.get("journal") or f.get("booktitle")), True))
+            runs.append((abbr_venue(f.get("journal") or f.get("booktitle")), True))
     if year:
         tail.append(year)
     if tail:
@@ -340,10 +367,26 @@ class Numberer:
 
 CITE_RE = re.compile(r"\[(@[^\]]+)\]")
 TBD_RE = re.compile(r"\[TBD[^\]]*\]")
+MATH_RE = re.compile(r"\$([^$]+?)\$")   # 인라인 수식 $…$ (display 수식 "$$ … $$" 줄은 parse_src 가 줄 단위로 먼저 뗀다)
 
 
 def inline_runs(text: str, nb: Numberer, cite_sup: bool = True) -> list:
-    """텍스트 → [(text, {sup, hl})] 런. 인용은 번호 확정(첫 등장 순)."""
+    """텍스트 → [(text, {sup, hl, b, u, math})] 런. 인라인 수식 $…$ 를 먼저 떼어 math 런으로 만들고(수식 안의 _ * 가
+    굵게/밑줄/TBD 마크업에 닿지 않도록), 나머지 구간에서 인용 번호를 확정(첫 등장 순)한다."""
+    assert text.count("$") % 2 == 0, f"인라인 수식 $ 짝이 맞지 않음: {text[:80]}"
+    runs = []
+    pos = 0
+    for m in MATH_RE.finditer(text):
+        if m.start() > pos:
+            runs.extend(_cite_split(text[pos:m.start()], nb, cite_sup))
+        runs.append((m.group(1).strip(), {"math": True}))
+        pos = m.end()
+    if pos < len(text):
+        runs.extend(_cite_split(text[pos:], nb, cite_sup))
+    return runs
+
+
+def _cite_split(text: str, nb: Numberer, cite_sup: bool) -> list:
     runs = []
     pos = 0
     for m in CITE_RE.finditer(text):
@@ -390,12 +433,12 @@ def _mark_split(s: str) -> list:
 
 
 def runs_md(runs: list) -> str:
-    """md 출력용: 굵게/밑줄 런을 마크다운 표기로 되돌린다."""
-    return "".join(f"**{t}**" if f.get("b") else f"<u>{t}</u>" if f.get("u") else t for t, f in runs)
+    """md 출력용: 굵게/밑줄 런을 마크다운 표기로 되돌리고 인라인 수식은 $…$ 로 유지한다."""
+    return "".join(f"${t}$" if f.get("math") else f"**{t}**" if f.get("b") else f"<u>{t}</u>" if f.get("u") else t for t, f in runs)
 
 
 def runs_text(runs: list) -> str:
-    return "".join(t for t, _ in runs)
+    return "".join(f"${t}$" if f.get("math") else t for t, f in runs)
 
 
 # ----------------------------------------------------------------------------- OMML (LaTeX 부분집합)
@@ -580,11 +623,16 @@ class Latex:
         return "".join(out)
 
 
-def latex_to_omml(latex: str) -> str:
+def latex_to_omml(latex: str, rpr: str = "") -> str:
+    """rpr(<w:sz>/<w:szCs> 등 w:rPr 자식)을 주면 각 수식 런 <m:r> 에 <w:rPr> 로 넣는다 — 인라인 수식을 둘러싼 본문 글자
+    크기에 맞추는 용도(교수님이 Word 에서 고친 인라인 수식 객체와 같은 구조: <m:r><w:rPr><w:sz/>…</w:rPr><m:t>).
+    글꼴(rFonts)은 넣지 않는다 — 두 양식의 settings.xml 이 수식 글꼴을 Cambria Math 로 지정하고 있다."""
     p = Latex(latex)
     body = p.seq()
     assert p.peek()[0] is None, f"수식 파싱 잔여 토큰: {p.toks[p.i:]}"
     body = body.replace('</m:t></m:r><m:r><m:t xml:space="preserve">', "")  # 인접한 평문 런 병합
+    if rpr:
+        body = re.sub(r"<m:r>((?:<m:rPr>.*?</m:rPr>)?)", lambda m: "<m:r>" + m.group(1) + f"<w:rPr>{rpr}</w:rPr>", body)
     return f"<m:oMath>{body}</m:oMath>"
 
 
@@ -603,9 +651,13 @@ def wr(t: str, rpr: str = "") -> str:
 
 
 def runs_xml(runs: list, base_rpr: str = "") -> str:
-    """base_rpr 는 <w:sz>/<w:szCs> 만 허용 — 스키마 순서(b, i, sz, szCs, highlight, u, vertAlign)를 지켜 조립."""
+    """base_rpr 는 <w:sz>/<w:szCs> 만 허용 — 스키마 순서(b, i, sz, szCs, highlight, u, vertAlign)를 지켜 조립.
+    math 런은 인라인 OMML 로 내며 base_rpr(글자 크기)만 물려받는다(본문은 스타일 크기 상속, 표 셀·주석은 자기 크기)."""
     out = []
     for t, f in runs:
+        if f.get("math"):
+            out.append(latex_to_omml(t, rpr=base_rpr))
+            continue
         rpr = ("<w:b/>" if f.get("b") else "") + ("<w:i/>" if f.get("i") else "") + base_rpr
         if f.get("hl"):
             rpr += '<w:highlight w:val="yellow"/>'
@@ -674,21 +726,26 @@ class DocxBuilder:
         return self.eq_no
 
     # ---- captions
-    # 캡션: @cap_en 이 비어 있으면 국문 한 줄만 낸다(09-09 교수님 지시 — 영어 캡션 불필요, 캡션은 간결하게·세부는 본문).
+    # 캡션: 09-14 교수님 지시 — 그림·표 캡션은 영문(@cap_en 필수; 양식의 붉은 주석 "표와 그림 : 영문" 과도 일치).
+    # @cap_ko 가 있으면 양식 순서대로 국문 줄을 앞에 병기한다(현재 소스는 영문만 사용).
     def _fig_caption(self, no: int, ko: str, en: str) -> str:
-        ko_x = para("a8", wr("그림") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(ko, self.nb)))
-        if not en.strip():
-            return ko_x
-        en_x = para("a8", wr("Fig.") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(en, self.nb)))
-        return ko_x + en_x
+        lines = []
+        if ko.strip():
+            lines.append(para("a8", wr("그림") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(ko, self.nb))))
+        if en.strip():
+            lines.append(para("a8", wr("Fig.") + "<w:r><w:tab/></w:r>" + wr(f"{no}.") + "<w:r><w:tab/></w:r>" + runs_xml(inline_runs(en, self.nb))))
+        assert lines, f"그림 {no}: 캡션(@cap_en)이 없습니다"
+        return "".join(lines)
 
     def _tbl_caption(self, no: int, ko: str, en: str) -> str:
         ppr = '<w:tabs><w:tab w:val="left" w:pos="466"/></w:tabs>'
-        ko_x = para("a8", wr("표") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(ko, self.nb)), ppr)
-        if not en.strip():
-            return ko_x
-        en_x = para("a8", wr("Table") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(en, self.nb)), ppr)
-        return ko_x + en_x
+        lines = []
+        if ko.strip():
+            lines.append(para("a8", wr("표") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(ko, self.nb)), ppr))
+        if en.strip():
+            lines.append(para("a8", wr("Table") + "<w:r><w:tab/></w:r>" + wr(f"{no}.  ") + runs_xml(inline_runs(en, self.nb)), ppr))
+        assert lines, f"표 {no}: 캡션(@cap_en)이 없습니다"
+        return "".join(lines)
 
     # ---- float wrapper (page-wide items in a 2-column section)
     def _float_wrap(self, inner: str) -> str:
@@ -784,7 +841,8 @@ class DocxBuilder:
         tbl = f"<w:tbl>{tblpr}{grid}{''.join(trs)}</w:tbl>"
         note_x = ""
         if note:
-            note_x = para("a3", runs_xml(inline_runs(note, self.nb, cite_sup=False), '<w:sz w:val="16"/><w:szCs w:val="16"/>'),
+            # 표 주석은 본문 크기(a3 상속 10pt) — 09-14 교수님 코멘트("Fontsize=8인 이유?"): 캡션이 아니라 본문 성격의 주석이므로 본문과 같은 크기
+            note_x = para("a3", runs_xml(inline_runs(note, self.nb, cite_sup=False)),
                           '<w:spacing w:before="40" w:after="120" w:line="240" w:lineRule="auto"/><w:ind w:firstLine="0"/><w:jc w:val="left"/>')
         block = self._tbl_caption(self.tbl_no, ko, en) + tbl + (note_x or para("a3", "", '<w:spacing w:after="120"/>'))
         if width == "page":
@@ -808,7 +866,10 @@ class DocxBuilder:
                  '<w:bottom w:val="single" w:sz="3" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="3" w:space="0" w:color="000000"/>'
         none = "".join(f'<w:{s} w:val="nil"/>' for s in ("top", "left", "bottom", "right"))
         ps = []
-        ps.append(para("af3", '<w:bookmarkStart w:id="0" w:name="_top"/><w:bookmarkEnd w:id="0"/>' + wr("투고용 논문 2021")))
+        # 양식 파일(template_ieie_2021.docx)의 첫 줄 라벨 "투고용 논문 2021" 은 원고 내용이 아니라 서식 표시라
+        # 09-11 검토 반영으로 출력하지 않는다(학회 예시 원고 example_conference_2page.docx 에도 없음).
+        # 되살리려면 아래 줄의 wr("") 를 wr("투고용 논문 2021") 로 바꾼다.
+        ps.append(para("af3", '<w:bookmarkStart w:id="0" w:name="_top"/><w:bookmarkEnd w:id="0"/>' + wr("")))
         ps.append(para("a9", wr(meta["title_ko"])))
         ps.append(para("aa", wr(meta["title_en"], '<w:sz w:val="34"/>')))
         ps.append(para("ad", wr("요") + wr("  ") + wr("약")))
@@ -869,6 +930,11 @@ class MdBuilder:
     def _t(self, text: str) -> str:
         return runs_text(inline_runs(text, self.nb))
 
+    def _caption(self, ko_label: str, en_label: str, no: int, ko: str, en: str) -> str:
+        lines = ([f"{ko_label} {no}. {self._t(ko)}"] if ko.strip() else []) + ([f"{en_label} {no}. {self._t(en)}"] if en.strip() else [])
+        assert lines, f"{en_label} {no}: 캡션(@cap_en)이 없습니다"
+        return "  \n".join(lines) + "\n"
+
     def front(self, meta):
         o = self.out
         o.append(f"# {meta['title_ko']}\n")
@@ -905,12 +971,12 @@ class MdBuilder:
     def figure(self, path, width, scale, ko, en):
         self.fig_no += 1
         rel = os.path.relpath(os.path.join(ROOT, path), IEIE)
-        self.out.append(f"![그림 {self.fig_no}]({rel})\n")
-        self.out.append(f"그림 {self.fig_no}. {self._t(ko)}" + (f"  \nFig. {self.fig_no}. {self._t(en)}" if en.strip() else "") + "\n")
+        self.out.append(f"![Fig. {self.fig_no}]({rel})\n")
+        self.out.append(self._caption("그림", "Fig.", self.fig_no, ko, en))
 
     def table(self, width, colw, rows, ko, en, note):
         self.tbl_no += 1
-        self.out.append(f"표 {self.tbl_no}. {self._t(ko)}" + (f"  \nTable {self.tbl_no}. {self._t(en)}" if en.strip() else "") + "\n")
+        self.out.append(self._caption("표", "Table", self.tbl_no, ko, en))
         ncol = max(len(r) for r in rows)
         lines = []
         for ri, r in enumerate(rows):
@@ -967,7 +1033,7 @@ def walk(doc: Doc, sinks: list, bib: dict):
                 s.table(b["width"], b["colw"], b["rows"], b["cap_ko"], b["cap_en"], b["note"])
 
 
-def build_docx(dx: DocxBuilder, template: str, out: str, title: str, sect_pr: str = None, subject: str = "IEIE 투고용 초안"):
+def build_docx(dx: DocxBuilder, template: str, out: str, title: str, sect_pr: str = None, subject: str = ""):
     """sect_pr/subject 는 학술대회 2쪽 빌더(build_ieie_conf_docx.py)가 마지막 섹션 속성·문서 속성을 바꿔 재사용."""
     zin = zipfile.ZipFile(template)
     names = zin.namelist()
@@ -1039,7 +1105,7 @@ def validate(out: str):
     n_tbl = doc.count("<w:tbl>")
     n_img = doc.count("<w:drawing>")
     n_math = doc.count("<m:oMath>")
-    return dict(parts=len(parts), paragraphs=n_p, tables=n_tbl, images=n_img, equations=n_math, size_kb=os.path.getsize(out) // 1024)
+    return dict(parts=len(parts), paragraphs=n_p, tables=n_tbl, images=n_img, omath=n_math, size_kb=os.path.getsize(out) // 1024)
 
 
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
@@ -1099,6 +1165,8 @@ BLIND_PATTERNS = (r"\*\*\*", r"[Uu]niversit", r"대학교", r"대학원", r"연�
 
 
 def check_blind(doc) -> list:
+    """제목·키워드·초록·본문·캡션·표에서 저자·소속 단서를 찾는다. 참고문헌(REFERENCES)은 검사 대상이 아니다 —
+    서면 심사 규정이 금지하는 것은 본문의 저자명·소속 표기이고 참고문헌의 저자명은 통상 허용된다(2026-09-09 검수)."""
     texts = [doc.meta.get("title_ko", ""), doc.meta.get("title_en", ""), doc.meta.get("keywords", "")]
     texts += list(doc.meta.get("abstract_ko", [])) + list(doc.meta.get("abstract_en", []))
     for b in doc.blocks:
@@ -1119,7 +1187,7 @@ def check_blind(doc) -> list:
 def main(argv=None):
     import argparse
     ap = argparse.ArgumentParser(description="IEIE 논문지 양식 docx 빌더")
-    ap.add_argument("--src", default=SRC, help="소스 .src.md (기본: draft_ieie_v2.src.md — 학술대회 빌더와 공유)")
+    ap.add_argument("--src", default=SRC, help="소스 .src.md (기본: draft_ieie_v7.src.md — 학술대회 빌더와 공유)")
     ap.add_argument("--out", default=None, help="출력 stem (기본: 소스 이름에서 .src.md 를 뗀 것) → <stem>.md / <stem>.docx")
     ap.add_argument("--no-blind-check", action="store_true", help="서면 심사용 신원 단서 점검 생략")
     args = ap.parse_args(argv)

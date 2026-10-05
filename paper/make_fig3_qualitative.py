@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Fig. 3 — multi-model qualitative comparison (professor's ETER-Net paper layout):
-   GT | Zero-filled | U-Net† | E2E-VarNet† | PromptMR+ | bi-GRU (original) | SS2D (controlled) | Enhanced SS2D
+   Ground truth | Zero-filled | U-Net† | E2E-VarNet† | PromptMR+ | bi-GRU (original) | SS2D (controlled) | SS2D (enhanced)
    for several validation slices of different contrasts; per slice two rows — reconstruction (RSS magnitude,
-   per-slice LS scale-aligned inside the brain mask) and brain-masked |error| on a shared 0–0.10 colour scale
+   per-slice least-squares intensity-scaled inside the brain mask) and brain-masked |error| on a shared 0–0.10 colour scale
    of the [0,1]-normalised GT — plus one ×GAIN display-gain row of a single slice that reveals the background
-   ringing of the bi-GRU arm outside the skull (not penalised by the brain-masked metrics).
+   ringing of the bi-GRU model outside the skull (not penalised by the brain-masked metrics).
 
    Composition only: reconstructions/metrics come from `visualize_multimodel_compare.py`
    (results/vis/multimodel_compare/recon_<idx>.npz + metrics_<idx>.json; CPU fp32 inference, same
@@ -34,7 +34,7 @@ for _f in ("LiberationSans-Regular.ttf", "LiberationSans-Bold.ttf", "LiberationS
         fm.fontManager.addfont(_p)
 if any(f.name == "Liberation Sans" for f in fm.fontManager.ttflist):
     rcParams["font.family"] = "Liberation Sans"
-FS = dict(metric=5.5, errlabel=5.8, rowlabel=6.0, header=6.5, cbar_tick=5.5, cbar_label=5.8)
+FS = dict(metric=6.5, errlabel=6.5, rowlabel=6.5, header=6.5, cbar_tick=6.0, cbar_label=6.5)   # 10-01: 글자 6 pt 이상
 
 COLS = [  # (npz key, header line 1, header line 2)
     ("gt",       "Ground truth", ""),
@@ -42,9 +42,9 @@ COLS = [  # (npz key, header line 1, header line 2)
     ("unet",     "U-Net†", ""),
     ("varnet",   "E2E-VarNet†", ""),
     ("promptmr", "PromptMR+", ""),
-    ("gru",      "bi-GRU", "(original)"),
+    ("gru",      "ETER-net", "(bi-GRU)"),
     ("ss2d",     "SS2D", "(controlled)"),
-    ("v9",       "Enhanced", "SS2D"),
+    ("v9",       "SS2D", "(enhanced)"),
 ]
 NARROW_HDR = {"gt": ("Ground", "truth"), "zf": ("Zero-", "filled"), "unet": ("U-Net†", ""),
               "varnet": ("E2E-", "VarNet†"), "promptmr": ("Prompt", "MR+")}
@@ -78,16 +78,16 @@ def main():
 
     n_rows = 2 * len(slices) + (1 if args.gain_slice >= 0 else 0)
     n_cols = len(cols)
-    L_IN, R_IN = 0.30, 0.32              # row-label margin / colourbar tick+label margin (inches, same at every width)
+    L_IN, R_IN = 0.30, 0.38              # row-label margin / colourbar tick+label margin (inches, same at every width)
     CB = 0.10                            # colourbar column = 0.10 panel width (inside the grid)
     W = args.panel_in if args.panel_in else (args.fig_w - L_IN - R_IN) / (n_cols + CB)   # 0.749 in at page width (8 cols)
     dpi = int(round(384 / W))            # one slice pixel = one image pixel (512 dpi at page width)
     fig_w = (n_cols + CB) * W + L_IN + R_IN
-    fig_h = n_rows * W + 0.42            # + column headers
+    fig_h = n_rows * W + 0.34            # + column headers
     fig = plt.figure(figsize=(fig_w, fig_h))
     gs = fig.add_gridspec(n_rows, n_cols + 1, width_ratios=[1] * n_cols + [CB],
                           wspace=0.03, hspace=0.03,
-                          left=L_IN / fig_w, right=1 - R_IN / fig_w, top=1 - 0.40 / fig_h, bottom=0.01)
+                          left=L_IN / fig_w, right=1 - R_IN / fig_w, top=1 - 0.32 / fig_h, bottom=0.01)
     hot = plt.get_cmap("hot").copy(); hot.set_bad("black")
     txt_fx = [pe.withStroke(linewidth=1.6, foreground="black")]
     im_err = None
@@ -96,7 +96,7 @@ def main():
     def show_metrics(ax, m):
         if m is None:
             return
-        ax.text(0.03, 0.03, f"{m['psnr']:.2f} dB / {m['ssim']:.3f}", transform=ax.transAxes,
+        ax.text(0.03, 0.03, f"{m['psnr']:.2f} / {m['ssim']:.3f}", transform=ax.transAxes,
                 fontsize=FS["metric"], color="white", ha="left", va="bottom", path_effects=txt_fx)
 
     r = 0
@@ -116,7 +116,7 @@ def main():
                 ax1.text(0.5, 0.5, "|error|\n(brain mask)", transform=ax1.transAxes, fontsize=FS["errlabel"],
                          color="white", ha="center", va="center")
                 # row labels (contrast) on the left
-                ax0.text(-0.06, 0.5, f"{meta['contrast']}\nslice {meta['slice']}", transform=ax0.transAxes,
+                ax0.text(-0.06, 0.5, f"{meta['contrast']}", transform=ax0.transAxes,
                          rotation=90, fontsize=FS["rowlabel"], ha="right", va="center")
             elif key in rec:
                 x = rec[key] / gmax
@@ -144,14 +144,14 @@ def main():
                 continue
             ax.imshow(np.clip(args.gain * src / gmax, 0, 1), cmap="gray", vmin=0, vmax=1, interpolation="nearest")
             if key == "gt":
-                ax.text(-0.06, 0.5, f"×{args.gain:g} gain\n({meta['contrast']} s{meta['slice']})",
+                ax.text(-0.06, 0.5, f"×{args.gain:g} gain",
                         transform=ax.transAxes, rotation=90, fontsize=FS["rowlabel"], ha="right", va="center")
 
     if im_err is not None:
         cax = fig.add_subplot(gs[1:2 * len(slices), n_cols])
         cb = fig.colorbar(im_err, cax=cax, ticks=[0, 0.05, 0.10])
         cb.ax.tick_params(labelsize=FS["cbar_tick"], length=2, width=0.5, pad=1.5)
-        cb.set_label("|recon − GT| / max(GT)", fontsize=FS["cbar_label"], labelpad=1.5)
+        cb.set_label(r"|$\hat{x}$ − $x^{*}$| / max($x^{*}$)", fontsize=FS["cbar_label"], labelpad=1.5)
 
     for ext in ("png", "pdf"):
         fig.savefig(os.path.join(OUT, f"{args.out_name}.{ext}"), dpi=dpi)

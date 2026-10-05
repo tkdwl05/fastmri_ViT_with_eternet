@@ -1,11 +1,11 @@
 """Fig.4 — per-slice paired-difference distributions (draft_ko_v2 부록 A).
 
 입력:  results/eval/v9_unleashed/per_slice_paired_v9.csv  (7,334 슬라이스,
-       GRU/SS2D(통제판)/강화 SS2D 3모델 × SSIM/PSNR/NMSE/L1 per-slice 값)
+       GRU/통제 SS2D/강화 SS2D 3모델 × SSIM/PSNR/NMSE/L1 per-slice 값)
 출력:  paper/figs/fig4_per_slice_distribution.{png,pdf}
 
 행 (a): 통제 비교  Δ = SS2D − GRU        (NMSE/L1 은 부호 반전 — 항상 양수 = SS2D 우위)
-행 (b): 강화 비교  Δ = 강화판 − 통제판   (동일 규약 — 양수 = 강화판 우위)
+행 (b): 강화 비교  Δ = 강화 SS2D − 통제 SS2D   (동일 규약 — 양수 = 강화 SS2D 우위)
 x 축은 |Δ| 의 99.5 백분위로 대칭 클리핑(범위 밖 ≤0.5% 미표시, 그림 각주에 명시).
 """
 import os
@@ -64,9 +64,9 @@ METRICS = [
 LOWER_BETTER = {"nmse", "l1"}
 
 ROWS = [
-    # (행 제목, baseline 접두, 치환 접두, 승자 표기)
-    ("(a)  Controlled substitution:  SS2D  vs.  GRU", "gru", "ss2d", "SS2D"),
-    ("(b)  Enhanced SS2D  vs.  controlled SS2D", "ss2d", "v9", "enhanced"),
+    # (행 제목, baseline 접두, 치환 접두, 우위 모델 표기)
+    ("(a)  SS2D (controlled)  vs.  GRU", "gru", "ss2d", "SS2D"),
+    ("(b)  SS2D (enhanced)  vs.  SS2D (controlled)", "ss2d", "v9", "enhanced"),
 ]
 
 fig, axes = plt.subplots(2, 4, figsize=(PAGE_W, 3.7), facecolor="white")
@@ -121,7 +121,7 @@ for r, (row_title, base_p, new_p, winner) in enumerate(ROWS):
              ha="left", va="bottom")
 
 fig.suptitle(
-    f"Per-slice paired differences on the full validation set (n = {n:,} slices)",
+    f"Per-slice paired differences on the validation subset (n = {n:,} slices)",
     fontsize=FS["suptitle"], color=INK, x=LEFT, y=0.992, ha="left", fontweight="bold")
 # 범례는 page 폭에서 제목과 한 줄에 못 들어가므로 우상단 2행 세로 배치(행 (a) 제목과 좌우로 분리)
 fig.legend(

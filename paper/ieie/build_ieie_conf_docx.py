@@ -4,8 +4,8 @@
 
     CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_conf_docx.py
 
-입력  paper/ieie/draft_ieie_v2.src.md  (+ paper/references.bib, paper/figs/*.png) — 학술지 빌더와 **같은 소스**
-출력  paper/ieie/draft_ieie_v2_conf.md / .docx   (프로시딩 게재용: @author_ko/@affil_ko/@email/@author_en/@affil_en 포함)
+입력  paper/ieie/draft_ieie_v7.src.md  (+ paper/references.bib, paper/figs/*.png) — 학술지 빌더와 **같은 소스**
+출력  paper/ieie/draft_ieie_v7_conf.md / .docx   (프로시딩 게재용: @author_ko/@affil_ko/@email/@author_en/@affil_en 포함)
       (09-09 교수님 지시: 서면 심사용(학술지 양식)과 내용 동일, 저자·소속만 차이. 규정 Double Column 1~5쪽. 옛 v1 은 archive/.)
 
 투고용 학술지 빌더(build_ieie_docx.py)의 소스 파서·서지 포맷터·인용 번호·OMML·검증기를 그대로 import 하고,
@@ -14,7 +14,8 @@
     → 섹션 나누기(cols 1, space 567)
   - 2단 섹션(continuous, cols 2, space 567): "Abstract"(12pt bold, 가운데) → 영문 초록(9pt, 앞 공백 2칸)
     → 장 제목 "Ⅰ. 서론"(12pt, 가운데, bold 아님) → 절 제목 "2.1 …"(10pt, 왼쪽) → 본문 9pt(앞 공백 2칸, 줄간격 288 auto)
-    → 그림(단 폭 inline) + "그림 N. …" 캡션(9pt 가운데) / 표 캡션 "표 N. …" + 단 폭 표(8pt)
+    → 그림(단 폭 inline) + "Fig. N. …" 영문 캡션(9pt 가운데; 09-14 교수님 지시 — @cap_en 없으면 국문 "그림 N.") / 표 캡션 "Table N. …" + 단 폭 표(8pt) + 주석(본문 9pt)
+    → 인라인 수식 $…$ 는 본문 크기(9pt)의 인라인 OMML(교수님이 y_c 를 수식 객체로 고친 방식과 동일), display 수식도 9pt
     → "참고문헌"(12pt 가운데) → 스타일 "11"(개요 1) 9pt 내어쓰기 308 "[n] …" (IEIE 영문 서지 포맷은 학술지 빌더와 공유)
   - 글꼴: 작성예시와 동일하게 HY신명조(ascii/eastAsia) 직접 지정, 제목만 바탕
   - 인용은 본문 인라인 "[n]"(위첨자 아님), 첫 등장 순 번호 — 학술지 빌더와 동일 Numberer
@@ -30,10 +31,10 @@ from build_ieie_docx import (ROOT, IEIE, BIB, ROMAN, EMU_PER_TWIP, parse_bib, pa
                              runs_text, runs_md, fmt_reference, wt, _xml, png_size, latex_to_omml, latex_to_plain,
                              build_docx, validate, walk, MdBuilder)
 
-SRC = os.path.join(IEIE, "draft_ieie_v2.src.md")
+SRC = os.path.join(IEIE, "draft_ieie_v7.src.md")
 TEMPLATE = os.path.join(IEIE, "example_conference_2page.docx")
-OUT_MD = os.path.join(IEIE, "draft_ieie_v2_conf.md")
-OUT_DOCX = os.path.join(IEIE, "draft_ieie_v2_conf.docx")
+OUT_MD = os.path.join(IEIE, "draft_ieie_v7_conf.md")
+OUT_DOCX = os.path.join(IEIE, "draft_ieie_v7_conf.docx")
 
 # 작성예시 sectPr: A4, 여백 상하 1701 / 좌우 1134 → 본문 폭 9638, 2단 간격 567 → 단 폭 4535 (twips)
 PAGE_W = 11906 - 1134 - 1134
@@ -64,8 +65,14 @@ def crun(t: str, sz: int = None, b: bool = False, i: bool = False, hl: bool = Fa
     return f"<w:r><w:rPr>{rpr}</w:rPr>{wt(t)}</w:r>"
 
 
+def math_rpr(sz: int = None) -> str:
+    """인라인 OMML 런에 넣을 w:rPr 자식 — 글자 크기만(글꼴은 settings.xml 의 수식 글꼴 Cambria Math 가 맡는다)."""
+    return f'<w:sz w:val="{sz}"/><w:szCs w:val="{sz}"/>' if sz else ""
+
+
 def cruns(runs: list, sz: int = None, b: bool = False) -> str:
-    return "".join(crun(t, sz, b or bool(f.get("b")), bool(f.get("i")), bool(f.get("hl")), bool(f.get("sup")),
+    return "".join(latex_to_omml(t, rpr=math_rpr(sz)) if f.get("math") else
+                   crun(t, sz, b or bool(f.get("b")), bool(f.get("i")), bool(f.get("hl")), bool(f.get("sup")),
                         u=bool(f.get("u"))) for t, f in runs)
 
 
@@ -195,7 +202,8 @@ class DocxConf:
 
     def equation(self, latex: str) -> int:
         self.eq_no += 1
-        inner = latex_to_omml(latex) + crun(f"  ({self.eq_no})", sz=18)
+        # display 수식도 본문 9pt(sz 18) — 09-14 이전엔 docDefaults 10pt 로 본문보다 크게 렌더됐음(의도적 정정)
+        inner = latex_to_omml(latex, rpr=math_rpr(18)) + crun(f"  ({self.eq_no})", sz=18)
         self.body.append(cpara(inner, jc="center", mark=PFONT + '<w:sz w:val="18"/>'))
         self.h_body += 26
         self._last = "eq"
@@ -229,7 +237,7 @@ class DocxConf:
             '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>')
         assert width != "page", "2단 본문에서 page 폭 그림은 지원하지 않음(단 폭 col 만)"
         self.body.append(cpara(drawing, jc="center", mark=PFONT + '<w:sz w:val="18"/>'))
-        cap = f"그림 {self.fig_no}. {ko}"
+        cap = f"Fig. {self.fig_no}. {en}" if en.strip() else f"그림 {self.fig_no}. {ko}"   # 09-14: 영문 캡션(@cap_en) 우선
         self.body.append(cpara(cruns(inline_runs(cap, self.nb, cite_sup=False), sz=18), jc="center"))
         self.body.append(blank(18))
         self.h_body += h_tw / 20.0 + 4 + text_height(cap, 18) + 13
@@ -271,13 +279,14 @@ class DocxConf:
                            f'<w:p><w:pPr>{ppr}</w:pPr>{"".join(pieces)}</w:p></w:tc>')
             trpr = '<w:trPr><w:trHeight w:val="250"/>' + ('<w:tblHeader/>' if ri == 0 else '') + '</w:trPr>'
             trs.append(f"<w:tr>{trpr}{''.join(tcs)}</w:tr>")
-        cap = f"표 {self.tbl_no}. {ko}"
+        cap = f"Table {self.tbl_no}. {en}" if en.strip() else f"표 {self.tbl_no}. {ko}"   # 09-14: 영문 캡션(@cap_en) 우선
         self.body.append(cpara(cruns(inline_runs(cap, self.nb, cite_sup=False), sz=18), jc="center"))
         self.body.append(f"<w:tbl>{tblpr}{grid}{''.join(trs)}</w:tbl>")
         if note:
-            self.body.append(cpara(cruns(inline_runs(note, self.nb, cite_sup=False), sz=16)))
+            # 표 주석은 본문 크기(9pt) — 09-14 교수님 코멘트("Fontsize=8인 이유?"); 표 셀만 8pt
+            self.body.append(cpara(cruns(inline_runs(note, self.nb, cite_sup=False), sz=18)))
         self.body.append(blank(18))
-        self.h_body += text_height(cap, 18) + len(rows) * 13.5 + (text_height(note, 16) if note else 0) + 13
+        self.h_body += text_height(cap, 18) + len(rows) * 13.5 + (text_height(note, 18) if note else 0) + 13
         self._last = "table"
         return self.tbl_no
 
@@ -336,12 +345,12 @@ class MdConf(MdBuilder):
     def figure(self, path, width, scale, ko, en):
         self.fig_no += 1
         rel = os.path.relpath(os.path.join(ROOT, path), IEIE)
-        self.out.append(f"![그림 {self.fig_no}]({rel})\n")
-        self.out.append(f"그림 {self.fig_no}. {self._t(ko)}\n")
+        self.out.append(f"![Fig. {self.fig_no}]({rel})\n")
+        self.out.append((f"Fig. {self.fig_no}. {self._t(en)}" if en.strip() else f"그림 {self.fig_no}. {self._t(ko)}") + "\n")
 
     def table(self, width, colw, rows, ko, en, note):
         self.tbl_no += 1
-        self.out.append(f"표 {self.tbl_no}. {self._t(ko)}\n")
+        self.out.append((f"Table {self.tbl_no}. {self._t(en)}" if en.strip() else f"표 {self.tbl_no}. {self._t(ko)}") + "\n")
         ncol = max(len(r) for r in rows)
         lines = []
         for ri, r in enumerate(rows):
@@ -387,7 +396,7 @@ def main(argv=None):
     md = MdConf(nb, authors)
     md.front(doc.meta)
     walk(doc, [dx, md], bib)
-    build_docx(dx, TEMPLATE, out_docx, doc.meta["title_ko"], sect_pr=SECT_2COL, subject="IEIE 학술대회 프로시딩 게재용 초안")
+    build_docx(dx, TEMPLATE, out_docx, doc.meta["title_ko"], sect_pr=SECT_2COL, subject="")
     with open(out_md, "w", encoding="utf-8") as fh:
         fh.write(md.text())
     info = validate(out_docx)

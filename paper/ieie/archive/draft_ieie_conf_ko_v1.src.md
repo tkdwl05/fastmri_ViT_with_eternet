@@ -22,15 +22,15 @@ MRI는 k-space를 순차 수집하므로 촬영이 느리며, 언더샘플링 �
 
 # 방법
 
-그림 1은 두 팔이 공유하는 통제 파이프라인이다. 완전 샘플링 16코일 k-space y_c에서 GT(RSS 영상, 384×384 crop/pad)를 만들고, R=4 equispaced 마스크 M(ACS 8%)을 곱한 언더샘플링 k-space ỹ=M⊙y_c를 실수·허수로 분리한 (32, 384, 384) 텐서가 입력이다. 이 입력은 두 갈래로 흐른다. 시퀀스 모델 f_θ가 k-space를 영상 도메인 특징(20채널)으로 직접 변환하고, 같은 ỹ를 코일별 역 FFT한 zero-filled 코일 영상(32채널)과 채널 결합(52채널)해 후처리 U-Net g_φ(dual-frame skip, depth 5, 31.1M)가 magnitude 영상 x̂를 출력한다. 손실은 brain mask 내부의 L1+(1−SSIM)이고 data-consistency 블록과 ViT 인코더[@oh2025vitbirnn]는 두지 않는다. 점선 상자의 f_θ만이 두 팔 사이의 유일한 변수이며 데이터·마스크·손실·최적화·U-Net은 동일하다.
+그림 1은 두 모델이 공유하는 통제 파이프라인이다. 완전 샘플링 16코일 k-space y_c에서 GT(RSS 영상, 384×384 crop/pad)를 만들고, R=4 equispaced 마스크 M(ACS 8%)을 곱한 언더샘플링 k-space ỹ=M⊙y_c를 실수·허수로 분리한 (32, 384, 384) 텐서가 입력이다. 이 입력은 두 갈래로 흐른다. 시퀀스 모델 f_θ가 k-space를 영상 도메인 특징(20채널)으로 직접 변환하고, 같은 ỹ를 코일별 역 FFT한 zero-filled 코일 영상(32채널)과 채널 결합(52채널)해 후처리 U-Net g_φ(dual-frame skip, depth 5, 31.1M)가 magnitude 영상 x̂를 출력한다. 손실은 brain mask 내부의 L1+(1−SSIM)이고 data-consistency 블록과 ViT 인코더[@oh2025vitbirnn]는 두지 않는다. 점선 상자의 f_θ만이 두 모델 사이의 유일한 변수이며 데이터·마스크·손실·최적화·U-Net은 동일하다.
 
 @figure: paper/figs/conf_fig1_pipeline.png | col | 1.0
-@cap_ko: 두 팔이 공유하는 ETER-Net 통제 파이프라인. 점선 상자의 시퀀스 모델 f_θ만이 유일한 변수이고 마스크·zero-filled 분기·U-Net·손실은 두 팔에서 동일하다. 화살표의 숫자는 채널 수(공간 384²), 영상은 검증 슬라이스 예시
+@cap_ko: 두 모델이 공유하는 ETER-Net 통제 파이프라인. 점선 상자의 시퀀스 모델 f_θ만이 유일한 변수이고 마스크·zero-filled 분기·U-Net·손실은 두 모델에서 동일하다. 화살표의 숫자는 채널 수(공간 384²), 영상은 검증 슬라이스 예시
 
-그림 2는 f_θ 자리에 들어가는 두 팔의 내부다. (a) bi-GRU 팔은 원본 ETER-Net 그대로 k-space를 384개 행의 시퀀스(스텝당 12,288차원)로 펼쳐 양방향 GRU를 통과시킨 뒤, 전치해 열 방향으로 한 번 더 통과시킨다. 두 GRU의 입력–은닉 행렬(방향별 12,288×11,520과 7,680×11,520)이 파라미터의 대부분이라 GRU 스택만 637.1M, 팔 전체 668.2M이며, 재귀는 스텝 순서대로만 계산된다. (b) SS2D 팔은 픽셀별 LN·Linear(32→128)·SiLU와 depthwise conv 뒤에 selective scan(S6)을 네 방향(각 행 →/←, 각 열 ↓/↑, L=384)으로 적용하고 네 출력을 채널 결합해 LN·Linear와 1×1 conv로 GRU와 같은 20채널에 정합한다. 상태 갱신 h_t=Ā_t h_{t−1}+B̄_t x_t의 (Δ_t, B_t, C_t)는 입력에서 생성되고(d_inner 128, d_state 16), 방향별 한 조의 S6 가중치를 그 방향의 모든 행(열)이 공유하므로 SSM 스택은 0.12M(팔 전체 31.2M)에 그치며 스캔은 병렬 O(L)로 계산된다.
+그림 2는 f_θ 자리에 들어가는 두 모듈의 내부다. (a) bi-GRU 모델은 원본 ETER-Net 그대로 k-space를 384개 행의 시퀀스(스텝당 12,288차원)로 펼쳐 양방향 GRU를 통과시킨 뒤, 전치해 열 방향으로 한 번 더 통과시킨다. 두 GRU의 입력–은닉 행렬(방향별 12,288×11,520과 7,680×11,520)이 파라미터의 대부분이라 GRU 스택만 637.1M, 모델 전체 668.2M이며, 재귀는 스텝 순서대로만 계산된다. (b) SS2D 모델은 픽셀별 LN·Linear(32→128)·SiLU와 depthwise conv 뒤에 selective scan(S6)을 네 방향(각 행 →/←, 각 열 ↓/↑, L=384)으로 적용하고 네 출력을 채널 결합해 LN·Linear와 1×1 conv로 GRU와 같은 20채널에 정합한다. 상태 갱신 h_t=Ā_t h_{t−1}+B̄_t x_t의 (Δ_t, B_t, C_t)는 입력에서 생성되고(d_inner 128, d_state 16), 방향별 한 조의 S6 가중치를 그 방향의 모든 행(열)이 공유하므로 SSM 스택은 0.12M(모델 전체 31.2M)에 그치며 스캔은 병렬 O(L)로 계산된다.
 
 @figure: paper/figs/conf_fig2_arms.png | col | 1.0
-@cap_ko: 시퀀스 모델 f_θ의 두 팔. (a) 원본 bi-GRU: k-space 행을 시퀀스로 펼친 양방향 GRU를 행·열 방향으로 2단 적용(flatten-reshape, 668.2M). (b) SS2D: 4방향 cross-scan을 방향별 S6로 병렬 스캔한 뒤 채널 결합(SSM 스택 0.12M, 팔 전체 31.2M)
+@cap_ko: 시퀀스 모델 f_θ의 두 구성. (a) 원본 bi-GRU: k-space 행을 시퀀스로 펼친 양방향 GRU를 행·열 방향으로 2단 적용(flatten-reshape, 668.2M). (b) SS2D: 4방향 cross-scan을 방향별 S6로 병렬 스캔한 뒤 채널 결합(SSM 스택 0.12M, 모델 전체 31.2M)
 
 강화 SS2D(그림 3)는 통제를 해제한 변형이다. stem(LN·Linear 32→256·SiLU) 뒤 stride-3 conv로 128² 격자로 내린 다음, Mamba 게이팅을 복원한 잔차 SS2D 블록 3개(LN·Linear 256→512를 x_ssm|z로 분할 → DWConv·SiLU → 4방향 스캔(d_inner 256, d_state 32, fp16) → y·SiLU(z) → Linear·dropout 0.05 → 잔차 합)를 쌓고, LN·bilinear 업샘플·3×3 conv(SiLU)·1×1 conv로 64채널 특징을 낸다. 이후의 결합·U-Net·손실은 그림 1과 같다. coarse scan 덕분에 epoch당 시간은 통제판 수준(2.84 h 대 3.07 h)이고 파라미터는 34.2M(SSM 스택 3.1M)이다.
 
@@ -56,6 +56,6 @@ fastMRI brain multicoil[@zbontar2018fastmri] 확보 서브셋(혼합 contrast)�
 
 # 결론
 
-ETER-Net의 도메인 변환 자리에서 bi-GRU를 SS2D로 치환하는 것만으로 DC 없이, 21배 적은 파라미터로 표준 지표(SSIM·PSNR·nMSE) 전부와 대다수 슬라이스·볼륨에서 일관된 개선을 얻었다. 이 결론은 "SSM이 RNN보다 우월하다"는 일반론이 아니라 "SS2D 치환이 원 bi-GRU 설계보다 낫다"로 한정되며, 두 팔은 메커니즘과 파라미터화가 함께 달라 그 기여를 분리하지 못한 한계가 있다. 멀티시드 재현, Transformer·pixel-GRU 팔 추가, 가속률 일반화 학습을 진행 중이다.
+ETER-Net의 도메인 변환 자리에서 bi-GRU를 SS2D로 치환하는 것만으로 DC 없이, 21배 적은 파라미터로 표준 지표(SSIM·PSNR·nMSE) 전부와 대다수 슬라이스·볼륨에서 일관된 개선을 얻었다. 이 결론은 "SSM이 RNN보다 우월하다"는 일반론이 아니라 "SS2D 치환이 원 bi-GRU 설계보다 낫다"로 한정되며, 두 모델은 메커니즘과 파라미터화가 함께 달라 그 기여를 분리하지 못한 한계가 있다. 멀티시드 재현, Transformer·pixel-GRU 모델 추가, 가속률 일반화 학습을 진행 중이다.
 
 # REFERENCES

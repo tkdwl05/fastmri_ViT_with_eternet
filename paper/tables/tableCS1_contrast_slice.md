@@ -1,6 +1,6 @@
-**Table S1 (slice-level). Per-contrast SSIM (slice-level mean; best in bold) and fraction of favoring slices (SSIM-based; parentheses: range over SSIM, PSNR and nMSE).**
+**Table S1 (slice-level). Per-contrast SSIM (slice-level mean; best in bold) and fraction of slices on which the first model of each pair is better (SSIM-based; parentheses: range over SSIM, PSNR and nMSE).**
 
-| Contrast | n (slices) | SSIM bi-GRU | SSIM SS2D | SSIM Enhanced | SS2D vs. bi-GRU (%) | Enhanced vs. SS2D (%) |
+| Contrast | n (slices) | SSIM bi-GRU | SSIM SS2D (controlled) | SSIM SS2D (enhanced) | SS2D vs. bi-GRU (%) | SS2D (enhanced) vs. SS2D (controlled) (%) |
 |---|---:|---:|---:|---:|---:|---:|
 | AXFLAIR | 518 | 0.8705 | 0.8720 | **0.8734** | 76.8 (71.0–76.8) | 67.8 (64.3–67.8) |
 | AXT1 | 492 | 0.9064 | 0.9078 | **0.9080** | 78.5 (68.7–78.5) | 48.2 (48.2–49.2) |

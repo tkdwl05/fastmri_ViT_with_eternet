@@ -1,6 +1,6 @@
 \begin{table}[ht]
 \centering
-\caption{Quantitative comparison on the fastMRI brain multi-coil validation set (7,334 slices, R = 4, brain-masked); mean±SD over slices, best in bold, second best underlined.}
+\caption{Quantitative comparison on the fastMRI brain multi-coil validation subset (7,334 slices, R = 4, brain-masked); mean±SD over slices, best in bold, second best underlined.}
 \label{tab:main-slice}
 \begin{tabular}{lrrrr}
 \toprule
@@ -9,7 +9,7 @@ Method & Params (M) & SSIM $\uparrow$ & PSNR (dB) $\uparrow$ & nMSE (\%) $\downa
 Zero-filled & -- & 0.7521$\pm$0.0767 & 24.76$\pm$2.96 & 3.938$\pm$3.806 \\
 bi-GRU (original) & 668 & 0.9126$\pm$0.0894 & 33.78$\pm$2.59 & 0.449$\pm$0.525 \\
 SS2D (controlled) & 31 & \underline{0.9140$\pm$0.0890} & \underline{33.90$\pm$2.63} & \textbf{0.438$\pm$0.526} \\
-Enhanced SS2D & 34 & \textbf{0.9145$\pm$0.0875} & \textbf{33.92$\pm$2.63} & \underline{0.439$\pm$0.536} \\
+SS2D (enhanced) & 34 & \textbf{0.9145$\pm$0.0875} & \textbf{33.92$\pm$2.63} & \underline{0.439$\pm$0.536} \\
 \bottomrule
 \end{tabular}
 \end{table}

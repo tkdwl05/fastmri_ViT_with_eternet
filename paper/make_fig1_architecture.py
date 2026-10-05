@@ -3,11 +3,11 @@
 """
 학술지판 그림 1 — 아키텍처 (page 폭, 고전적 논문 블록 다이어그램 문법 v2, 2026-09-09).
 
-  (a) 두 팔이 공유하는 ETER-Net 통제 파이프라인 — 데이터 노드는 정본 슬라이스 실제 썸네일, 화살표 위 숫자 = 채널 수
-  (b) 시퀀스 모델 두 팔 — 왼쪽 bi-GRU(펼친 양방향 순환 체인 → 전치 → 2단), 오른쪽 SS2D(cross-scan → S6×4 → Ⓒ → LN·Linear → 1×1 conv)
+  (a) 두 모델에 공통인 ETER-Net 파이프라인(가중치 공유 없음) — 데이터 노드는 고정 대표 슬라이스 실제 썸네일, 화살표 위 숫자 = 채널 수
+  (b) 시퀀스 모듈 두 구성 — 왼쪽 bi-GRU(펼친 양방향 순환 체인 → 전치 → 2단), 오른쪽 SS2D(행·열 4방향 스캔 → S6×4 → Ⓒ → LN·Linear → 1×1 conv)
   (c) 강화 SS2D — 왼쪽 블록 체인(화살표 위 공간 크기), 오른쪽 게이트 잔차 블록 내부
 
-양식 규칙(균일 블록·화살표 위 크기·실데이터 썸네일·펼친 bi-RNN·cross-scan→S6×4→Ⓒ·게이트 잔차 블록·Liberation Sans)과
+양식 규칙(균일 블록·화살표 위 크기·실데이터 썸네일·펼친 bi-RNN·4방향(행·열) 스캔→S6×4→Ⓒ·게이트 잔차 블록·Liberation Sans)과
 도우미·썸네일 로더는 학술대회판 스크립트 paper/make_figs_conf_arch.py 를 그대로 import 한다(단일 출처 — 규칙을 바꾸면 그쪽을 고친다).
 (a) 는 page 폭에 맞춰 다시 배치했고, (b)·(c) 는 학술대회판 그림 2·3 과 같은 축척(각 반폭 ≈ 단 폭)이다.
 
@@ -33,11 +33,11 @@ H = 4.15                      # figure height (in)
 HALF = 3.36                   # (b)·(c) 오른쪽 반폭의 x 오프셋 (왼쪽 반폭 0.04~3.25, 오른쪽 3.40~6.65)
 
 
-# ═════════════════════════ (a) shared pipeline ═════════════════════════
+# ═════════════════════════ (a) common pipeline (no weight sharing) ═════════════════════════
 def panel_a(ax, th, top):
     vmax = float(th["gt"].max())
     text(ax, 0.04, top - 0.03, "(a)", fs=FS_P, weight="bold", ha="left", va="top")
-    text(ax, 0.30, top - 0.03, "shared ETER-Net pipeline", fs=FS, ha="left", va="top")
+    text(ax, 0.30, top - 0.03, "common ETER-Net pipeline (no weight sharing)", fs=FS, ha="left", va="top")
     T = 0.46                                  # thumbnail size (main row)
     yc = top - 0.60                           # main-row centre line
     y1 = yc - T / 2
@@ -57,19 +57,19 @@ def panel_a(ax, th, top):
     x_yu = mx_ + 0.32
     arrow(ax, (mx_ + 0.055, yc), (x_yu, yc))
     thumb(ax, x_yu, y1, T, th["ksp_und"])
-    text(ax, x_yu + T / 2, y1 - 0.045, r"$\tilde{y} = M \odot y_c$", fs=6.0, va="top")
+    text(ax, x_yu + T / 2, y1 - 0.045, r"$\tilde{y}_c = M \odot y_c$", fs=6.0, va="top")
     lab(ax, x_yu + T / 2, y1 - 0.15, "undersampled", va="top", fs=5.2)
     jx = x_yu + T + 0.20                      # junction: k-space feeds f_θ and the zero-filled branch
     arrow(ax, (x_yu + T, yc), (jx, yc), head=False)
     dot(ax, jx, yc)
 
-    # sequence-model slot (the only variable)
+    # sequence-module box (the only part replaced)
     sx, sw, sh = jx + 0.18, 1.14, 0.66
     sy = yc - sh / 2
     ax.add_patch(FancyBboxPatch((sx, sy), sw, sh, boxstyle="round,pad=0,rounding_size=0.035",
                                 fc="white", ec=INK, lw=0.7, ls=(0, (2.2, 1.4)), zorder=3))
-    text(ax, sx + sw / 2, sy + sh - 0.09, "sequence model $f_\\theta$", fs=7.0, max_w=sw - 0.04, z=4)
-    text(ax, sx + sw / 2, sy + sh - 0.20, "the only variable — see (b)", fs=5.4, color=MUTED, max_w=sw - 0.04, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.09, "sequence module $f_\\theta$", fs=7.0, max_w=sw - 0.04, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.20, "only part replaced — see (b)", fs=5.4, color=MUTED, max_w=sw - 0.04, z=4)
     bw, bh = 0.42, 0.19
     box(ax, sx + 0.05, sy + 0.08, bw, bh, "bi-GRU", fc=FILL_R, ec=EDGE_R, fs=6.0)
     text(ax, sx + sw / 2, sy + 0.08 + bh / 2, "or", fs=5.4, color=MUTED, z=4)
@@ -83,7 +83,7 @@ def panel_a(ax, th, top):
     lab(ax, (sx + sw + cx - 0.055) / 2, yc + 0.03, "20", fs=5.2)
     op(ax, cx, yc, "C", fs=6.0)
     ux, uw = cx + 0.18, 0.90
-    box(ax, ux, sy + 0.07, uw, sh - 0.14, "U-Net $g_\\phi$", sub="depth 5, wf 6 · 31.1M, shared", fs=7.0, sub_fs=5.0)
+    box(ax, ux, sy + 0.07, uw, sh - 0.14, "U-Net $g_\\phi$", sub="depth 5, 64 base channels\n31.1M, same architecture", fs=7.0, sub_fs=5.0)
     arrow(ax, (cx + 0.055, yc), (ux, yc))
     lab(ax, (cx + 0.055 + ux) / 2, yc + 0.03, "52", fs=5.2)
     rx = ux + uw + 0.30
@@ -94,8 +94,8 @@ def panel_a(ax, th, top):
     text(ax, rx + T / 2, y1 - 0.045, r"reconstruction $\hat{x}$", fs=6.0, va="top")
     lab(ax, rx + T / 2, y1 - 0.15, "magnitude", va="top", fs=5.2)
     thumb(ax, gx, y1, T, th["gt"], vmin=0, vmax=vmax)
-    text(ax, gx + T / 2, y1 - 0.045, "ground truth $x$", fs=6.0, va="top")
-    lab(ax, gx + T / 2, y1 - 0.15, "RSS($F^{-1} y_c$)", va="top", fs=5.2)
+    text(ax, gx + T / 2, y1 - 0.045, "ground truth $x^{*}$", fs=6.0, va="top")
+    lab(ax, gx + T / 2, y1 - 0.15, "dataset RSS", va="top", fs=5.2, max_w=T + 0.14)   # full-coil RSS shipped with fastMRI, crop/pad (not from the 16-coil y_c)
     yl = y1 + T + 0.10                        # loss bracket above the two images
     for xx in (rx + T / 2, gx + T / 2):
         ax.add_line(Line2D([xx, xx], [y1 + T, yl], color=INK2, lw=LW_ARR, ls=(0, (1.2, 1.2)), zorder=4))
@@ -118,13 +118,13 @@ def panel_a(ax, th, top):
     return zy - 0.17                          # panel bottom
 
 
-# ═════════════════════════ (b) the two arms ═════════════════════════
+# ═════════════════════════ (b) the two sequence modules ═════════════════════════
 def panel_b(ax, th, top):
     text(ax, 0.04, top - 0.03, "(b)", fs=FS_P, weight="bold", ha="left", va="top")
     text(ax, 0.30, top - 0.03, "bi-GRU (original ETER-Net)", fs=FS, ha="left", va="top")
-    text(ax, 3.25, top - 0.03, "668.2M (GRU stack 637.1M)", fs=FS_S, color=MUTED, ha="right", va="top")
-    text(ax, HALF + 0.04, top - 0.03, "SS2D (controlled substitution)", fs=FS, ha="left", va="top")
-    text(ax, PW - 0.04, top - 0.03, "31.2M (SSM stack 0.117M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, 3.25, top - 0.03, "668.2M (bi-GRU module 637.1M)", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, HALF + 0.04, top - 0.03, "SS2D (controlled)", fs=FS, ha="left", va="top")
+    text(ax, PW - 0.04, top - 0.03, "31.2M (SS2D module 0.12M)", fs=FS_S, color=MUTED, ha="right", va="top")
 
     # ── left: unrolled bi-GRU, two passes ──
     y0 = top - 0.84                           # chain baseline
@@ -149,7 +149,7 @@ def panel_b(ax, th, top):
     lab(ax, 0.04, y0 - 0.03, "recurrence sequential in $t$; input–hidden matrices 12,288×11,520 and 7,680×11,520 per direction",
         ha="left", va="top", fs=4.8, max_w=3.21)
 
-    # ── right: SS2D = stem → cross-scan → S6 ×4 → concat → merge ──
+    # ── right: SS2D = stem → 4-way row/column scan → S6 ×4 → concat → merge ──
     dx = HALF
     bh = 0.22
     yr = top - 0.58                           # main-row box bottom
@@ -163,8 +163,8 @@ def panel_b(ax, th, top):
     for d, i, j in (("r", 0, 1), ("l", 1, 1), ("d", 0, 0), ("u", 1, 0)):
         scan_grid(ax, gx0 + i * (gs + gg), gy0 + j * (gs + gg), gs, d)
     gxc = gx0 + gs + gg / 2
-    text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "cross-scan", fs=5.2, va="bottom")
-    lab(ax, gxc, gy0 - 0.03, "rows →←, cols ↓↑, $L$=384", va="top", fs=4.8)
+    text(ax, gxc, gy0 + 2 * gs + gg + 0.04, "4-way scan", fs=5.2, va="bottom")
+    lab(ax, gxc, gy0 - 0.03, "rows →←, columns ↓↑, $L$=384", va="top", fs=4.8)
     arrow(ax, (dx + 1.06, ym), (gx0 - 0.005, ym))
     # four S6 scans — independent weights per direction, each shared by all its rows/columns
     s6x, s6w, s6h, pitch = dx + 1.74, 0.36, 0.10, 0.115
@@ -184,7 +184,7 @@ def panel_b(ax, th, top):
     lab(ax, dx + 2.92, yr - 0.03, "20×384$^2$", va="top", fs=5.0, color=INK)
     text(ax, dx + 0.04, yr - 0.36, "S6:  $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t$,   $y_t = C_t h_t + D x_t$,   "
          "$(\\Delta_t, B_t, C_t)$ from $x_t$", fs=5.6, ha="left", va="center", max_w=PW - dx - 0.08)
-    lab(ax, dx + 0.04, yr - 0.50, "d_inner 128, d_state 16; one S6 weight set per direction, shared by all its rows (columns)",
+    lab(ax, dx + 0.04, yr - 0.50, "128 inner channels, $N$ = 16; one S6 weight set per direction, shared by all its rows (columns)",
         ha="left", va="center", fs=4.9, max_w=PW - dx - 0.08)
     return yr - 0.55                          # panel bottom
 
@@ -192,8 +192,8 @@ def panel_b(ax, th, top):
 # ═════════════════════════ (c) enhanced SS2D ═════════════════════════
 def panel_c(ax, top):
     text(ax, 0.04, top - 0.03, "(c)", fs=FS_P, weight="bold", ha="left", va="top")
-    text(ax, 0.30, top - 0.03, "enhanced SS2D (replaces $f_\\theta$ in (a))", fs=FS, ha="left", va="top")
-    text(ax, PW - 0.04, top - 0.03, "34.2M (SSM stack 3.1M), fp16 scan", fs=FS_S, color=MUTED, ha="right", va="top")
+    text(ax, 0.30, top - 0.03, "SS2D (enhanced) — replaces $f_\\theta$ in (a)", fs=FS, ha="left", va="top")
+    text(ax, PW - 0.04, top - 0.03, "34.2M (SS2D module 3.1M), fp16 scan", fs=FS_S, color=MUTED, ha="right", va="top")
 
     # ── left: block chain ──
     py, ph = 0.06, top - 0.20 - 0.06          # bottom panel extent (shared with the block detail on the right)
@@ -249,14 +249,14 @@ def panel_c(ax, top):
     lab(ax, dx + 0.81, cl + 0.03, "$z$", fs=5.0, color=INK)
     box(ax, dx + 0.90, cu - hb / 2, 0.46, hb, "DWConv 3×3", sub="SiLU, 256", fs=5.4, sub_fs=4.8)
     arrow(ax, (dx + 1.36, cu), (dx + 1.42, cu))
-    box(ax, dx + 1.42, cu - hb / 2, 0.56, hb, "4-dir scan · merge", sub="d_inner 256, N 32", fc=FILL_B, ec=EDGE_B,
+    box(ax, dx + 1.42, cu - hb / 2, 0.56, hb, "4-dir scan · merge", sub="256 ch., $N$ = 32", fc=FILL_B, ec=EDGE_B,
         fs=5.4, sub_fs=4.6)
     box(ax, dx + 0.90, cl - hb / 2, 0.46, hb, "SiLU", sub="gate", fs=5.6, sub_fs=4.8)
     gx = dx + 2.10
     polyline(ax, [(dx + 1.98, cu), (gx, cu), (gx, c + 0.055)])
     polyline(ax, [(dx + 1.36, cl), (gx, cl), (gx, c - 0.055)])
     op(ax, gx, c, r"$\otimes$")
-    box(ax, dx + 2.20, c - hb / 2, 0.42, hb, "Linear", sub="drop 0.05", fs=5.6, sub_fs=4.8)
+    box(ax, dx + 2.20, c - hb / 2, 0.42, hb, "Linear", sub="dropout 0.05", fs=5.6, sub_fs=4.8)
     arrow(ax, (gx + 0.055, c), (dx + 2.20, c))
     ox = dx + 2.74
     arrow(ax, (dx + 2.62, c), (ox - 0.055, c))

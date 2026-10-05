@@ -26,9 +26,9 @@ NS = {
 }
 W = "{%s}" % NS["w"]; WP = "{%s}" % NS["wp"]; A = "{%s}" % NS["a"]; R = "{%s}" % NS["r"]; M = "{%s}" % NS["m"]
 XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
-DEFAULT = [  # (docx, 대응 양식) — 09-09 통합판 v2(학술지 = 서면 심사용, 학술대회 = 프로시딩 게재용, 같은 소스)
-    ("draft_ieie_v2.docx", "template_ieie_2021.docx"),
-    ("draft_ieie_v2_conf.docx", "example_conference_2page.docx"),
+DEFAULT = [  # (docx, 대응 양식) — 09-15 v7(학술지 = 서면 심사용, 학술대회 = 프로시딩 게재용, 같은 소스; 09-14 교수님 검토 반영)
+    ("draft_ieie_v7.docx", "template_ieie_2021.docx"),
+    ("draft_ieie_v7_conf.docx", "example_conference_2page.docx"),
 ]
 
 
@@ -290,18 +290,25 @@ def check_drawings(rep, root, parts, rid, sec, pmap):
 
 
 def check_equations(rep, root, pmap):
+    """oMath 를 display(문단의 평문이 "(n)" 번호뿐) 와 inline(본문 문장 속 $…$ 기호, 09-14 교수님 방식) 으로 나눈다.
+    반환값은 display 수식 수(식 참조 번호 검사용)."""
     eqs = list(root.iter(M + "oMath"))
-    bad = 0
+    bad = 0; n_disp = 0; n_inl = 0
     for e in eqs:
         p = pmap.get(e)
         while p is not None and p.tag != W + "p":
             p = pmap.get(p)
         if p is None:
             bad += 1; continue
-        if not re.search(r"\(\d+\)\s*$", text_of(p)):
-            rep.warn("수식 번호 없음", text_of(p)[:40])
-    rep.fail("수식이 문단 밖", str(bad)) if bad else rep.ok("수식", f"{len(eqs)} oMath (문단 내, 우측 번호 확인)")
-    return len(eqs)
+        if re.fullmatch(r"\s*\(\d+\)\s*", text_of(p)):
+            n_disp += 1
+        else:
+            n_inl += 1
+    if bad:
+        rep.fail("수식이 문단 밖", str(bad))
+    else:
+        rep.ok("수식", f"display {n_disp} / inline {n_inl} oMath (display 는 우측 번호, inline 은 본문 크기 확인)")
+    return n_disp
 
 
 def block_texts(root):
@@ -328,25 +335,25 @@ def block_texts(root):
 
 
 def check_captions_and_refs(rep, blocks, n_tables, n_figs, n_eqs, journal):
-    # 표: 캡션이 표 위, 그림: 캡션이 그림 아래. 국문 캡션은 필수. 영문 캡션은 양식 예시엔 있으나 09-09 교수님 지시로
-    # 국문만 쓰기로 했으므로 있으면 개수만 알리고(정보), 없어도 경고하지 않는다.
-    n_en = 0
+    # 표: 캡션이 표 위, 그림: 캡션이 그림 아래. 09-14 교수님 지시(v7): 캡션은 **영문** 필수("Table n." / "Fig. n."),
+    # 국문 캡션은 선택(있으면 개수만 알림). (09-09 "국문만" 규칙은 대체됨.)
+    n_en = 0; n_ko = 0
     for i, (k, t) in enumerate(blocks):
         if k == "tbl":
             prev = [x for x in blocks[max(0, i - 3):i] if x[0] == "p" and x[1]]
             txt = " ".join(x[1] for x in prev)
             ko = re.search(r"(?<![가-힣])표\s*\d+", txt); en = re.search(r"Table\s*\d+", txt)
-            if not ko:
-                rep.fail("표 캡션(위) 없음", t[:50])
-            n_en += bool(en)
+            if not en:
+                rep.fail("표 영문 캡션(위) 없음", t[:50])
+            n_en += bool(en); n_ko += bool(ko)
         if k == "fig":
             nxt = [x for x in blocks[i + 1:i + 4] if x[0] == "p" and x[1]]
             txt = " ".join(x[1] for x in nxt)
             ko = re.search(r"그림\s*\d+", txt); en = re.search(r"Fig\.\s*\d+", txt)
-            if not ko:
-                rep.fail("그림 캡션(아래) 없음", txt[:50])
-            n_en += bool(en)
-    rep.ok("캡션 언어", f"국문 캡션 {n_tables + n_figs}개 확인, 영문 캡션 {n_en}개 (09-09 규칙: 국문만)")
+            if not en:
+                rep.fail("그림 영문 캡션(아래) 없음", txt[:50])
+            n_en += bool(en); n_ko += bool(ko)
+    rep.ok("캡션 언어", f"영문 캡션 {n_en}/{n_tables + n_figs}개 확인, 국문 캡션 {n_ko}개 (09-14 규칙: 영문)")
     alltext = "\n".join(t for k, t in blocks)
     refs = {"표": [int(x) for x in re.findall(r"(?<![가-힣])표\s*(\d+)", alltext)],
             "그림": [int(x) for x in re.findall(r"그림\s*(\d+)", alltext)],
@@ -361,12 +368,18 @@ def check_captions_and_refs(rep, blocks, n_tables, n_figs, n_eqs, journal):
             "잔존 마크다운 ** / __": len(re.findall(r"(?<!\*)\*\*(?!\*)|(?<!_)__(?!_)", alltext)),
             "잔존 @지시어": len(re.findall(r"(^|\s)@\w+:", alltext)),
             "잔존 [@cite]": len(re.findall(r"\[@", alltext)),
-            "잔존 %% 주석": alltext.count("%%")}
+            "잔존 %% 주석": alltext.count("%%"),
+            "잔존 $ 인라인 수식 구분자": alltext.count("$")}
     for k, v in left.items():
         if v:
             (rep.warn if k.startswith("'***'") or k == "[TBD]" else rep.fail)(k, f"{v}건")
     if not any(v for k, v in left.items() if not (k.startswith("'***'") or k == "[TBD]")):
         rep.ok("잔존 마크업 없음")
+    # 평문 첨자 토큰(y_c, f_θ, d_inner …) — 09-14 교수님 지시(C47/C53): 첨자는 수식 객체로. 소스에서 $…$ 로 감싸면 OMML 이 되어
+    # 평문(w:t)에 남지 않는다. 식별자성 토큰(data_range 등)은 허용.
+    ALLOW = {"data_range"}
+    plain_sub = sorted({m for m in re.findall(r"(?<![\w/])[A-Za-zΔθφỹ]+_[A-Za-z0-9θφ]+", alltext) if m not in ALLOW})
+    rep.warn("평문 첨자 토큰(_x) — $…$ 로 감쌀 것", ", ".join(plain_sub)) if plain_sub else rep.ok("평문 첨자 토큰 없음")
     return alltext
 
 

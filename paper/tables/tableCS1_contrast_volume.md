@@ -1,6 +1,6 @@
-**Table S1 (volume-level). Per-contrast SSIM (volume-level mean; best in bold) and fraction of favoring slices (SSIM-based; parentheses: range over SSIM, PSNR and nMSE).**
+**Table S1 (volume-level). Per-contrast SSIM (volume-level mean; best in bold) and fraction of slices on which the first model of each pair is better (SSIM-based; parentheses: range over SSIM, PSNR and nMSE).**
 
-| Contrast | n (volumes) | SSIM bi-GRU | SSIM SS2D | SSIM Enhanced | SS2D vs. bi-GRU (%) | Enhanced vs. SS2D (%) |
+| Contrast | n (volumes) | SSIM bi-GRU | SSIM SS2D (controlled) | SSIM SS2D (enhanced) | SS2D vs. bi-GRU (%) | SS2D (enhanced) vs. SS2D (controlled) (%) |
 |---|---:|---:|---:|---:|---:|---:|
 | AXFLAIR | 33 | 0.8716 | 0.8731 | **0.8745** | 76.8 (71.0–76.8) | 67.8 (64.3–67.8) |
 | AXT1 | 32 | 0.9072 | 0.9086 | **0.9088** | 78.5 (68.7–78.5) | 48.2 (48.2–49.2) |

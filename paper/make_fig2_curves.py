@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Fig. 2 — validation learning curves (SSIM / PSNR) of the three arms, read from logs/*/log.txt.
+"""Fig. 2 — validation learning curves (SSIM / PSNR) of the three models, read from logs/*/log.txt.
 
 Standard metrics only (brain-masked SSIM and PSNR). The internal composite scalar is NOT plotted.
-Values are the trainer's batch-pooled validation numbers (per-epoch log), so PSNR is on a different
+Values are the trainer's per-batch validation numbers (per-epoch log), so PSNR is on a different
 scale from the slice-level Table 1 — the caption must say so. Output: paper/figs/fig2_learning_curves.{png,pdf}
 """
 import os, re
@@ -34,8 +34,8 @@ LOGS = {
 BEST_EP = {"GRU": 50, "SS2D": 48, "enhanced SS2D": 78}     # checkpoints reported in the tables
 STYLE = {
     "GRU":           dict(color="#e34948", ls="-",  marker="o", ms=2.2, label="bi-GRU (ETER-Net original, 668M)"),
-    "SS2D":          dict(color="#2a78d6", ls="-",  marker="s", ms=2.2, label="SS2D, controlled (31M)"),
-    "enhanced SS2D": dict(color="#2e9e6b", ls="--", marker="^", ms=2.2, label="SS2D, enhanced (34M, 80 ep)"),
+    "SS2D":          dict(color="#2a78d6", ls="-",  marker="s", ms=2.2, label="SS2D (controlled), 31M"),
+    "enhanced SS2D": dict(color="#2e9e6b", ls="--", marker="^", ms=2.2, label="SS2D (enhanced), 34M, 80 epochs"),
 }
 LINE_RE = re.compile(r'Epoch\s+(\d+)/\d+\s+train_loss=([\d.]+)'
                      r'(?:\s+val_composite=([\d.]+)\s+val_ssim_m=([\d.]+)\s+val_psnr=([\d.]+)'
@@ -70,7 +70,7 @@ def main():
     axes[0].set_ylabel("validation SSIM (brain-masked)")
     axes[0].set_ylim(0.895, 0.916)
     axes[0].set_title("(a) SSIM")
-    axes[1].set_ylabel("validation PSNR (dB, batch-pooled)")
+    axes[1].set_ylabel("validation PSNR (dB, per-batch)")
     axes[1].set_ylim(33.5, 35.4)
     axes[1].set_title("(b) PSNR")
 
