@@ -17,6 +17,9 @@ v8 Pure ETER-Net — U-Net 단독 대조 모델(시퀀스 모듈 제거, f_θ �
 집계 식은 paper/make_tables.py 를 따른다. 그 파일은 import 하는 순간 paper/tables/ 를 다시 쓰는 부작용이 있어
 import 하지 않고 같은 식을 옮겨 적었다(각 함수 docstring 에 원 줄 번호). --summary-only 는 기존 CSV 로 요약만 다시 만든다
 (예: 1b 대응 평가 CSV 가 나온 뒤 --ref 를 추가할 때 — 재추론 불필요).
+
+--seq (2026-10-05): 같은 프로토콜로 단일 비교 모델(pixel-GRU·Transformer)도 평가한다. 기본값 unet 은 출력 파일 이름·
+요약 문구가 이전과 같다. 모델 생성 인자는 main_train_pure_v8.build_model 과 같다(공유 config, use_dc=False).
 """
 
 import os
@@ -50,19 +53,54 @@ CM_SCALE = {'ssim': 1.0, 'psnr': 1.0, 'nmse': 100.0, 'l1': 1.0}     # nMSE → %
 CM_FMT = {'ssim': '{:.4f}', 'psnr': '{:.2f}', 'nmse': '{:.3f}', 'l1': '{:.3f}'}   # make_tables.py:267 (+L1)
 HEAD = {'ssim': 'SSIM ↑', 'psnr': 'PSNR (dB) ↑', 'nmse': 'nMSE (%) ↓', 'l1': 'L1 ↓'}
 NAME_D = {'ssim': 'SSIM', 'psnr': 'PSNR (dB)', 'nmse': 'nMSE (10⁻³ %)', 'l1': 'L1'}   # Δ 표의 지표 이름
-CSV_NAME = 'per_slice_unet_only.csv'
-SUMMARY_NAME = 'summary_unet_only.md'
-MODEL_NAME = 'U-Net only'
+# --seq 별 이름·기본 경로 (unet = 이전과 동일). main() 에서 아래 전역을 선택한 모델의 값으로 바꾼다.
+SEQ_SPECS = {
+    'unet': dict(name='U-Net only', title='U-Net 단독 대조 모델 (시퀀스 모듈 제거, $f_\\theta \\equiv 0$)',
+                 csv='per_slice_unet_only.csv', summary='summary_unet_only.md',
+                 ckpt='logs/PureETER_UNET_noDC_R4_brain384_v8_s1_50ep/pure_unet_best.pt',
+                 out_dir='results/eval/v8_unet_only'),
+    'pixelgru': dict(name='pixel-GRU', title='pixel-GRU 비교 모델 (화소 단위로 행과 열을 스캔하는 가중치 공유 bi-GRU 시퀀스 모듈)',
+                     csv='per_slice_pixelgru.csv', summary='summary_pixelgru.md',
+                     ckpt='logs/PureETER_PIXELGRU_noDC_R4_brain384_v8_s1_50ep/pure_pixelgru_best.pt',
+                     out_dir='results/eval/v8_pixelgru'),
+    'transformer': dict(name='Transformer', title='Transformer 비교 모델 (axial attention 시퀀스 모듈)',
+                        csv='per_slice_transformer.csv', summary='summary_transformer.md',
+                        ckpt='logs/PureETER_TRANSFORMER_noDC_R4_brain384_v8_s1_50ep/pure_transformer_best.pt',
+                        out_dir='results/eval/v8_transformer'),
+}
+SEQ = 'unet'
+CSV_NAME = SEQ_SPECS[SEQ]['csv']
+SUMMARY_NAME = SEQ_SPECS[SEQ]['summary']
+MODEL_NAME = SEQ_SPECS[SEQ]['name']
+TITLE = SEQ_SPECS[SEQ]['title']
 
 
 # ------------------------------------------------------------------ 모델
 def build_model(device):
-    """main_train_pure_v8.build_model 의 다른 비교 모델과 같은 공유 config 인자 (시퀀스 모듈 인자 없음)."""
-    from u_pure_eternet_unet import PureETER_UNET
-    model = PureETER_UNET(
-        n_coil=C.N_COIL, n_hidden_2=C.N_HIDDEN_LRNN_2,
-        unet_depth=C.UNET_DEPTH, unet_wf=C.UNET_WF, use_dc=False,
-    )
+    """main_train_pure_v8.build_model 과 같은 공유 config 인자 (use_dc=False). SEQ 전역으로 모델 선택."""
+    if SEQ == 'unet':
+        from u_pure_eternet_unet import PureETER_UNET
+        model = PureETER_UNET(
+            n_coil=C.N_COIL, n_hidden_2=C.N_HIDDEN_LRNN_2,
+            unet_depth=C.UNET_DEPTH, unet_wf=C.UNET_WF, use_dc=False,
+        )
+    elif SEQ == 'pixelgru':
+        from u_pure_eternet_pixelgru import PureETER_PIXELGRU
+        model = PureETER_PIXELGRU(
+            n_coil=C.N_COIL, n_hidden_2=C.N_HIDDEN_LRNN_2,
+            unet_depth=C.UNET_DEPTH, unet_wf=C.UNET_WF,
+            pixelgru_hidden=C.PIXELGRU_HIDDEN, use_dc=False,
+        )
+    elif SEQ == 'transformer':
+        from u_pure_eternet_transformer import PureETER_TRANSFORMER
+        model = PureETER_TRANSFORMER(
+            n_coil=C.N_COIL, n_hidden_2=C.N_HIDDEN_LRNN_2,
+            unet_depth=C.UNET_DEPTH, unet_wf=C.UNET_WF,
+            axial_d_model=C.TRANSFORMER_D_MODEL, axial_n_pairs=C.TRANSFORMER_N_PAIRS,
+            axial_n_heads=C.TRANSFORMER_N_HEADS, use_dc=False,
+        )
+    else:
+        raise ValueError(SEQ)
     return model.to(device)
 
 
@@ -79,7 +117,7 @@ def run_inference(model, ds, total, device, num_workers):
     rows = []
     it = iter(loader)
     with torch.no_grad():
-        for idx in tqdm(range(total), desc='U-Net only eval', unit='slice'):
+        for idx in tqdm(range(total), desc=f'{MODEL_NAME} eval', unit='slice'):
             sample = next(it)
             data_in     = sample['data'].float().to(device)
             data_in_img = sample['data_img'].float().to(device)
@@ -292,7 +330,7 @@ def build_summary(model_rows, refs, ckpt, n_val_total, ep_info):
         ref_m, n_ref = join_ref(model_rows, read_csv_rows(path, column), f'{name} ({path})')
         joined.append((name, path, column, ref_m, n_ref))
 
-    L = [f'# v8 Pure ETER-Net — U-Net 단독 대조 모델 (시퀀스 모듈 제거, $f_\\theta \\equiv 0$) per-slice 평가', '']
+    L = [f'# v8 Pure ETER-Net — {TITLE} per-slice 평가', '']
     L.append(f'- 체크포인트: `{ckpt}`' + (f' — ep {ep_info["epoch"]}/{ep_info["n_total"]} ({ep_info["how"]})'
                                         if ep_info else ''))
     partial = n < n_val_total if n_val_total else False
@@ -352,12 +390,15 @@ def build_summary(model_rows, refs, ckpt, n_val_total, ep_info):
 
 # ------------------------------------------------------------------ main
 def main():
-    p = argparse.ArgumentParser(description='v8 U-Net 단독 대조 모델 per-slice 평가 + 기준 CSV 대응 비교')
-    p.add_argument('--ckpt', default='logs/PureETER_UNET_noDC_R4_brain384_v8_s1_50ep/pure_unet_best.pt',
+    global SEQ, CSV_NAME, SUMMARY_NAME, MODEL_NAME, TITLE
+    p = argparse.ArgumentParser(description='v8 단일 모델(U-Net 단독·pixel-GRU·Transformer) per-slice 평가 + 기준 CSV 대응 비교')
+    p.add_argument('--seq', choices=sorted(SEQ_SPECS), default='unet',
+                   help='평가할 모델 (unet = U-Net 단독 대조 모델, 기본). --ckpt·--out-dir 기본값도 이에 따라 바뀜')
+    p.add_argument('--ckpt', default=None,
                    help='state_dict 체크포인트(*_best.pt / *_epoch_N.pt). 전체 상태 *_last.pt 는 load_ckpt 계약 밖. '
                         '--summary-only 때도 추론에 쓴 경로를 그대로 줄 것 (요약의 ckpt·에폭 표기용)')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
-    p.add_argument('--out-dir', default='results/eval/v8_unet_only')
+    p.add_argument('--out-dir', default=None)
     p.add_argument('--max-samples', type=int, default=-1, help='-1 = 검증 집합 전체 (양수 = 배관 점검용 부분 평가)')
     p.add_argument('--num-workers', type=int, default=4,
                    help='순서 보존(shuffle=False). eval_paired_v8_nodc 의 0 고정은 /dev/shm 64MB 시절 — 현 컨테이너 128g')
@@ -368,6 +409,11 @@ def main():
     p.add_argument('--summary-only', action='store_true',
                    help='추론 없이 --out-dir 의 기존 CSV 로 요약만 다시 생성 (--ref 추가용)')
     args = p.parse_args()
+    spec = SEQ_SPECS[args.seq]
+    SEQ, CSV_NAME, SUMMARY_NAME, MODEL_NAME, TITLE = (args.seq, spec['csv'], spec['summary'],
+                                                     spec['name'], spec['title'])
+    args.ckpt = args.ckpt or spec['ckpt']
+    args.out_dir = args.out_dir or spec['out_dir']
 
     refs = [parse_ref(s) for s in args.ref]
     for name, path, _ in refs:
@@ -390,7 +436,7 @@ def main():
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         print('=' * 64)
-        print(' v8 Pure ETER-Net — U-Net 단독 대조 모델 per-slice 평가')
+        print(f' v8 Pure ETER-Net — {TITLE} per-slice 평가')
         print(f'  device={device}')
         print('=' * 64)
         if not torch.cuda.is_available():

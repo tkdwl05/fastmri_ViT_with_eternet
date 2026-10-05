@@ -24,7 +24,7 @@ ViT 인코더 + 시퀀스 모듈(GRU=ETER 또는 SS2D=Mamba) 하이브리드였�
 
 **진행 상태·큐·ETA·E1 결과표의 단일 출처 = `docs/v8_fairness_followup_plan.md`** (여기엔 복사하지 않는다 — 금방 낡음).
 큐 요지: E1 다중 시드(25ep×3시드, 09-18 완료 — 시드 간 차이의 부호가 일관되지 않음, 두 모델 동등) → 1b 50ep seed 1 쌍 GRU→SS2D(10-02 완료 — Δ 재현 안 됨, 학습 회차 간 변동과 구분되지 않음,
-런 폴더 `_s1_50ep`) → U-Net 단독 모델(시퀀스 모듈 제거, SEED=1, 10-04 완료 — 볼륨 SSIM 0.9127, IEIE 표 1 행) → **(다음, 사용자 실행 지시 대기)** pixel-GRU → Transformer → E3 최소-GRU → E2 LR 스윕 → radapt 재개 → 추론-only 일괄.
+런 폴더 `_s1_50ep`) → U-Net 단독 모델(시퀀스 모듈 제거, SEED=1, 10-04 완료 — 볼륨 SSIM 0.9127, IEIE 표 1 행) → **▶ pixel-GRU(SEED=1, 10-05 10:00 UTC 실행 시작)** → Transformer → E3 최소-GRU → E2 LR 스윕 → radapt 재개 → 추론-only 일괄.
 각 단계 완료 후 다음 단계는 **수동 실행 시작**(자동 체인 없음 — E1 후 2.5일 유휴 재발 방지).
 
 ## 작업 규칙 (사용자 결정 — 이후 모든 작업에 적용)
@@ -116,7 +116,7 @@ SS2D = RefinementBlock + DC) — 이 비대칭이 `docs/eternet_paper_data_consi
 
 - **ckpt·per-epoch 요약** = `logs/<RUN_NAME>/`: `log.txt`(한 줄/epoch — 분석 스크립트는 이것을 읽지 거대한 tqdm `runs/*.log` 를 읽지 않는다), v8 `pure_<arm>_{last,best,epoch_N}.pt`, v9 `ss2d_v9_{last,best,epoch_N}.pt`(last = 전체 상태 재개(true-resume)). v9 RUN_NAME = `PureETER_SS2D_V9_unleashed_R4_brain384` / `..._radapt_multiAR_brain384`, 완료 표시 파일 = `logs/<RUN_NAME>/DONE`.
 - **tqdm·supervisor 로그** = `<track>/runs/`: v8 은 모델축 기준 `runs/{gru,ss2d,chain}/`·`runs/multiseed/`(E1·1b 런 로그), v9 는 각 `runs/ss2d/`. 완료된 런의 tqdm 로그는 gzip(`zcat` 으로 열람). 런처 `*.sh` 는 git-ignore(로컬 전용).
-- **결과** = 저장소 공통 `results/`: `eval/v8_nodc/`(per-slice paired·우위 슬라이스 비율·matched-epoch), `eval/v8_nodc_s1_50ep/`(1b seed 1 짝 평가), `eval/v8_unet_only/`(U-Net 단독, `eval_unet_only_v8.py`), `eval/v8_r_sweep{,_norm}/`(stride-4 서브샘플 — 논문 표 불가, 큐 7단계에서 전체 val 재실행), `eval/v9_unleashed/`, `eval/baselines_384_full/`(공개 모델 전체 val 본 연구 프로토콜 행: U-Net† 0.8971 / E2E-VarNet† 0.9181 / PromptMR+ 0.9417, 볼륨 SSIM), `eval/zero_filled/`, `vis/{v7_titan_compare,v8_pure_eternet_compare,v9_unleashed_compare,multimodel_compare}/`.
+- **결과** = 저장소 공통 `results/`: `eval/v8_nodc/`(per-slice paired·우위 슬라이스 비율·matched-epoch), `eval/v8_nodc_s1_50ep/`(1b seed 1 짝 평가), `eval/v8_unet_only/`(U-Net 단독, `eval_unet_only_v8.py` — `--seq pixelgru|transformer` 로 단일 비교 모델도 같은 프로토콜 평가 → `eval/v8_{pixelgru,transformer}/`), `eval/v8_r_sweep{,_norm}/`(stride-4 서브샘플 — 논문 표 불가, 큐 7단계에서 전체 val 재실행), `eval/v9_unleashed/`, `eval/baselines_384_full/`(공개 모델 전체 val 본 연구 프로토콜 행: U-Net† 0.8971 / E2E-VarNet† 0.9181 / PromptMR+ 0.9417, 볼륨 SSIM), `eval/zero_filled/`, `vis/{v7_titan_compare,v8_pure_eternet_compare,v9_unleashed_compare,multimodel_compare}/`.
 - **`.gitignore`**: `results/` 는 기본 무시, 요약 md·PNG 만 화이트리스트(per-slice CSV·log·ckpt·npz 는 계속 무시). 새 결과 폴더를 공유하려면 디렉터리 + 파일 패턴 두 줄(`!results/eval/<dir>/` 와 `!results/eval/<dir>/<file>`)을 함께 추가.
 
 ## 실행
@@ -132,7 +132,10 @@ SEQ_MODEL=pixelgru USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pu
 SEED=1 ARMS=unet SMOKE_BS=8 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_seed1_50ep.sh \
   > v8_eter_pure/runs/multiseed_outer_unet_s1_50ep.log 2>&1 < /dev/null & disown
 # 진행 확인: tail -2 logs/PureETER_UNET_noDC_R4_brain384_v8_s1_50ep/log.txt ; nvidia-smi
-#   (다음 단계 pixel-GRU 는 사용자 지시 후 수동 실행 시작 — SEED 경로는 실행 전 확정, 권장 SEED=1)
+# ★ 현재 단계: pixel-GRU 50ep SEED=1 (10-05 10:00 UTC 실행 시작; 같은 런처 ARMS=pixelgru — 재기동도 같은 명령)
+SEED=1 ARMS=pixelgru SMOKE_BS=8 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_seed1_50ep.sh \
+  > v8_eter_pure/runs/multiseed_outer_pixelgru_s1_50ep.log 2>&1 < /dev/null & disown
+# 진행 확인: tail -2 logs/PureETER_PIXELGRU_noDC_R4_brain384_v8_s1_50ep/log.txt ; nvidia-smi   (완료 후 다음 단계 Transformer 는 수동 실행 시작)
 #   ⚠ 런처는 끝나도 init 이 회수하지 않아 좀비로 남는다 — 종료 감시는 kill -0 이 아니라 `ps -o stat=` 의 Z 를 확인
 # 1b(완료, 10-02): 같은 런처 기본값 ARMS="gru ss2d" → logs/PureETER_{GRU,SS2D}_noDC_R4_brain384_v8_s1_50ep/, 짝 평가 results/eval/v8_nodc_s1_50ep/
 # E1 다중 시드 런처(완료): v8_eter_pure/runs/run_v8_multiseed.sh — SEEDS × ARMS × EPOCHS env, 완료 런 skip
@@ -180,7 +183,7 @@ GPU 를 쓰는 스크립트는 GPU0 에서 학습이 도는 중이면 실행하�
 - conda 환경 **`base`**(`/opt/conda`) — `mri_env` 는 이전 머신 이름이며 이 머신에 없다.
 - GPU: **TITAN RTX 24GB × 2** — 정책상 **GPU0 단독**, GPU1 은 항상 비워둔다.
 - 컨테이너: Docker 이미지 **`mri:v1`**(`infra/docker/Dockerfile`, 2026-08-31 재구성 — 절차 `infra/docker/RUNBOOK.md`, 스크립트 00_backup→10_preflight→20_build→30_run→40_restore→50_verify). torch 2.3.1 / numpy 1.26.4 는 mamba_ssm 2.2.2 wheel ABI 때문에 동결.
-- **컨테이너 재시작 후 재개 = 큐 표의 *현재 단계* 런처 재실행**(10-04 현재 실행 중인 런 없음 — U-Net 단독 완료, 다음 pixel-GRU 는 사용자 지시 대기. 실행 중 단계가 생기면 그 런처를 재실행). `post_reboot_rearm.sh` 는 GPU0 점유를 확인하지 않고 radapt 를 띄우는 radapt 전용 스크립트라 큐 6단계 전에는 쓰지 않는다 — `infra/docker/RUNBOOK.md` [7] 은 아직 radapt 기준으로 적혀 있다.
+- **컨테이너 재시작 후 재개 = 큐 표의 *현재 단계* 런처 재실행**(현재 pixel-GRU: `SEED=1 ARMS=pixelgru SMOKE_BS=8 … run_v8_seed1_50ep.sh`, 완료 런 skip·전체 상태 재개 — 위 §실행). `post_reboot_rearm.sh` 는 GPU0 점유를 확인하지 않고 radapt 를 띄우는 radapt 전용 스크립트라 큐 6단계 전에는 쓰지 않는다 — `infra/docker/RUNBOOK.md` [7] 은 아직 radapt 기준으로 적혀 있다.
 - **NVML/`/dev/nvidia0` EPERM 반복 재발**: 원인은 cgroup device allowlist 탈락(드라이버·이미지 문제 아님) → `30_host_run.sh` 가 `--device` 를 명시. 실행 중 CUDA 컨텍스트는 살아남지만 **새 프로세스 실행 시작이 실패**하므로 장기 런은 `MAX_RETRY=200` supervisor 로 띄운다.
 - wandb `WANDB_MODE=online`(미동기 `offline-run-*` 는 sync 안 된 것).
 - git 인증 **SSH**(`git@github.com` remote, `~/.ssh/id_ed25519`). push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
