@@ -2,7 +2,7 @@
 v8 Pure ETER-Net 2×2 ablation — 단일 파라미터화 trainer.
 
 환경변수로 4런 구동 (everything else identical):
-  SEQ_MODEL = gru | ss2d | transformer | pixelgru  (3·4번째 팔 2026-09-02 추가 — 공정성 실험)
+  SEQ_MODEL = gru | ss2d | transformer | pixelgru | unet  (3·4번째 비교 모델 2026-09-02 추가 — 공정성 실험; unet = 시퀀스 모듈 제거 대조 모델 2026-10-01)
   USE_DC    = 0  | 1         (DC 축; DCBlock + complex head)
   SMOKE_BS, ACCUM_STEPS, SANITY_NUM_EPOCHS, SANITY_VAL_EVERY_N_EPOCHS 도 override 가능.
 
@@ -44,8 +44,8 @@ from check_recon_env import check_env_for_model
 
 # ── 런 선택 (4런: SEQ_MODEL × USE_DC) ──
 SEQ_MODEL = os.environ.get('SEQ_MODEL', 'gru').lower()
-assert SEQ_MODEL in ('gru', 'ss2d', 'transformer', 'pixelgru'), \
-    f"SEQ_MODEL must be gru|ss2d|transformer|pixelgru, got {SEQ_MODEL}"
+assert SEQ_MODEL in ('gru', 'ss2d', 'transformer', 'pixelgru', 'unet'), \
+    f"SEQ_MODEL must be gru|ss2d|transformer|pixelgru|unet, got {SEQ_MODEL}"
 USE_DC    = os.environ.get('USE_DC', '0') == '1'
 
 # ── override ──
@@ -111,7 +111,7 @@ def build_model(device):
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
     elif SEQ_MODEL == 'transformer':
-        # 3번째 팔: Transformer/axial attention (2026-09-02, docs/axial_transformer_arm_design.md)
+        # 3번째 비교 모델: Transformer/axial attention (2026-09-02, docs/axial_transformer_arm_design.md)
         from u_pure_eternet_transformer import PureETER_TRANSFORMER
         model = PureETER_TRANSFORMER(
             n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
@@ -122,12 +122,20 @@ def build_model(device):
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
     elif SEQ_MODEL == 'pixelgru':
-        # 4번째 팔: 가중치 공유 재귀 (2026-09-02, 공정성 — 메커니즘 vs 파라미터화 분리)
+        # 4번째 비교 모델: 가중치 공유 재귀 (2026-09-02, 공정성 — 메커니즘 vs 파라미터화 분리)
         from u_pure_eternet_pixelgru import PureETER_PIXELGRU
         model = PureETER_PIXELGRU(
             n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
             unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
             pixelgru_hidden=int(os.environ.get('PIXELGRU_HIDDEN', PIXELGRU_HIDDEN)),
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'unet':
+        # 대조 모델: 시퀀스 모듈 제거 (f_θ ≡ 0 → U-Net 입력 52ch 중 20ch 를 0 으로, U-Net 은 동일) (2026-10-01)
+        from u_pure_eternet_unet import PureETER_UNET
+        model = PureETER_UNET(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
     else:
