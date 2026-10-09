@@ -103,6 +103,8 @@ results/vis/multimodel_compare/*
 
 # infra/docker 재구성 세트 + radapt 재개/정지/스냅샷 스크립트 — *.sh 전역 무시의 예외 (2026-08-31, 09-03 정지·스냅샷 추가)
 !infra/docker/*.sh
+# RunPod Pod 실행 세트 (2026-10-09) — *.sh 전역 무시의 예외 (개인 서명 URL 은 Pod 의 /root/_setup/urls.txt 에만 둔다)
+!infra/runpod/*.sh
 !v9_mamba_radapt/runs/post_reboot_rearm.sh
 !v9_mamba_radapt/runs/clean_stop_pre_outage.sh
 !v9_mamba_radapt/runs/snapshot_pre_outage.sh
