@@ -43,6 +43,7 @@ v8fix — 학습 붕괴 수정 레시피(DL) 트레이너 (2026-10-08).
   SANITY_VAL_EVERY_N_EPOCHS, STOP_AFTER_EPOCH, HEALTH_EVERY_STEPS, PROBE_VAL_SLICES, WANDB_RUN_TAG, SAME_UNET_INIT,
   PREFETCH_FACTOR·NUM_WORKERS_VAL(데이터 로더 자원 — 결과 무관), WANDB_PROJECT(wandb 프로젝트, 기본 ViT-MRI-Recon — RunPod 런은 fastMRI-research (entity tkdwl05-hongik-university)),
   V8FIX_LOG_ROOT(기본 <repo>/logs — 디버그 런을 scratch 로 보내는 용도),
+  VAL_MAX_RETRY(기본 3)·TRAIN_NAN_RETRY(기본 1) — 일시적 비유한 값 재계산 횟수(아래 run_val·학습 step 주석, 10-09),
   디버그 전용: DEBUG_MAX_STEPS(epoch 당 step 상한), DEBUG_VAL_SAMPLES(검증 앞쪽 N 슬라이스만).
 """
 
@@ -77,7 +78,7 @@ if os.environ.get('ALLOW_TF32', '0') != '1':
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
 from dataloader_h5_v5 import FastMRI_H5_Dataloader
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, default_collate
 from check_recon_env import check_env_for_model
 import smoke_recipe_fix as R                   # 레시피 함수의 단일 출처 (import 부작용: sys.path·PYTORCH_CUDA_ALLOC_CONF 기본값뿐)
 
@@ -108,6 +109,13 @@ SAME_UNET_INIT     = os.environ.get('SAME_UNET_INIT', '1') == '1'
 # 공유·고정 메모리가 한도에 닿아 OOM → 2 로 줄인다(10-09).
 PREFETCH_FACTOR    = int(os.environ.get('PREFETCH_FACTOR', PREFETCH_FACTOR))
 NUM_WORKERS_VAL    = int(os.environ.get('NUM_WORKERS_VAL', NUM_WORKERS_VAL))
+# 일시적 비유한 값 재계산 (10-09): RunPod RTX 3090 Pod 에서 학습 배치 약 0.2% 의 loss 와 검증 배치 일부의 지표가 NaN/-inf 로 나왔다.
+# 같은 슬라이스를 다시 읽어 다시 계산하면 매번 유한했고(검증 95 배치 × 5 회, GPU 결정적 반복 3000 회·전송 1 TB·VRAM 시험, 읽기 3.2 만 회 모두 무오류),
+# 학습 로그에는 데이터 로더 워커의 overflow 경고(dataloader_h5_v5.py:234·235 의 ×1e4·×1e6, FFT 비유한)가 있었다 → 학습 중 Pod 의
+# CPU 쪽에서 가끔 데이터가 깨진다(로컬 TITAN 은 16 epoch 동안 경고·NaN 0 건). epoch 2 검증 평균이 NaN 이 되어 best 체크포인트가
+# 저장되지 않았다 → 비유한 검증 배치는 데이터셋에서 다시 읽어 다시 계산하고, 학습 배치는 한 번 다시 계산한 뒤 그래도 비유한이면 건너뛴다.
+VAL_MAX_RETRY      = int(os.environ.get('VAL_MAX_RETRY', '3'))
+TRAIN_NAN_RETRY    = int(os.environ.get('TRAIN_NAN_RETRY', '1'))
 assert ACCUM_STEPS == 1, 'v8fix 는 ACCUM_STEPS=1 만 (스모크와 같은 step 정의)'
 NEAR_THR, ALERT_NEAR = R.NEAR_THR, R.TH_COLLAPSED_NEAR       # 1e-6, 0.5
 EXIT_ALERT = 3
@@ -172,43 +180,79 @@ def skimage_ssim_batch_masked(pred, target, mask):
     return float(np.mean(vals)) if vals else 0.0
 
 
+def _val_batch_metrics(model, sample, device, amp=True):
+    """검증 한 배치의 (ssim, psnr, nmse, l1) — main_train_pure_v8.py:152-189 와 같은 지표 공식.
+    매번 CPU 쪽 sample 에서 GPU 로 다시 보내 계산한다(재계산 때 GPU 쪽 사본을 재사용하지 않도록)."""
+    data_in     = sample['data'].float().to(device)
+    data_in_img = sample['data_img'].float().to(device)
+    data_ref    = sample['label'].float().to(device)
+    brain_mask  = sample['brain_mask'].float().to(device)
+    mask        = sample['mask'].float().to(device)
+    sens        = sample['sens'].float().to(device)
+    s = R.per_sample_scale(data_in_img)
+    x_ksp, x_img = R.normalize_inputs(data_in, data_in_img, s)
+
+    with torch.amp.autocast('cuda', enabled=amp):
+        out = model(x_img, x_ksp, mask, sens)
+
+    out_f = out.float() * s
+    ref_f = data_ref.float()
+    m     = brain_mask
+    m_sum = m.sum().clamp(min=1.0)
+    diff_sq_sum = ((out_f - ref_f) ** 2 * m).sum()
+    mse  = diff_sq_sum / m_sum
+    ref_max_in_mask = (ref_f * m).max().clamp(min=1e-10)
+    psnr = (20 * torch.log10(ref_max_in_mask / torch.sqrt(mse.clamp(min=1e-10)))).item()
+    ref_sq_sum = (ref_f ** 2 * m).sum().clamp(min=1e-10)
+    nmse = (diff_sq_sum / ref_sq_sum).item()
+    ssim = skimage_ssim_batch_masked(out_f, ref_f, m)
+    l1   = (((out_f - ref_f).abs() * m).sum() / m_sum).item()
+    return ssim, psnr, nmse, l1
+
+
 def run_val(model, val_loader, device):
     """main_train_pure_v8.py:152-189 와 같은 지표 공식 — 입력을 정규화해 forward 하고 출력×s 로 원 단위 label 과 비교.
-    (composite 없음)"""
+    (composite 없음)
+    지표 중 하나라도 비유한(NaN/±inf)인 배치는 그 배치를 데이터셋에서 다시 읽어(shuffle 없음 → batch bi = 인덱스
+    [bi·bs, (bi+1)·bs)) 최대 VAL_MAX_RETRY 번 다시 계산하고, 그래도 비유한이면 fp32(autocast 끔)로 한 번 계산한다.
+    그래도 비유한이면 그 배치를 평균에서 빼고 개수를 센다 (10-09, 위 VAL_MAX_RETRY 주석)."""
     model.eval()
     all_ssim, all_psnr, all_nmse, all_l1 = [], [], [], []
+    n_retry = n_recovered = n_fp32 = n_excluded = 0
     val_bar = tqdm(val_loader, desc='  Val', leave=False, unit='batch')
     with torch.no_grad():
-        for sample in val_bar:
-            data_in     = sample['data'].float().to(device)
-            data_in_img = sample['data_img'].float().to(device)
-            data_ref    = sample['label'].float().to(device)
-            brain_mask  = sample['brain_mask'].float().to(device)
-            mask        = sample['mask'].float().to(device)
-            sens        = sample['sens'].float().to(device)
-            s = R.per_sample_scale(data_in_img)
-            x_ksp, x_img = R.normalize_inputs(data_in, data_in_img, s)
-
-            with torch.amp.autocast('cuda'):
-                out = model(x_img, x_ksp, mask, sens)
-
-            out_f = out.float() * s
-            ref_f = data_ref.float()
-            m     = brain_mask
-            m_sum = m.sum().clamp(min=1.0)
-            diff_sq_sum = ((out_f - ref_f) ** 2 * m).sum()
-            mse  = diff_sq_sum / m_sum
-            ref_max_in_mask = (ref_f * m).max().clamp(min=1e-10)
-            psnr = (20 * torch.log10(ref_max_in_mask / torch.sqrt(mse.clamp(min=1e-10)))).item()
-            ref_sq_sum = (ref_f ** 2 * m).sum().clamp(min=1e-10)
-            nmse = (diff_sq_sum / ref_sq_sum).item()
-            ssim = skimage_ssim_batch_masked(out_f, ref_f, m)
-            l1   = (((out_f - ref_f).abs() * m).sum() / m_sum).item()
+        for bi, sample in enumerate(val_bar):
+            met = _val_batch_metrics(model, sample, device)
+            if not np.all(np.isfinite(met)):
+                bad0 = met
+                amax0 = {k: float(sample[k].abs().max()) for k in ('data', 'data_img', 'label')}
+                ds_v, bs_v = val_loader.dataset, val_loader.batch_size
+                for _ in range(VAL_MAX_RETRY):
+                    n_retry += 1
+                    sample = default_collate([ds_v[j] for j in range(bi * bs_v, min((bi + 1) * bs_v, len(ds_v)))])
+                    met = _val_batch_metrics(model, sample, device)
+                    if np.all(np.isfinite(met)):
+                        break
+                how = 'retry'
+                if not np.all(np.isfinite(met)):
+                    n_fp32 += 1
+                    met = _val_batch_metrics(model, sample, device, amp=False)
+                    how = 'fp32'
+                ok = bool(np.all(np.isfinite(met)))
+                n_recovered += int(ok)
+                log_line(f'VAL-nonfinite batch{bi} first={tuple(round(float(v), 4) for v in bad0)} input_absmax={amax0} '
+                         f'{"recovered by " + how if ok else "EXCLUDED"} → {tuple(round(float(v), 4) for v in met)}')
+                if not ok:
+                    n_excluded += 1
+                    continue
+            ssim, psnr, nmse, l1 = met
             all_psnr.append(psnr); all_nmse.append(nmse); all_ssim.append(ssim); all_l1.append(l1)
             val_bar.set_postfix(SSIM=f'{ssim:.4f}', PSNR=f'{psnr:.2f}dB')
     model.train()
-    return {'ssim': float(np.mean(all_ssim)), 'psnr': float(np.mean(all_psnr)),
-            'nmse': float(np.mean(all_nmse)), 'l1': float(np.mean(all_l1))}
+    mean = lambda v: float(np.mean(v)) if v else float('nan')   # noqa: E731
+    return {'ssim': mean(all_ssim), 'psnr': mean(all_psnr), 'nmse': mean(all_nmse), 'l1': mean(all_l1),
+            'n_batches': len(all_ssim), 'retry': n_retry, 'recovered': n_recovered, 'fp32': n_fp32,
+            'excluded': n_excluded}
 
 
 @torch.no_grad()
@@ -451,6 +495,7 @@ def main():
     global_step = 0
     consec_skip = 0
     total_skip = 0
+    total_nan_retry = total_nan_recovered = 0
     start_epoch = 0
     tic = time.time()
 
@@ -480,6 +525,8 @@ def main():
         best_val      = _full_state['best_val']
         global_step   = _full_state.get('global_step', 0)
         total_skip    = _full_state.get('total_skip', 0)
+        total_nan_retry     = _full_state.get('total_nan_retry', 0)
+        total_nan_recovered = _full_state.get('total_nan_recovered', 0)
         start_epoch   = _full_state['epoch']
         rng = _full_state.get('rng', {})
         # torch.load(map_location=cuda) 가 RNG ByteTensor 를 GPU 로 옮기므로 CPU 로 되돌려 복원한다
@@ -526,9 +573,7 @@ def main():
         batch_bar = tqdm(trainloader, desc=f'Epoch {epoch+1:3d}/{NUM_EPOCHS}', leave=False, unit='batch')
         optimizer.zero_grad(set_to_none=True)
 
-        for i, sample in enumerate(batch_bar):
-            if DEBUG_MAX_STEPS and i >= DEBUG_MAX_STEPS:
-                break
+        def _train_forward(sample):
             data_in     = sample['data'].float().to(device)
             data_in_img = sample['data_img'].float().to(device)
             data_ref    = sample['label'].float().to(device)
@@ -548,6 +593,27 @@ def main():
             loss_l1   = ((out_fp - data_ref).abs() * brain_mask).sum() / m_sum
             loss_ssim = 1 - criterion_ssim_loss(out_fp, data_ref, mask=brain_mask)
             loss      = loss_l1 + LAM * loss_ssim
+            return s, out, out_fp, loss_l1, loss_ssim, loss
+
+        for i, sample in enumerate(batch_bar):
+            if DEBUG_MAX_STEPS and i >= DEBUG_MAX_STEPS:
+                break
+            s, out, out_fp, loss_l1, loss_ssim, loss = _train_forward(sample)
+
+            # 일시적 비유한 값(10-09, 위 VAL_MAX_RETRY 주석): 같은 배치를 CPU 쪽 sample 에서 다시 보내 다시 계산한다.
+            # 다시 계산해도 비유한이면 아래 기존 NaN-skip. cpu_finite = CPU 쪽 입력이 유한한지(원인 진단용).
+            for _r in range(TRAIN_NAN_RETRY):
+                if torch.isfinite(loss):
+                    break
+                _first = loss.item()
+                del out, out_fp, loss_l1, loss_ssim, loss
+                _cpu_ok = all(bool(torch.isfinite(sample[k]).all()) for k in ('data', 'data_img', 'label', 'brain_mask', 'sens'))
+                _amax = {k: f"{float(sample[k].abs().max()):.3g}" for k in ('data', 'data_img', 'label')}
+                s, out, out_fp, loss_l1, loss_ssim, loss = _train_forward(sample)
+                _ok = bool(torch.isfinite(loss))
+                total_nan_retry += 1; total_nan_recovered += int(_ok)
+                log_line(f'NaN-retry ep{epoch+1} batch{i} first={_first} cpu_finite={_cpu_ok} input_absmax={_amax} '
+                         f'{"recovered" if _ok else "still non-finite"} retry_total={total_nan_retry} recovered_total={total_nan_recovered}')
 
             if not torch.isfinite(loss):           # 기존 트레이너 :360-377 NaN/Inf-skip 가드
                 # 건너뛸 배치의 계산 그래프를 바로 놓는다 — 그대로 두면 다음 forward 동안 두 배치 분량이 GPU 에 남아
@@ -607,16 +673,23 @@ def main():
         do_val = ((epoch + 1) % VAL_EVERY_N_EPOCHS == 0) or is_stop or (epoch + 1) == NUM_EPOCHS
         train_part = (f'train_loss={avg_loss:.5f}  train_l1={avg_l1:.5f}  train_ssim_loss={avg_sl:.5f}  '
                       f'l1_over_ssim_term={avg_l1 / max(LAM * avg_sl, 1e-12):.1f}  gn_max={ep_gn_max:.3g}  '
-                      f'clipped={ep_clipped}  steps={n_done}')
+                      f'clipped={ep_clipped}  steps={n_done}  nan_retry_total={total_nan_retry}  '
+                      f'nan_recovered_total={total_nan_recovered}  nan_skip_total={total_skip}')
         if do_val:
             tqdm.write(f'  [Val ep{epoch+1}] running...')
             vm = run_val(model, val_loader, device)
             tqdm.write(f'  [Val] SSIM_m={vm["ssim"]:.4f}  PSNR={vm["psnr"]:.2f}dB  NMSE={vm["nmse"]:.4f}  L1={vm["l1"]:.4f}')
             wandb.log({'val/ssim_masked': vm['ssim'], 'val/psnr_masked': vm['psnr'],
-                       'val/nmse_masked': vm['nmse'], 'val/l1_masked': vm['l1']}, step=global_step)
+                       'val/nmse_masked': vm['nmse'], 'val/l1_masked': vm['l1'],
+                       'val/nonfinite_retry': vm['retry'], 'val/nonfinite_fp32': vm['fp32'],
+                       'val/nonfinite_excluded': vm['excluded']}, step=global_step)
             log_line(f'Epoch {epoch+1}/{NUM_EPOCHS}  {train_part}  val_ssim_m={vm["ssim"]:.4f}  '
-                     f'val_psnr={vm["psnr"]:.2f}  val_nmse={vm["nmse"]:.4f}  val_l1={vm["l1"]:.4f}')
-            if vm['ssim'] > best_val_ssim:
+                     f'val_psnr={vm["psnr"]:.2f}  val_nmse={vm["nmse"]:.4f}  val_l1={vm["l1"]:.4f}  '
+                     f'val_batches={vm["n_batches"]}  val_retry={vm["retry"]}  val_recovered={vm["recovered"]}  '
+                     f'val_fp32={vm["fp32"]}  val_excluded={vm["excluded"]}')
+            for _k in ('retry', 'recovered', 'fp32', 'excluded', 'n_batches'):
+                vm.pop(_k)
+            if np.isfinite(vm['ssim']) and vm['ssim'] > best_val_ssim:
                 best_val_ssim = vm['ssim']
                 best_val = dict(vm, epoch=epoch + 1)
                 save_checkpoint_atomic(model.state_dict(), os.path.join(PATH_FOLDER, f'{PREFIX}_best.pt'))
@@ -632,6 +705,7 @@ def main():
             'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
             'scaler': scaler.state_dict(), 'best_val_ssim': best_val_ssim, 'best_val': best_val,
             'global_step': global_step, 'total_skip': total_skip, 'recipe': recipe_info,
+            'total_nan_retry': total_nan_retry, 'total_nan_recovered': total_nan_recovered,
             'rng': {'torch_cpu': torch.get_rng_state(), 'torch_cuda': torch.cuda.get_rng_state_all(),
                     'numpy': np.random.get_state(), 'python': random.getstate()},
             'run_config': dict(batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS, total_steps=total_steps, seed=SEED,
