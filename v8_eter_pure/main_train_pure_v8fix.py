@@ -72,6 +72,10 @@ sys.path.append(os.path.join(_PROJECT_ROOT, 'tools'))
 
 from myConfig_pure_eter_v8 import *           # noqa: F401,F403  (공유 하이퍼파라미터 — 기존 트레이너와 같은 config)
 from u_choh_SSIM import SSIM
+# TF32 끔(기본): 로컬 TITAN RTX(Turing)에는 TF32 가 없다 — Ampere 이상 GPU(RunPod 3090 등)에서도 같은 fp32 정밀도로 맞춘다(10-09).
+if os.environ.get('ALLOW_TF32', '0') != '1':
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
 from dataloader_h5_v5 import FastMRI_H5_Dataloader
 from torch.utils.data import DataLoader, Subset
 from check_recon_env import check_env_for_model
@@ -546,10 +550,15 @@ def main():
             loss      = loss_l1 + LAM * loss_ssim
 
             if not torch.isfinite(loss):           # 기존 트레이너 :360-377 NaN/Inf-skip 가드
+                # 건너뛸 배치의 계산 그래프를 바로 놓는다 — 그대로 두면 다음 forward 동안 두 배치 분량이 GPU 에 남아
+                # SS2D(평소 약 20 GB)가 24 GB GPU 에서 OOM 났다(RunPod RTX 3090, 10-09).
+                del out, out_fp, loss_l1, loss_ssim
                 optimizer.zero_grad(set_to_none=True)
                 consec_skip += 1; total_skip += 1
                 if consec_skip <= 3 or consec_skip % 50 == 0:
                     tqdm.write(f'  [NaN-skip] ep{epoch+1} batch{i} loss={loss.item()} consec={consec_skip} total={total_skip}')
+                    log_line(f'NaN-skip ep{epoch+1} batch{i} consec={consec_skip} total={total_skip}')
+                del loss
                 if consec_skip >= MAX_CONSEC_SKIP:
                     _msg = f'FATAL: {consec_skip} consecutive non-finite loss (ep{epoch+1} batch{i}) → exit(1)'
                     tqdm.write('  ' + _msg)
