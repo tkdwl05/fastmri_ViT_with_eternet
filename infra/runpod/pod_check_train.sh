@@ -13,7 +13,7 @@ for ARM in ${ARMS:-unet gru ss2d}; do
   MON=$!
   SEED=1 SEQ_MODEL=$ARM SANITY_NUM_EPOCHS=50 STOP_AFTER_EPOCH=1 SMOKE_BS=8 V8FIX_LOG_ROOT=$OUT/logs \
     DEBUG_MAX_STEPS=$STEPS DEBUG_VAL_SAMPLES=256 PROBE_VAL_SLICES=8 HEALTH_EVERY_STEPS=200 \
-    WANDB_MODE=online WANDB_PROJECT=fastMRI-v8fix-runpod WANDB_RUN_TAG=podcheck PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    WANDB_MODE=online WANDB_ENTITY=tkdwl05-hongik-university WANDB_PROJECT=fastMRI-research WANDB_RUN_TAG=podcheck PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     $PY v8_eter_pure/main_train_pure_v8fix.py > $OUT/${ARM}.log 2>&1
   rc=$?
   kill $MON 2>/dev/null

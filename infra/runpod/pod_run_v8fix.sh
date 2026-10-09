@@ -29,7 +29,7 @@ for ARM in $ARMS; do
   for i in $(seq 1 "$MAX_RETRY"); do
     echo "[pod] $RUN attempt $i BS=$SMOKE_BS EPOCHS=$EPOCHS STOP=$STOP $(date -u)" | tee -a "$LOG"
     SEED=$SEED RUN_SUFFIX=$SUFFIX SEQ_MODEL=$ARM SANITY_NUM_EPOCHS=$EPOCHS STOP_AFTER_EPOCH=$STOP SMOKE_BS=$SMOKE_BS \
-      PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True WANDB_MODE=online WANDB_PROJECT=fastMRI-v8fix-runpod \
+      PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True WANDB_MODE=online WANDB_ENTITY=tkdwl05-hongik-university WANDB_PROJECT=fastMRI-research \
       $PY v8_eter_pure/main_train_pure_v8fix.py >> "$LOG" 2>&1
     rc=$?
     [ $rc -eq 0 ] && { ok=1; break; }
