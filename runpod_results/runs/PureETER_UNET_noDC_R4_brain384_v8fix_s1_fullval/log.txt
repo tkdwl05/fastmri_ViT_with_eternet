@@ -8,3 +8,16 @@ HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 NaN-skip ep1 batch2204 consec=1 total=4
+HEALTH ep1 step2500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step4000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step4500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep1 batch4855 consec=1 total=5
+NaN-skip ep1 batch4857 consec=1 total=6
+NaN-skip ep1 batch4955 consec=1 total=7
+HEALTH ep1 step5000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep1 batch5096 consec=1 total=8
+NaN-skip ep1 batch5122 consec=1 total=9
+NaN-skip ep1 batch5160 consec=1 total=10
+HEALTH ep1 step5500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
