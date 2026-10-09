@@ -77,3 +77,30 @@ HEALTH ep3 step22000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep3 step22500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep3 step23000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 NaN-skip ep3 batch6775 consec=1 total=26
+NaN-skip ep3 batch7015 consec=1 total=27
+NaN-skip ep3 batch7068 consec=1 total=28
+NaN-skip ep3 batch7082 consec=1 total=29
+NaN-skip ep3 batch7184 consec=1 total=30
+HEALTH ep3 step23500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep3 batch7311 consec=1 total=31
+NaN-skip ep3 batch7360 consec=1 total=32
+NaN-skip ep3 batch7371 consec=1 total=33
+NaN-skip ep3 batch7459 consec=1 total=34
+NaN-skip ep3 batch7500 consec=1 total=35
+NaN-skip ep3 batch7511 consec=1 total=36
+HEALTH ep3 step24000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep3 batch7787 consec=1 total=37
+NaN-skip ep3 batch7829 consec=1 total=38
+NaN-skip ep3 batch7906 consec=1 total=39
+NaN-skip ep3 batch7980 consec=1 total=40
+HEALTH ep3 step24359 (epoch-end) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+Epoch 3/50  train_loss=0.03687  train_l1=0.03634  train_ssim_loss=0.17212  l1_over_ssim_term=68.7  gn_max=3.38  clipped=0  steps=8114
+HEALTH ep4 step24500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step25000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep4 batch1079 consec=1 total=41
+HEALTH ep4 step25500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep4 batch1410 consec=1 total=42
+NaN-skip ep4 batch1424 consec=1 total=43
+NaN-skip ep4 batch1435 consec=1 total=44
+NaN-skip ep4 batch1564 consec=1 total=45
+HEALTH ep4 step26000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
