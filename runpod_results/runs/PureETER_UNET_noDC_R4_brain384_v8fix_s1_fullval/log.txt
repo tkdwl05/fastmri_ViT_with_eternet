@@ -1,0 +1,10 @@
+SCRATCH START run=PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval recipe=DL BS=8 LR=0.0002 EPOCHS=50 STOP_AFTER_EPOCH=50 params=31.1M lambda_ssim=0.003075 s_bar=325.25 max_norm=1000 unet_init=own unet_init_checksum=5.9212156172e+02 data_seed=SEED+1000*epoch
+HEALTH ep0 step0 (init) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step4000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
