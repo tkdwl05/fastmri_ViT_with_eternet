@@ -41,6 +41,7 @@ v8fix — 학습 붕괴 수정 레시피(DL) 트레이너 (2026-10-08).
 
 환경 변수: SEQ_MODEL, SEED, RUN_SUFFIX, SMOKE_BS, SANITY_NUM_EPOCHS(=일정 전체 epoch, 기본 config 50),
   SANITY_VAL_EVERY_N_EPOCHS, STOP_AFTER_EPOCH, HEALTH_EVERY_STEPS, PROBE_VAL_SLICES, WANDB_RUN_TAG, SAME_UNET_INIT,
+  WANDB_PROJECT(wandb 프로젝트, 기본 ViT-MRI-Recon — RunPod 런은 fastMRI-v8fix-runpod),
   V8FIX_LOG_ROOT(기본 <repo>/logs — 디버그 런을 scratch 로 보내는 용도),
   디버그 전용: DEBUG_MAX_STEPS(epoch 당 step 상한), DEBUG_VAL_SAMPLES(검증 앞쪽 N 슬라이스만).
 """
@@ -419,7 +420,7 @@ def main():
     _wandb_tag = os.environ.get('WANDB_RUN_TAG', '')
     _wandb_id  = _RUN_NAME + (f'_{_wandb_tag}' if _wandb_tag else '')
     wandb.init(
-        project='ViT-MRI-Recon', name=f'{_wandb_id}_BS{BATCH_SIZE}',
+        project=os.environ.get('WANDB_PROJECT', 'ViT-MRI-Recon'), name=f'{_wandb_id}_BS{BATCH_SIZE}',
         id=_wandb_id, resume='allow',
         config={
             'track': 'v8fix', 'recipe': RECIPE, 'seq_model': SEQ_MODEL, 'use_dc': False, 'seed': SEED,
