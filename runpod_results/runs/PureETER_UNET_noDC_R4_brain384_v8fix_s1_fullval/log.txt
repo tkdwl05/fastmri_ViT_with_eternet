@@ -59,3 +59,13 @@ HEALTH ep2 step16245 (epoch-end) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0
 Epoch 2/50  train_loss=0.04191  train_l1=0.04129  train_ssim_loss=0.20240  l1_over_ssim_term=66.4  gn_max=3.21  clipped=0  steps=8128  val_ssim_m=nan  val_psnr=nan  val_nmse=nan  val_l1=nan
 PROBE ep2 slices=64 ssim=0.8630 | deep4 dSSIM=+0.03270±0.00246 (64/64, p=1.1e-19) | verdict {'deep_used': 'used'}
 NaN-skip ep3 batch78 consec=1 total=22
+NaN-skip ep3 batch137 consec=1 total=23
+NaN-skip ep3 batch172 consec=1 total=24
+HEALTH ep3 step16500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step17000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep3 batch1121 consec=1 total=25
+HEALTH ep3 step17500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step18000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step18500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step19000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step19500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
