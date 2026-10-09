@@ -104,3 +104,10 @@ NaN-skip ep4 batch1424 consec=1 total=43
 NaN-skip ep4 batch1435 consec=1 total=44
 NaN-skip ep4 batch1564 consec=1 total=45
 HEALTH ep4 step26000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step26500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+RESUME start_epoch=3 best_val_ssim=-1.0000 global_step=24359 data_seed=SEED+1000*epoch
+NaN-skip ep4 batch0 consec=1 total=41
+NaN-skip ep4 batch60 consec=1 total=42
+HEALTH ep4 step24500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-skip ep4 batch265 consec=1 total=43
+HEALTH ep4 step25000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
