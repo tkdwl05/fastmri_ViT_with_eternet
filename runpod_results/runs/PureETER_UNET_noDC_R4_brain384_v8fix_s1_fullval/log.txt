@@ -46,3 +46,6 @@ NaN-skip ep2 batch2717 consec=1 total=20
 HEALTH ep2 step11000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 NaN-skip ep2 batch3333 consec=1 total=21
 HEALTH ep2 step11500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step12000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step12500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step13000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
