@@ -41,7 +41,7 @@ v8fix — 학습 붕괴 수정 레시피(DL) 트레이너 (2026-10-08).
 
 환경 변수: SEQ_MODEL, SEED, RUN_SUFFIX, SMOKE_BS, SANITY_NUM_EPOCHS(=일정 전체 epoch, 기본 config 50),
   SANITY_VAL_EVERY_N_EPOCHS, STOP_AFTER_EPOCH, HEALTH_EVERY_STEPS, PROBE_VAL_SLICES, WANDB_RUN_TAG, SAME_UNET_INIT,
-  WANDB_PROJECT(wandb 프로젝트, 기본 ViT-MRI-Recon — RunPod 런은 fastMRI-research (entity tkdwl05-hongik-university)),
+  PREFETCH_FACTOR·NUM_WORKERS_VAL(데이터 로더 자원 — 결과 무관), WANDB_PROJECT(wandb 프로젝트, 기본 ViT-MRI-Recon — RunPod 런은 fastMRI-research (entity tkdwl05-hongik-university)),
   V8FIX_LOG_ROOT(기본 <repo>/logs — 디버그 런을 scratch 로 보내는 용도),
   디버그 전용: DEBUG_MAX_STEPS(epoch 당 step 상한), DEBUG_VAL_SAMPLES(검증 앞쪽 N 슬라이스만).
 """
@@ -100,6 +100,10 @@ PROBE_VAL_SLICES   = int(os.environ.get('PROBE_VAL_SLICES', '64'))
 DEBUG_MAX_STEPS    = int(os.environ.get('DEBUG_MAX_STEPS', '0'))
 DEBUG_VAL_SAMPLES  = int(os.environ.get('DEBUG_VAL_SAMPLES', '0'))
 SAME_UNET_INIT     = os.environ.get('SAME_UNET_INIT', '1') == '1'
+# 데이터 로더 자원 (결과 무관 — 워커가 맡는 샘플·난수는 prefetch·val 워커 수와 무관). RunPod(RAM 125 GB)에서 train prefetch 4 는
+# 공유·고정 메모리가 한도에 닿아 OOM → 2 로 줄인다(10-09).
+PREFETCH_FACTOR    = int(os.environ.get('PREFETCH_FACTOR', PREFETCH_FACTOR))
+NUM_WORKERS_VAL    = int(os.environ.get('NUM_WORKERS_VAL', NUM_WORKERS_VAL))
 assert ACCUM_STEPS == 1, 'v8fix 는 ACCUM_STEPS=1 만 (스모크와 같은 step 정의)'
 NEAR_THR, ALERT_NEAR = R.NEAR_THR, R.TH_COLLAPSED_NEAR       # 1e-6, 0.5
 EXIT_ALERT = 3
