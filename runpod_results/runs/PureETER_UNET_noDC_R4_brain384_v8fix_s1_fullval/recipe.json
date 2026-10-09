@@ -1,0 +1,24 @@
+{
+ "name": "DL",
+ "s_bar": {
+  "mean": 325.2484691441059,
+  "median": 340.3082733154297,
+  "min": 19.192102432250977,
+  "max": 606.7523193359375,
+  "n": 64
+ },
+ "lambda_base": 1.0,
+ "lambda_ssim": 0.0030745725033895113,
+ "max_norm": 1000.0,
+ "adam_eps": 1e-08,
+ "k_ratio": 100.0,
+ "optimizer": "AdamW",
+ "weight_decay": 3e-05,
+ "lr": 0.0002,
+ "smoke_script_version": "2026-10-07b",
+ "run": "PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval",
+ "seq": "unet",
+ "seed": 1,
+ "num_epochs": 50,
+ "batch_size": 8
+}
