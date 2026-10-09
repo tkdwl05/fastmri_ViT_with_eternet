@@ -111,3 +111,30 @@ NaN-skip ep4 batch60 consec=1 total=42
 HEALTH ep4 step24500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 NaN-skip ep4 batch265 consec=1 total=43
 HEALTH ep4 step25000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+RESUME start_epoch=3 best_val_ssim=-1.0000 global_step=24359 data_seed=SEED+1000*epoch
+HEALTH ep4 step24500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-retry ep4 batch349 first=nan cpu_finite=True input_absmax={'data': '3.18e+29', 'data_img': '1.75e+29', 'label': '900'} still non-finite retry_total=1 recovered_total=0
+NaN-skip ep4 batch349 consec=1 total=41
+NaN-retry ep4 batch366 first=nan cpu_finite=False input_absmax={'data': 'nan', 'data_img': 'nan', 'label': '835'} still non-finite retry_total=2 recovered_total=0
+NaN-skip ep4 batch366 consec=1 total=42
+NaN-retry ep4 batch376 first=nan cpu_finite=True input_absmax={'data': '7.05e+33', 'data_img': '3.69e+33', 'label': '1.07e+03'} still non-finite retry_total=3 recovered_total=0
+NaN-skip ep4 batch376 consec=1 total=43
+NaN-retry ep4 batch393 first=nan cpu_finite=False input_absmax={'data': 'inf', 'data_img': 'inf', 'label': '1.12e+03'} still non-finite retry_total=4 recovered_total=0
+NaN-skip ep4 batch393 consec=1 total=44
+NaN-retry ep4 batch425 first=nan cpu_finite=True input_absmax={'data': '3.77e+22', 'data_img': '9.82e+21', 'label': '667'} still non-finite retry_total=5 recovered_total=0
+NaN-skip ep4 batch425 consec=1 total=45
+NaN-retry ep4 batch460 first=nan cpu_finite=True input_absmax={'data': '1.74e+36', 'data_img': '1.27e+36', 'label': '1.27e+03'} still non-finite retry_total=6 recovered_total=0
+NaN-skip ep4 batch460 consec=1 total=46
+NaN-retry ep4 batch468 first=nan cpu_finite=True input_absmax={'data': '4.39e+25', 'data_img': '2.45e+25', 'label': '1.02e+03'} still non-finite retry_total=7 recovered_total=0
+NaN-skip ep4 batch468 consec=1 total=47
+HEALTH ep4 step25000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+NaN-retry ep4 batch689 first=nan cpu_finite=True input_absmax={'data': '1.04e+31', 'data_img': '4.25e+30', 'label': '990'} still non-finite retry_total=8 recovered_total=0
+NaN-skip ep4 batch689 consec=1 total=48
+NaN-retry ep4 batch708 first=nan cpu_finite=True input_absmax={'data': '1.24e+35', 'data_img': '1.58e+35', 'label': '1.03e+03'} still non-finite retry_total=9 recovered_total=0
+NaN-skip ep4 batch708 consec=1 total=49
+NaN-retry ep4 batch759 first=nan cpu_finite=True input_absmax={'data': '1.65e+32', 'data_img': '1.12e+32', 'label': '1.02e+03'} still non-finite retry_total=10 recovered_total=0
+NaN-skip ep4 batch759 consec=1 total=50
+NaN-retry ep4 batch896 first=nan cpu_finite=False input_absmax={'data': 'inf', 'data_img': 'inf', 'label': '792'} still non-finite retry_total=11 recovered_total=0
+NaN-skip ep4 batch896 consec=1 total=51
+HEALTH ep4 step25500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step26000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
