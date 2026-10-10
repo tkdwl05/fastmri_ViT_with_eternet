@@ -1,0 +1,122 @@
+SCRATCH START run=PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval recipe=DL BS=8 LR=0.0002 EPOCHS=50 STOP_AFTER_EPOCH=50 params=668.2M lambda_ssim=0.003075 s_bar=325.25 max_norm=1000 unet_init=copied from PureETER_UNET built right after seed_all(SEED) unet_init_checksum=5.9212156172e+02 data_seed=SEED+1000*epoch trainer=ampguard amp_grad_retry=1 amp_min_scale=1024
+HEALTH ep0 step0 (init) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep1 batch0 loss=0.56413 amp_scale=65536 cpu_finite=True input_absmax={'data': '105', 'data_img': '924', 'label': '1.29e+03'} still non-finite retry_total=1 recovered_total=0
+GRAD-retry ep1 batch140 loss=0.19626 amp_scale=32768 cpu_finite=True input_absmax={'data': '122', 'data_img': '607', 'label': '1.07e+03'} still non-finite retry_total=2 recovered_total=0
+GRAD-retry ep1 batch141 loss=0.19775 amp_scale=16384 cpu_finite=True input_absmax={'data': '168', 'data_img': '767', 'label': '904'} still non-finite retry_total=3 recovered_total=0
+GRAD-retry ep1 batch142 loss=0.19078 amp_scale=8192 cpu_finite=True input_absmax={'data': '164', 'data_img': '680', 'label': '986'} still non-finite retry_total=4 recovered_total=0
+GRAD-retry ep1 batch143 loss=0.19388 amp_scale=4096 cpu_finite=True input_absmax={'data': '182', 'data_img': '547', 'label': '806'} still non-finite retry_total=5 recovered_total=0
+HEALTH ep1 step500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep1 batch3535 loss=0.055985 amp_scale=4096 cpu_finite=True input_absmax={'data': '104', 'data_img': '554', 'label': '802'} still non-finite retry_total=6 recovered_total=0
+GRAD-retry ep1 batch3536 loss=0.060287 amp_scale=2048 cpu_finite=True input_absmax={'data': '159', 'data_img': '931', 'label': '1.45e+03'} still non-finite retry_total=7 recovered_total=0
+GRAD-retry ep1 batch3537 loss=0.059448 amp_scale=1024 cpu_finite=True input_absmax={'data': '98.8', 'data_img': '696', 'label': '941'} still non-finite retry_total=8 recovered_total=0
+AMP-floor ep1 batch3537 amp_scale 512 -> 1024 floor_total=1
+GRAD-retry ep1 batch3538 loss=0.066883 amp_scale=1024 cpu_finite=True input_absmax={'data': '165', 'data_img': '562', 'label': '919'} still non-finite retry_total=9 recovered_total=0
+AMP-floor ep1 batch3538 amp_scale 512 -> 1024 floor_total=2
+GRAD-retry ep1 batch3540 loss=0.27509 amp_scale=1024 cpu_finite=True input_absmax={'data': '120', 'data_img': '874', 'label': '1.28e+03'} still non-finite retry_total=10 recovered_total=0
+AMP-floor ep1 batch3540 amp_scale 512 -> 1024 floor_total=3
+GRAD-retry ep1 batch3541 loss=0.27455 amp_scale=1024 cpu_finite=True input_absmax={'data': '167', 'data_img': '928', 'label': '1.03e+03'} still non-finite retry_total=11 recovered_total=0
+AMP-floor ep1 batch3541 amp_scale 512 -> 1024 floor_total=4
+GRAD-retry ep1 batch3542 loss=0.16276 amp_scale=1024 cpu_finite=True input_absmax={'data': '122', 'data_img': '638', 'label': '1.57e+03'} still non-finite retry_total=12 recovered_total=0
+AMP-floor ep1 batch3542 amp_scale 512 -> 1024 floor_total=5
+GRAD-retry ep1 batch3543 loss=0.23317 amp_scale=1024 cpu_finite=True input_absmax={'data': '147', 'data_img': '576', 'label': '894'} still non-finite retry_total=13 recovered_total=0
+AMP-floor ep1 batch3543 amp_scale 512 -> 1024 floor_total=6
+GRAD-retry ep1 batch3544 loss=0.29216 amp_scale=1024 cpu_finite=True input_absmax={'data': '127', 'data_img': '624', 'label': '858'} still non-finite retry_total=14 recovered_total=0
+AMP-floor ep1 batch3544 amp_scale 512 -> 1024 floor_total=7
+GRAD-retry ep1 batch3545 loss=0.24828 amp_scale=1024 cpu_finite=True input_absmax={'data': '148', 'data_img': '860', 'label': '1.55e+03'} still non-finite retry_total=15 recovered_total=0
+AMP-floor ep1 batch3545 amp_scale 512 -> 1024 floor_total=8
+GRAD-retry ep1 batch3546 loss=0.23777 amp_scale=1024 cpu_finite=True input_absmax={'data': '127', 'data_img': '609', 'label': '1.17e+03'} still non-finite retry_total=16 recovered_total=0
+AMP-floor ep1 batch3546 amp_scale 512 -> 1024 floor_total=9
+GRAD-retry ep1 batch3547 loss=0.27886 amp_scale=1024 cpu_finite=True input_absmax={'data': '119', 'data_img': '455', 'label': '721'} still non-finite retry_total=17 recovered_total=0
+AMP-floor ep1 batch3547 amp_scale 512 -> 1024 floor_total=10
+GRAD-retry ep1 batch3548 loss=0.32125 amp_scale=1024 cpu_finite=True input_absmax={'data': '183', 'data_img': '731', 'label': '1.01e+03'} still non-finite retry_total=18 recovered_total=0
+AMP-floor ep1 batch3548 amp_scale 512 -> 1024 floor_total=11
+GRAD-retry ep1 batch3549 loss=0.26442 amp_scale=1024 cpu_finite=True input_absmax={'data': '150', 'data_img': '784', 'label': '1.34e+03'} still non-finite retry_total=19 recovered_total=0
+AMP-floor ep1 batch3549 amp_scale 512 -> 1024 floor_total=12
+GRAD-retry ep1 batch3550 loss=0.26848 amp_scale=1024 cpu_finite=True input_absmax={'data': '113', 'data_img': '570', 'label': '927'} still non-finite retry_total=20 recovered_total=0
+AMP-floor ep1 batch3550 amp_scale 512 -> 1024 floor_total=13
+GRAD-retry ep1 batch3551 loss=0.23657 amp_scale=1024 cpu_finite=True input_absmax={'data': '125', 'data_img': '762', 'label': '1.41e+03'} still non-finite retry_total=21 recovered_total=0
+AMP-floor ep1 batch3551 amp_scale 512 -> 1024 floor_total=14
+GRAD-retry ep1 batch3552 loss=0.20703 amp_scale=1024 cpu_finite=True input_absmax={'data': '111', 'data_img': '673', 'label': '852'} still non-finite retry_total=22 recovered_total=0
+AMP-floor ep1 batch3552 amp_scale 512 -> 1024 floor_total=15
+GRAD-retry ep1 batch3553 loss=0.24889 amp_scale=1024 cpu_finite=True input_absmax={'data': '150', 'data_img': '777', 'label': '1.02e+03'} still non-finite retry_total=23 recovered_total=0
+AMP-floor ep1 batch3553 amp_scale 512 -> 1024 floor_total=16
+GRAD-retry ep1 batch3554 loss=0.24701 amp_scale=1024 cpu_finite=True input_absmax={'data': '117', 'data_img': '727', 'label': '1.24e+03'} still non-finite retry_total=24 recovered_total=0
+AMP-floor ep1 batch3554 amp_scale 512 -> 1024 floor_total=17
+GRAD-retry ep1 batch3555 loss=0.32467 amp_scale=1024 cpu_finite=True input_absmax={'data': '87.8', 'data_img': '504', 'label': '722'} still non-finite retry_total=25 recovered_total=0
+AMP-floor ep1 batch3555 amp_scale 512 -> 1024 floor_total=18
+GRAD-retry ep1 batch3556 loss=0.19528 amp_scale=1024 cpu_finite=True input_absmax={'data': '112', 'data_img': '829', 'label': '1.22e+03'} still non-finite retry_total=26 recovered_total=0
+AMP-floor ep1 batch3556 amp_scale 512 -> 1024 floor_total=19
+GRAD-retry ep1 batch3557 loss=0.22237 amp_scale=1024 cpu_finite=True input_absmax={'data': '87.6', 'data_img': '566', 'label': '949'} still non-finite retry_total=27 recovered_total=0
+AMP-floor ep1 batch3557 amp_scale 512 -> 1024 floor_total=20
+GRAD-retry ep1 batch3558 loss=0.24825 amp_scale=1024 cpu_finite=True input_absmax={'data': '154', 'data_img': '718', 'label': '1.15e+03'} still non-finite retry_total=28 recovered_total=0
+AMP-floor ep1 batch3558 amp_scale 512 -> 1024 floor_total=21
+GRAD-retry ep1 batch3559 loss=0.28482 amp_scale=1024 cpu_finite=True input_absmax={'data': '157', 'data_img': '643', 'label': '902'} still non-finite retry_total=29 recovered_total=0
+AMP-floor ep1 batch3559 amp_scale 512 -> 1024 floor_total=22
+GRAD-retry ep1 batch3560 loss=0.18985 amp_scale=1024 cpu_finite=True input_absmax={'data': '71.5', 'data_img': '469', 'label': '859'} still non-finite retry_total=30 recovered_total=0
+AMP-floor ep1 batch3560 amp_scale 512 -> 1024 floor_total=23
+GRAD-retry ep1 batch3561 loss=0.25959 amp_scale=1024 cpu_finite=True input_absmax={'data': '161', 'data_img': '604', 'label': '915'} still non-finite retry_total=31 recovered_total=0
+AMP-floor ep1 batch3561 amp_scale 512 -> 1024 floor_total=24
+GRAD-retry ep1 batch3562 loss=0.17085 amp_scale=1024 cpu_finite=True input_absmax={'data': '127', 'data_img': '527', 'label': '843'} still non-finite retry_total=32 recovered_total=0
+AMP-floor ep1 batch3562 amp_scale 512 -> 1024 floor_total=25
+GRAD-retry ep1 batch3563 loss=0.3338 amp_scale=1024 cpu_finite=True input_absmax={'data': '172', 'data_img': '863', 'label': '1.11e+03'} still non-finite retry_total=33 recovered_total=0
+AMP-floor ep1 batch3563 amp_scale 512 -> 1024 floor_total=26
+GRAD-retry ep1 batch3564 loss=0.26643 amp_scale=1024 cpu_finite=True input_absmax={'data': '87.7', 'data_img': '714', 'label': '1.25e+03'} still non-finite retry_total=34 recovered_total=0
+AMP-floor ep1 batch3564 amp_scale 512 -> 1024 floor_total=27
+GRAD-retry ep1 batch3565 loss=0.21879 amp_scale=1024 cpu_finite=True input_absmax={'data': '132', 'data_img': '525', 'label': '839'} still non-finite retry_total=35 recovered_total=0
+AMP-floor ep1 batch3565 amp_scale 512 -> 1024 floor_total=28
+GRAD-retry ep1 batch3566 loss=0.27919 amp_scale=1024 cpu_finite=True input_absmax={'data': '113', 'data_img': '654', 'label': '1.28e+03'} still non-finite retry_total=36 recovered_total=0
+AMP-floor ep1 batch3566 amp_scale 512 -> 1024 floor_total=29
+GRAD-retry ep1 batch3567 loss=0.29686 amp_scale=1024 cpu_finite=True input_absmax={'data': '178', 'data_img': '717', 'label': '840'} still non-finite retry_total=37 recovered_total=0
+AMP-floor ep1 batch3567 amp_scale 512 -> 1024 floor_total=30
+GRAD-retry ep1 batch3568 loss=0.29769 amp_scale=1024 cpu_finite=True input_absmax={'data': '144', 'data_img': '552', 'label': '734'} still non-finite retry_total=38 recovered_total=0
+AMP-floor ep1 batch3568 amp_scale 512 -> 1024 floor_total=31
+GRAD-retry ep1 batch3569 loss=0.23246 amp_scale=1024 cpu_finite=True input_absmax={'data': '123', 'data_img': '525', 'label': '1.01e+03'} still non-finite retry_total=39 recovered_total=0
+AMP-floor ep1 batch3569 amp_scale 512 -> 1024 floor_total=32
+GRAD-retry ep1 batch3570 loss=0.24132 amp_scale=1024 cpu_finite=True input_absmax={'data': '172', 'data_img': '670', 'label': '990'} still non-finite retry_total=40 recovered_total=0
+AMP-floor ep1 batch3570 amp_scale 512 -> 1024 floor_total=33
+GRAD-retry ep1 batch3571 loss=0.21156 amp_scale=1024 cpu_finite=True input_absmax={'data': '142', 'data_img': '1.02e+03', 'label': '1.24e+03'} still non-finite retry_total=41 recovered_total=0
+AMP-floor ep1 batch3571 amp_scale 512 -> 1024 floor_total=34
+GRAD-retry ep1 batch3572 loss=0.20727 amp_scale=1024 cpu_finite=True input_absmax={'data': '99.3', 'data_img': '532', 'label': '852'} still non-finite retry_total=42 recovered_total=0
+AMP-floor ep1 batch3572 amp_scale 512 -> 1024 floor_total=35
+GRAD-retry ep1 batch3573 loss=0.20846 amp_scale=1024 cpu_finite=True input_absmax={'data': '83.8', 'data_img': '719', 'label': '984'} still non-finite retry_total=43 recovered_total=0
+AMP-floor ep1 batch3573 amp_scale 512 -> 1024 floor_total=36
+GRAD-retry ep1 batch3574 loss=0.23827 amp_scale=1024 cpu_finite=True input_absmax={'data': '155', 'data_img': '570', 'label': '1.03e+03'} still non-finite retry_total=44 recovered_total=0
+AMP-floor ep1 batch3574 amp_scale 512 -> 1024 floor_total=37
+GRAD-retry ep1 batch3575 loss=0.2192 amp_scale=1024 cpu_finite=True input_absmax={'data': '130', 'data_img': '517', 'label': '817'} still non-finite retry_total=45 recovered_total=0
+AMP-floor ep1 batch3575 amp_scale 512 -> 1024 floor_total=38
+GRAD-retry ep1 batch3576 loss=0.21403 amp_scale=1024 cpu_finite=True input_absmax={'data': '153', 'data_img': '542', 'label': '947'} still non-finite retry_total=46 recovered_total=0
+AMP-floor ep1 batch3576 amp_scale 512 -> 1024 floor_total=39
+GRAD-retry ep1 batch3577 loss=0.261 amp_scale=1024 cpu_finite=True input_absmax={'data': '99', 'data_img': '495', 'label': '825'} still non-finite retry_total=47 recovered_total=0
+AMP-floor ep1 batch3577 amp_scale 512 -> 1024 floor_total=40
+GRAD-retry ep1 batch3578 loss=0.19814 amp_scale=1024 cpu_finite=True input_absmax={'data': '94.7', 'data_img': '1.34e+03', 'label': '1.99e+03'} still non-finite retry_total=48 recovered_total=0
+AMP-floor ep1 batch3578 amp_scale 512 -> 1024 floor_total=41
+GRAD-retry ep1 batch3579 loss=0.20511 amp_scale=1024 cpu_finite=True input_absmax={'data': '122', 'data_img': '512', 'label': '887'} still non-finite retry_total=49 recovered_total=0
+AMP-floor ep1 batch3579 amp_scale 512 -> 1024 floor_total=42
+GRAD-retry ep1 batch3581 loss=0.3174 amp_scale=1024 cpu_finite=True input_absmax={'data': '86', 'data_img': '570', 'label': '890'} still non-finite retry_total=50 recovered_total=0
+AMP-floor ep1 batch3581 amp_scale 512 -> 1024 floor_total=43
+AMP-floor ep1 batch3582 amp_scale 512 -> 1024 floor_total=44
+AMP-floor ep1 batch3583 amp_scale 512 -> 1024 floor_total=45
+AMP-floor ep1 batch3584 amp_scale 512 -> 1024 floor_total=46
+AMP-floor ep1 batch3585 amp_scale 512 -> 1024 floor_total=47
+AMP-floor ep1 batch3586 amp_scale 512 -> 1024 floor_total=48
+AMP-floor ep1 batch3587 amp_scale 512 -> 1024 floor_total=49
+AMP-floor ep1 batch3588 amp_scale 512 -> 1024 floor_total=50
+GRAD-retry ep1 batch3631 loss=0.26392 amp_scale=1024 cpu_finite=True input_absmax={'data': '177', 'data_img': '925', 'label': '1.08e+03'} still non-finite retry_total=100 recovered_total=0
+AMP-floor ep1 batch3638 amp_scale 512 -> 1024 floor_total=100
+GRAD-retry ep1 batch3681 loss=0.33684 amp_scale=1024 cpu_finite=True input_absmax={'data': '185', 'data_img': '740', 'label': '862'} still non-finite retry_total=150 recovered_total=0
+AMP-floor ep1 batch3688 amp_scale 512 -> 1024 floor_total=150
+GRAD-retry ep1 batch3731 loss=0.30861 amp_scale=1024 cpu_finite=True input_absmax={'data': '137', 'data_img': '701', 'label': '1.02e+03'} still non-finite retry_total=200 recovered_total=0
+AMP-floor ep1 batch3738 amp_scale 512 -> 1024 floor_total=200
+GRAD-retry ep1 batch3781 loss=0.28938 amp_scale=1024 cpu_finite=True input_absmax={'data': '107', 'data_img': '626', 'label': '998'} still non-finite retry_total=250 recovered_total=0
+AMP-floor ep1 batch3788 amp_scale 512 -> 1024 floor_total=250
+GRAD-retry ep1 batch3831 loss=0.26742 amp_scale=1024 cpu_finite=True input_absmax={'data': '171', 'data_img': '864', 'label': '874'} still non-finite retry_total=300 recovered_total=0
+AMP-floor ep1 batch3839 amp_scale 512 -> 1024 floor_total=300
+GRAD-retry ep1 batch3883 loss=0.12732 amp_scale=1024 cpu_finite=True input_absmax={'data': '64.6', 'data_img': '570', 'label': '806'} still non-finite retry_total=350 recovered_total=0
+AMP-floor ep1 batch3890 amp_scale 512 -> 1024 floor_total=350
+ABANDONED 2026-10-10 14:20 UTC — ampguard 재학습도 같은 지점(epoch 1 batch 3535)부터 거의 모든 batch 기울기 비유한(배율 하한 1024 에서 step 건너뜀 반복) → 재현되는 GRU 기울기 폭주로 판단, 원인 진단 위해 중단. wandb run = PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval_pod3r
