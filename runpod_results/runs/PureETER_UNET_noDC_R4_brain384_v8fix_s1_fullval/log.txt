@@ -472,3 +472,13 @@ HEALTH ep26 step203500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01
 HEALTH ep26 step204000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep26 step204500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep26 step205000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step205500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step206000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step206500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step207000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step207500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step208000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step208500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step209000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step209500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step210000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
