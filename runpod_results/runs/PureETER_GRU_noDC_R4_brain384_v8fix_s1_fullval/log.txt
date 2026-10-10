@@ -3,3 +3,7 @@ HEALTH ep0 step0 (init) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=
 GRAD-retry ep1 batch0 loss=0.56413 amp_scale=65536 cpu_finite=True input_absmax={'data': '105', 'data_img': '924', 'label': '1.29e+03'} still non-finite retry_total=1 recovered_total=0
 HEALTH ep1 step500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
