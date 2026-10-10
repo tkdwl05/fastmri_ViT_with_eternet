@@ -58,3 +58,8 @@ GRAD-retry ep3 batch4618 loss=0.049737 amp_scale=131072 cpu_finite=True input_ab
 HEALTH ep3 step21000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep3 step21500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep3 step22000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step22500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step23000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch6874 loss=0.10506 amp_scale=131072 cpu_finite=True input_absmax={'data': '90.7', 'data_img': '536', 'label': '858'} still non-finite retry_total=10 recovered_total=0
+HEALTH ep3 step23500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step24000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
