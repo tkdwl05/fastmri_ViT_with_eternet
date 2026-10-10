@@ -41,3 +41,9 @@ HEALTH ep2 step15000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_
 HEALTH ep2 step15500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep2 step16000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep2 step16266 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 2/50  train_loss=0.04539  train_l1=0.04469  train_ssim_loss=0.22733  l1_over_ssim_term=63.9  gn_max=2.96  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=6  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.8657  val_psnr=31.93  val_nmse=0.0081  val_l1=12.7463  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep2 slices=64 ssim=0.8432 | shuffle_cross dSSIM=+0.00435±0.00255 (50/64, p=7.1e-06) | shuffle_adj dSSIM=-0.00001±0.00009 (34/64, p=0.71) | zero dSSIM=+0.08636±0.00539 (64/64, p=1.1e-19) | deep4 dSSIM=+0.02107±0.00185 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep3 step16500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch452 loss=0.12141 amp_scale=131072 cpu_finite=True input_absmax={'data': '164', 'data_img': '578', 'label': '810'} still non-finite retry_total=7 recovered_total=0
+HEALTH ep3 step17000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step17500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
