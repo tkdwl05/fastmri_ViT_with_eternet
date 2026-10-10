@@ -2,6 +2,8 @@
 v8fix + AMP 보호 장치 트레이너 (2026-10-10) — main_train_pure_v8fix.py(RunPod 판, NaN-retry 포함)와 학습 내용은 같고
 fp16 GradScaler 보호 장치 두 가지만 더했다(아래 AMP_GRAD_RETRY·AMP_MIN_SCALE 주석). 실행 중인 다른 런의 트레이너를 고치지 않으려고
 새 파일로 분리했다. 런 폴더·wandb 이름 규칙은 원 트레이너와 같다.
+10-10 추가: SEQ_MODEL=gru 이면 k-space 쪽 GRU(gru_h)를 fp32 로 계산한다(GRU_FP32_MODULES, 기본 gru_h) — 보호 장치만으로는
+같은 지점(epoch 1 batch ≈3,535)에서 다시 무너졌고, 그 상태에서 gru_h 의 fp16 기울기가 NaN 이거나 최대 40 배 틀렸다(gru_precision.py 주석).
 
 v8fix — 학습 붕괴 수정 레시피(DL) 트레이너 (2026-10-08).
 
@@ -49,6 +51,7 @@ v8fix — 학습 붕괴 수정 레시피(DL) 트레이너 (2026-10-08).
   V8FIX_LOG_ROOT(기본 <repo>/logs — 디버그 런을 scratch 로 보내는 용도),
   VAL_MAX_RETRY(기본 3)·TRAIN_NAN_RETRY(기본 1) — 일시적 비유한 값 재계산 횟수(아래 run_val·학습 step 주석, 10-09),
   AMP_GRAD_RETRY(기본 1)·AMP_MIN_SCALE(기본 1024) — AMP 보호 장치(10-10, 이 파일에서만),
+  GRU_FP32_MODULES(SEQ_MODEL=gru 일 때 기본 gru_h, 쉼표 구분, 빈 값 = 전부 fp16) — fp32 로 계산할 GRU 모듈(10-10),
   디버그 전용: DEBUG_MAX_STEPS(epoch 당 step 상한), DEBUG_VAL_SAMPLES(검증 앞쪽 N 슬라이스만).
 """
 
@@ -86,6 +89,7 @@ from dataloader_h5_v5 import FastMRI_H5_Dataloader
 from torch.utils.data import DataLoader, Subset, default_collate
 from check_recon_env import check_env_for_model
 import smoke_recipe_fix as R                   # 레시피 함수의 단일 출처 (import 부작용: sys.path·PYTORCH_CUDA_ALLOC_CONF 기본값뿐)
+import gru_precision                           # GRU_FP32_MODULES (10-10)
 
 # ── 레시피 DL 고정 (스모크 정의와 어긋나면 중단) ──
 RECIPE = 'DL'
@@ -98,6 +102,9 @@ ADAM_EPS = float(_SPEC['adam_eps'])            # 1e-8
 SEQ_MODEL = os.environ.get('SEQ_MODEL', 'gru').lower()
 assert SEQ_MODEL in ('unet', 'gru', 'ss2d'), f"v8fix 는 SEQ_MODEL=unet|gru|ss2d 만 (받은 값 {SEQ_MODEL})"
 HAS_SEQ = SEQ_MODEL in ('gru', 'ss2d')
+# k-space 쪽 GRU 를 fp32 로 (10-10, gru_precision.py 주석) — GRU 가 아닌 모델에는 해당 없음
+GRU_FP32_MODULES = tuple(n for n in os.environ.get('GRU_FP32_MODULES', 'gru_h' if SEQ_MODEL == 'gru' else '').split(',') if n)
+assert SEQ_MODEL == 'gru' or not GRU_FP32_MODULES, 'GRU_FP32_MODULES 는 SEQ_MODEL=gru 에서만'
 
 # ── override ──
 NUM_EPOCHS         = int(os.environ.get('SANITY_NUM_EPOCHS', NUM_EPOCHS))
@@ -413,6 +420,9 @@ def main():
         model.unet.load_state_dict(_sd)
         del _ref, _sd
         unet_init_note = 'copied from PureETER_UNET built right after seed_all(SEED)'
+    if GRU_FP32_MODULES:
+        gru_precision.apply(model, GRU_FP32_MODULES)
+        print(f'[gru_precision] {GRU_FP32_MODULES} → fp32 (나머지 fp16 autocast)')
     groups = R.build_groups(model, SEQ_MODEL)
     with torch.no_grad():                      # U-Net 초기값 확인용 (모델끼리 같아야 함 — SCRATCH START 줄에 기록)
         _unet_checksum = float(sum((p.double() * (i + 1)).sum() for i, p in enumerate(model.unet.parameters())))
@@ -544,6 +554,8 @@ def main():
         for k, cur in (('batch_size', BATCH_SIZE), ('num_epochs', NUM_EPOCHS), ('seed', SEED)):
             if k in _rc and _rc[k] != cur:
                 _bad.append(f'{k} ckpt {_rc[k]} != 현재 {cur}')
+        if list(_rc.get('gru_fp32_modules', [])) != list(GRU_FP32_MODULES):
+            _bad.append(f'gru_fp32_modules ckpt {_rc.get("gru_fp32_modules", [])} != 현재 {list(GRU_FP32_MODULES)}')
         for k, cur in (('smoke_script_version', R.SCRIPT_VERSION), ('max_norm', MAX_NORM), ('adam_eps', ADAM_EPS),
                        ('k_ratio', float(R.K_RATIO))):
             if k in _ri and _ri[k] != cur:
@@ -585,7 +597,8 @@ def main():
                  f'EPOCHS={NUM_EPOCHS} STOP_AFTER_EPOCH={STOP_AFTER_EPOCH or "-"} params={num_params/1e6:.1f}M '
                  f'lambda_ssim={LAM:.6f} s_bar={recipe_info["s_bar"]["mean"]:.2f} max_norm={MAX_NORM:g} '
                  f'unet_init={unet_init_note} unet_init_checksum={_unet_checksum:.10e} data_seed=SEED+1000*epoch '
-                 f'trainer=ampguard amp_grad_retry={AMP_GRAD_RETRY} amp_min_scale={AMP_MIN_SCALE:g}')
+                 f'trainer=ampguard amp_grad_retry={AMP_GRAD_RETRY} amp_min_scale={AMP_MIN_SCALE:g} '
+                 f'gru_fp32_modules={",".join(GRU_FP32_MODULES) or "-"}')
         health_check(model, groups, -1, 0, 'init')
 
     if STOP_AFTER_EPOCH and start_epoch >= STOP_AFTER_EPOCH and STOP_AFTER_EPOCH < NUM_EPOCHS:
@@ -788,7 +801,7 @@ def main():
             'rng': {'torch_cpu': torch.get_rng_state(), 'torch_cuda': torch.cuda.get_rng_state_all(),
                     'numpy': np.random.get_state(), 'python': random.getstate()},
             'run_config': dict(batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS, total_steps=total_steps, seed=SEED,
-                               unet_init=unet_init_note),
+                               unet_init=unet_init_note, gru_fp32_modules=list(GRU_FP32_MODULES)),
         }, last_ckpt_path)
 
         # 기능 시험은 진단용 — 체크포인트 저장 뒤에 돌리고, 실패해도 학습을 멈추지 않는다

@@ -2,13 +2,15 @@
 # RunPod Pod: v8fix 한 모델만 50 epoch 학습 + 그 모델의 test_full·val 평가 — AMP 보호 장치 트레이너판 (2026-10-10).
 #   pod_run_arm.sh 와 같고 트레이너만 main_train_pure_v8fix_ampguard.py(fp16 GradScaler 배율 하한·기울기 비유한 재계산 — 그 파일 주석).
 #   pod3 ETER-net(GRU) 런이 배율 붕괴로 무너진 뒤 GRU 재학습에 쓴다. 실행 중인 다른 런의 런처를 고치지 않으려고 새 파일로 분리.
+#   ARM=gru 이면 트레이너가 k-space 쪽 GRU(gru_h)를 fp32 로 계산하므로(GRU_FP32_MODULES) 평가도 같은 정밀도의 래퍼
+#   eval_v8fix_grufp32.py 로 한다 (10-10).
 #   모델을 여러 Pod·GPU 에 나눠 동시에 돌릴 때 쓴다(pod_run_v8fix.sh 는 한 Pod 에서 unet → gru → ss2d 차례로).
 #   데이터·학습 설정·런 이름은 pod_run_v8fix.sh 와 같다(_s1_fullval, val 0~2 로 best 선택, test_full 최종 평가).
 #   ARM=gru|ss2d|unet  GPU=<장치 번호>  WANDB_RUN_TAG=<Pod 이름 — 같은 런 이름이 다른 Pod 의 wandb run 과 겹치지 않게>
 #   WAIT_PID=<pid>: 그 프로세스(이미 돌고 있는 같은 모델의 트레이너)가 끝날 때까지 기다린 뒤 시작 — 런처를 바꿔 끼울 때.
 #   재기동도 같은 명령(DONE 이면 학습 skip, 미완이면 전체 상태 재개). exit 3 = ALERT_COLLAPSE, exit 2 = 재개 설정 불일치 → 중단.
 #   대응(paired) 비교 요약은 세 모델의 per_slice CSV 를 한곳에 모은 뒤 eval_v8fix.py --summary-only 로 따로 만든다.
-#   예) ARM=gru GPU=0 WANDB_RUN_TAG=pod3r setsid -f bash infra/runpod/pod_run_arm_ampguard.sh > /root/_setup/run_gru.log 2>&1 < /dev/null
+#   예) ARM=gru GPU=0 WANDB_RUN_TAG=pod3f setsid -f bash infra/runpod/pod_run_arm_ampguard.sh > /root/_setup/run_gru.log 2>&1 < /dev/null
 set -u
 ROOT=/root/fastmri_ViT_with_eternet
 cd "$ROOT"
@@ -52,11 +54,12 @@ fi
 
 # 평가: best(val 0~2 기준) 체크포인트를 test_full(최종)과 val 전체(참고)에서. 대응 비교 요약은 따로.
 ELOG="$LOGDIR/eval_${ARM}${SUFFIX}.log"
+EVAL_PY=v8_eter_pure/eval_v8fix.py; [ "$ARM" = gru ] && EVAL_PY=v8_eter_pure/eval_v8fix_grufp32.py
 for split in test_full val; do
   OUT="results/eval/v8fix${SUFFIX}_${split}"
   [ -e "$OUT/summary_${ARM}.md" ] && continue
   echo "[arm] eval $split $ARM $(date -u)" | tee -a "$ELOG"
-  $PY v8_eter_pure/eval_v8fix.py --seq "$ARM" --ckpt "logs/$RUN/pure_${ARM}_best.pt" --data-path "./fastMRI_data/multicoil_${split}" \
+  $PY "$EVAL_PY" --seq "$ARM" --ckpt "logs/$RUN/pure_${ARM}_best.pt" --data-path "./fastMRI_data/multicoil_${split}" \
     --out-dir "$OUT" --skip-precheck --force --num-workers 8 >> "$ELOG" 2>&1 || echo "[arm] eval $split $ARM 실패" | tee -a "$ELOG"
 done
 echo "[arm] $RUN 학습·평가 완료 $(date -u)" | tee -a "$ELOG"
