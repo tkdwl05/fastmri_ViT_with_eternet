@@ -1,11 +1,5 @@
-SCRATCH START run=PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval recipe=DL BS=8 LR=0.0002 EPOCHS=50 STOP_AFTER_EPOCH=50 params=668.2M lambda_ssim=0.003075 s_bar=325.25 max_norm=1000 unet_init=copied from PureETER_UNET built right after seed_all(SEED) unet_init_checksum=5.9212156172e+02 data_seed=SEED+1000*epoch trainer=ampguard amp_grad_retry=1 amp_min_scale=1024
+SCRATCH START run=PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval recipe=DL BS=8 LR=0.0002 EPOCHS=50 STOP_AFTER_EPOCH=50 params=668.2M lambda_ssim=0.003075 s_bar=325.25 max_norm=1000 unet_init=copied from PureETER_UNET built right after seed_all(SEED) unet_init_checksum=5.9212156172e+02 data_seed=SEED+1000*epoch trainer=ampguard amp_grad_retry=1 amp_min_scale=1024 gru_fp32_modules=gru_h
 HEALTH ep0 step0 (init) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 GRAD-retry ep1 batch0 loss=0.56413 amp_scale=65536 cpu_finite=True input_absmax={'data': '105', 'data_img': '924', 'label': '1.29e+03'} still non-finite retry_total=1 recovered_total=0
-GRAD-retry ep1 batch140 loss=0.19626 amp_scale=32768 cpu_finite=True input_absmax={'data': '122', 'data_img': '607', 'label': '1.07e+03'} still non-finite retry_total=2 recovered_total=0
-GRAD-retry ep1 batch141 loss=0.19775 amp_scale=16384 cpu_finite=True input_absmax={'data': '168', 'data_img': '767', 'label': '904'} still non-finite retry_total=3 recovered_total=0
-GRAD-retry ep1 batch142 loss=0.19078 amp_scale=8192 cpu_finite=True input_absmax={'data': '164', 'data_img': '680', 'label': '986'} still non-finite retry_total=4 recovered_total=0
-GRAD-retry ep1 batch143 loss=0.19388 amp_scale=4096 cpu_finite=True input_absmax={'data': '182', 'data_img': '547', 'label': '806'} still non-finite retry_total=5 recovered_total=0
 HEALTH ep1 step500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
-HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
-HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
