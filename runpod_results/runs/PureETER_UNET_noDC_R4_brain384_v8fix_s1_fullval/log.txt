@@ -310,3 +310,17 @@ HEALTH ep17 step133500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01
 HEALTH ep17 step134000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep17 step134500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep17 step135000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step135500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step136000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step136500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step137000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step137500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step138000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep17 step138261 (epoch-end) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+Epoch 17/50  train_loss=0.02924  train_l1=0.02881  train_ssim_loss=0.13850  l1_over_ssim_term=67.7  gn_max=1.83  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0
+HEALTH ep18 step138500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep18 step139000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep18 step139500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep18 step140000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep18 step140500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep18 step141000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
