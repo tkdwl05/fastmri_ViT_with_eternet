@@ -1,0 +1,2 @@
+run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log: 
+run_PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval.log: 
