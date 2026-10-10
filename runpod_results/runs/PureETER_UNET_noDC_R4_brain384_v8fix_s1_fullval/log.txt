@@ -150,3 +150,10 @@ HEALTH ep8 step65000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep8 step65064 (epoch-end) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 Epoch 8/50  train_loss=0.03132  train_l1=0.03086  train_ssim_loss=0.14716  l1_over_ssim_term=68.2  gn_max=1.84  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  val_ssim_m=0.9124  val_psnr=34.55  val_nmse=0.0044  val_l1=9.5940  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
 PROBE ep8 slices=64 ssim=0.8913 | deep4 dSSIM=+0.01042±0.00086 (64/64, p=1.1e-19) | verdict {'deep_used': 'used'}
+HEALTH ep9 step65500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step66000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step66500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step67000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step67500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step68000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step68500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
