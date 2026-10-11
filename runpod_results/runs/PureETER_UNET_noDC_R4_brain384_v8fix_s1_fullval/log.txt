@@ -482,3 +482,6 @@ HEALTH ep26 step208500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01
 HEALTH ep26 step209000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep26 step209500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
 HEALTH ep26 step210000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step210500 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step211000 (step) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
+HEALTH ep26 step211458 (epoch-end) near_dead(|w|<1e-06) unet_deep=0.01% unet_all=0.01%
