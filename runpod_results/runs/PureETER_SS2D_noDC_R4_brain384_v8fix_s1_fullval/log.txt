@@ -218,3 +218,8 @@ HEALTH ep12 step94000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet
 HEALTH ep12 step94500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep12 step95000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep12 step95500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step96000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step96500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97596 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
