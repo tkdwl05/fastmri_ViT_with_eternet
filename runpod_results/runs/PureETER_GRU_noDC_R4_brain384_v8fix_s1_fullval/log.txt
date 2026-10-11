@@ -201,3 +201,6 @@ HEALTH ep9 step73197 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% 
 Epoch 9/50  train_loss=0.03271  train_l1=0.03223  train_ssim_loss=0.15392  l1_over_ssim_term=68.1  gn_max=3  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=31  grad_recovered_total=0  amp_floor_total=0
 GRAD-retry ep10 batch36 loss=0.10007 amp_scale=65536 cpu_finite=True input_absmax={'data': '98.1', 'data_img': '415', 'label': '765'} still non-finite retry_total=32 recovered_total=0
 HEALTH ep10 step73500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step74000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step74500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step75000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
