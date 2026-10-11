@@ -1,1 +1,2 @@
+eval_unet_s1_fullval.log: 
 run_PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval.log: 
