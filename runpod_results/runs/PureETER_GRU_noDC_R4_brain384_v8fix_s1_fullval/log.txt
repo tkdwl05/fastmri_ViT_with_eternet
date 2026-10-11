@@ -222,3 +222,7 @@ HEALTH ep10 step81330 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01%
 Epoch 10/50  train_loss=0.03214  train_l1=0.03167  train_ssim_loss=0.15168  l1_over_ssim_term=67.9  gn_max=3.31  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=3  grad_retry_total=34  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9031  val_psnr=33.78  val_nmse=0.0052  val_l1=10.4961  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
 PROBE ep10 slices=64 ssim=0.8813 | shuffle_cross dSSIM=+0.00198±0.00093 (43/64, p=0.0081) | shuffle_adj dSSIM=-0.00016±0.00006 (16/64, p=7.7e-05) | zero dSSIM=+0.01507±0.00215 (62/64, p=2.3e-16) | deep4 dSSIM=+0.01547±0.00147 (64/64, p=1.1e-19) | verdict {'deep_used': 'used', 'seq_used': 'used', 'seq_used_adj': 'not shown'}
 HEALTH ep11 step81500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep11 batch580 loss=0.11506 amp_scale=65536 cpu_finite=True input_absmax={'data': '109', 'data_img': '559', 'label': '928'} still non-finite retry_total=35 recovered_total=0
+HEALTH ep11 step82000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step82500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step83000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
