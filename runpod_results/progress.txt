@@ -1,4 +1,4 @@
-run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch   6/50:  52%|█████▏    | 4243/8133 [1:17:53<1:11:34,  1.10s/batch, L1=0.0296, LR=1.94e-04, Loss=0.0299, SSIM_c=0.8834, gn=1.32][A
+run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch   6/50:  72%|███████▏  | 5883/8133 [1:47:54<41:01,  1.09s/batch, L1=0.0363, LR=1.94e-04, Loss=0.0367, SSIM_c=0.8643, gn=0.867][A
 run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval_ampcollapse_20261010.log: Epoch   2/50:  95%|█████████▍| 7716/8133 [1:33:37<05:02,  1.38batch/s, L1=0.2017, LR=1.99e-04, Loss=0.2044, SSIM_c=0.1357, gn=217][A
 run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval_ampfloor_stuck_20261010.log: Epoch   1/50:  48%|████▊     | 3924/8133 [54:46<2:04:33,  1.78s/batch, L1=0.1338, LR=2.00e-04, Loss=0.1355, SSIM_c=0.4352, gn=nan][A
-run_PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval.log:   Val:  49%|████▉     | 2676/5461 [10:25<12:17,  3.78batch/s, PSNR=35.60dB, SSIM=0.9378][A
+run_PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch  11/50:  17%|█▋        | 1397/8133 [19:28<1:31:56,  1.22batch/s, L1=0.0260, LR=1.80e-04, Loss=0.0264, SSIM_c=0.8937, gn=0.319][A
