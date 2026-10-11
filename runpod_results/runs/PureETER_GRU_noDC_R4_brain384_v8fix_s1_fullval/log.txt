@@ -186,3 +186,9 @@ HEALTH ep9 step67500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_
 GRAD-retry ep9 batch2710 loss=0.030679 amp_scale=131072 cpu_finite=True input_absmax={'data': '200', 'data_img': '817', 'label': '894'} still non-finite retry_total=29 recovered_total=0
 HEALTH ep9 step68000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep9 step68500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step69000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step69500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep9 batch4735 loss=0.027777 amp_scale=131072 cpu_finite=True input_absmax={'data': '123', 'data_img': '661', 'label': '1.05e+03'} still non-finite retry_total=30 recovered_total=0
+GRAD-retry ep9 batch4782 loss=0.21023 amp_scale=65536 cpu_finite=True input_absmax={'data': '127', 'data_img': '634', 'label': '851'} still non-finite retry_total=31 recovered_total=0
+HEALTH ep9 step70000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step70500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
