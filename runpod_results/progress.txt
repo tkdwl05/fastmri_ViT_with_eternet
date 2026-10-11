@@ -1,1 +1,1 @@
-run_PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch  50/50:  26%|██▌       | 2112/8133 [29:23<19:00,  5.28batch/s, L1=0.0195, LR=1.11e-06, Loss=0.0197, SSIM_c=0.9142, gn=0.129][A
+run_PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch  50/50:  77%|███████▋  | 6252/8133 [59:31<08:03,  3.89batch/s, L1=0.0223, LR=1.01e-06, Loss=0.0229, SSIM_c=0.7956, gn=0.0841][A
