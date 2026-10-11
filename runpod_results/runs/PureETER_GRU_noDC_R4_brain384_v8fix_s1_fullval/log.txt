@@ -131,3 +131,7 @@ HEALTH ep6 step48000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_
 HEALTH ep6 step48500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 GRAD-retry ep6 batch8075 loss=0.12301 amp_scale=131072 cpu_finite=True input_absmax={'data': '108', 'data_img': '621', 'label': '750'} still non-finite retry_total=21 recovered_total=0
 HEALTH ep6 step48798 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 6/50  train_loss=0.03477  train_l1=0.03427  train_ssim_loss=0.16229  l1_over_ssim_term=68.7  gn_max=7.86  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=21  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9025  val_psnr=34.17  val_nmse=0.0048  val_l1=9.9550  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep6 slices=64 ssim=0.8808 | shuffle_cross dSSIM=+0.00238±0.00104 (42/64, p=0.017) | shuffle_adj dSSIM=-0.00015±0.00011 (27/64, p=0.26) | zero dSSIM=+0.03286±0.00283 (63/64, p=7e-18) | deep4 dSSIM=+0.02272±0.00178 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep7 step49000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step49500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
