@@ -192,3 +192,6 @@ GRAD-retry ep9 batch4735 loss=0.027777 amp_scale=131072 cpu_finite=True input_ab
 GRAD-retry ep9 batch4782 loss=0.21023 amp_scale=65536 cpu_finite=True input_absmax={'data': '127', 'data_img': '634', 'label': '851'} still non-finite retry_total=31 recovered_total=0
 HEALTH ep9 step70000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep9 step70500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step71000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step71500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step72000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
