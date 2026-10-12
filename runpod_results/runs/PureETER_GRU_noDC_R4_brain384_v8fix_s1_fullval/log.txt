@@ -334,3 +334,8 @@ HEALTH ep16 step122500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 HEALTH ep16 step123000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 RESUME start_epoch=15 best_val_ssim=0.9134 global_step=121995 data_seed=SEED+1000*epoch
 HEALTH ep16 step122000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep16 batch492 loss=0.071167 amp_scale=131072 cpu_finite=True input_absmax={'data': '116', 'data_img': '730', 'label': '1.2e+03'} still non-finite retry_total=49 recovered_total=0
+HEALTH ep16 step122500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep16 step123000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep16 step123500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep16 step124000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
