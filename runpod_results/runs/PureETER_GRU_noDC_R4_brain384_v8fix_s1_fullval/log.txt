@@ -290,3 +290,6 @@ HEALTH ep14 step106500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 GRAD-retry ep14 batch778 loss=0.031084 amp_scale=131072 cpu_finite=True input_absmax={'data': '122', 'data_img': '501', 'label': '1e+03'} still non-finite retry_total=43 recovered_total=0
 GRAD-retry ep14 batch996 loss=0.094899 amp_scale=65536 cpu_finite=True input_absmax={'data': '107', 'data_img': '654', 'label': '987'} still non-finite retry_total=44 recovered_total=0
 HEALTH ep14 step107000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step107500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step108000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step108500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
