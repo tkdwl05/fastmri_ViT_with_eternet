@@ -393,3 +393,6 @@ HEALTH ep21 step170000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 HEALTH ep21 step170500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep21 step170793 (epoch-end) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 Epoch 21/50  train_loss=0.02932  train_l1=0.02890  train_ssim_loss=0.13876  l1_over_ssim_term=67.7  gn_max=2.27  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0
+HEALTH ep22 step171000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep22 step171500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep22 step172000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%

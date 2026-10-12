@@ -311,3 +311,6 @@ PROBE ep14 slices=64 ssim=0.8923 | shuffle_cross dSSIM=+0.00163±0.00087 (44/64,
 HEALTH ep15 step114000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep15 step114500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep15 step115000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep15 batch1224 loss=0.089181 amp_scale=65536 cpu_finite=True input_absmax={'data': '115', 'data_img': '765', 'label': '885'} still non-finite retry_total=47 recovered_total=0
+HEALTH ep15 step115500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step116000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
