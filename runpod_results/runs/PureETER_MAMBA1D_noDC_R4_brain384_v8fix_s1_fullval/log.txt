@@ -452,3 +452,14 @@ HEALTH ep2 step8000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_a
 NaN-retry ep2 batch124 first=nan cpu_finite=True input_absmax={'data': '129', 'data_img': '641', 'label': '1.01e+03'} still non-finite retry_total=222 recovered_total=0
 NaN-skip ep2 batch124 consec=1 total=222
 HEALTH ep2 step8500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step9000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step9500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step10000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+NaN-retry ep2 batch2134 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '677', 'label': '1.38e+03'} still non-finite retry_total=223 recovered_total=0
+NaN-skip ep2 batch2134 consec=1 total=223
+NaN-retry ep2 batch2135 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '1.07e+03', 'label': '1.49e+03'} still non-finite retry_total=224 recovered_total=0
+NaN-skip ep2 batch2135 consec=2 total=224
+NaN-retry ep2 batch2161 first=nan cpu_finite=True input_absmax={'data': '103', 'data_img': '790', 'label': '1.07e+03'} still non-finite retry_total=225 recovered_total=0
+NaN-skip ep2 batch2161 consec=1 total=225
+HEALTH ep2 step10500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step11000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
