@@ -435,3 +435,20 @@ HEALTH ep1 step5500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_a
 NaN-retry ep1 batch6075 first=nan cpu_finite=True input_absmax={'data': '119', 'data_img': '662', 'label': '913'} still non-finite retry_total=217 recovered_total=0
 NaN-skip ep1 batch6075 consec=1 total=217
 HEALTH ep1 step6000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step6500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+NaN-retry ep1 batch7093 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '1.07e+03', 'label': '1.34e+03'} still non-finite retry_total=218 recovered_total=0
+NaN-skip ep1 batch7093 consec=1 total=218
+NaN-retry ep1 batch7158 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '884', 'label': '1.11e+03'} still non-finite retry_total=219 recovered_total=0
+NaN-skip ep1 batch7158 consec=1 total=219
+HEALTH ep1 step7000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+NaN-retry ep1 batch7236 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '858', 'label': '1.2e+03'} still non-finite retry_total=220 recovered_total=0
+NaN-skip ep1 batch7236 consec=1 total=220
+NaN-retry ep1 batch7379 first=nan cpu_finite=True input_absmax={'data': '133', 'data_img': '646', 'label': '891'} still non-finite retry_total=221 recovered_total=0
+NaN-skip ep1 batch7379 consec=1 total=221
+HEALTH ep1 step7500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step7912 (epoch-end) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+Epoch 1/50  train_loss=0.09890  train_l1=0.09781  train_ssim_loss=0.35298  l1_over_ssim_term=90.1  gn_max=1.19e+03  clipped=2  steps=7912  nan_retry_total=221  nan_recovered_total=0  nan_skip_total=221  amp_scale=4096  amp_skip=7  grad_retry_total=7  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep2 step8000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+NaN-retry ep2 batch124 first=nan cpu_finite=True input_absmax={'data': '129', 'data_img': '641', 'label': '1.01e+03'} still non-finite retry_total=222 recovered_total=0
+NaN-skip ep2 batch124 consec=1 total=222
+HEALTH ep2 step8500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
