@@ -1,0 +1,49 @@
+{
+ "name": "DL",
+ "s_bar": {
+  "mean": 325.2484691441059,
+  "median": 340.3082733154297,
+  "min": 19.192102432250977,
+  "max": 606.7523193359375,
+  "n": 64
+ },
+ "lambda_base": 1.0,
+ "lambda_ssim": 0.0030745725033895113,
+ "max_norm": 1000.0,
+ "adam_eps": 1e-08,
+ "k_ratio": 100.0,
+ "optimizer": "AdamW",
+ "weight_decay": 3e-05,
+ "lr": 0.0002,
+ "smoke_script_version": "2026-10-07b",
+ "run": "PureETER_MAMBA1D_noDC_R4_brain384_v8fix_s1_fullval",
+ "seq": "mamba1d",
+ "seed": 1,
+ "num_epochs": 50,
+ "batch_size": 8,
+ "harness_seq": "gru",
+ "model_class": "PureETER_Mamba1D",
+ "mamba_cfg": {
+  "d_inner_h": 6192,
+  "d_inner_v": 6568,
+  "d_state": 16,
+  "d_conv": 4,
+  "dt_rank_h": 768,
+  "dt_rank_v": 480,
+  "fp32_stages": [
+   "h",
+   "v"
+  ]
+ },
+ "mamba_fp32_stages": [
+  "h",
+  "v"
+ ],
+ "mamba_init": "mamba_ssm default (outmatch 없음)",
+ "code_ast_sha256": {
+  "u_pure_eternet_mamba1d.py": "ae26c4de9e82dca049a05b191a4410bb2365f030290f91120ab687d510619f15",
+  "u_pure_eternet_gru.py": "521ad1dd5cf76364df495864b3a879710e873f354b8e8a17c1bc85b24cec0c92",
+  "smoke_recipe_fix.py": "9406926a03a2f4e01d9cb371143c2296b537be6898a2aa26dcf7ccf07e804584"
+ },
+ "precision_note": "Mamba h·v fp32, U-Net fp16 autocast (기준 ETER-net: gru_h fp32, gru_v·U-Net fp16)"
+}
