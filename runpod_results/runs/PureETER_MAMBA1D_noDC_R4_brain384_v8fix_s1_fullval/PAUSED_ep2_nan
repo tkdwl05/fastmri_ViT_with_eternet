@@ -1,0 +1,1 @@
+Mamba-ETER 50 epoch 런을 epoch 3 batch ~2,800 에서 정지 (2026-10-12 12:3x UTC, 사용자 결정): epoch 3 에서 배치 30~50% NaN-skip. last.pt = epoch 2 끝(11:43), 같은 내용 사본 pure_mamba1d_last_ep2_backup.pt. pod2 GPU 는 ETER-net 이전에 사용.

@@ -1769,3 +1769,539 @@ NaN-retry ep3 batch3068 first=nan cpu_finite=True input_absmax={'data': '167', '
 NaN-skip ep3 batch3068 consec=2 total=926
 NaN-retry ep3 batch3073 first=nan cpu_finite=True input_absmax={'data': '135', 'data_img': '711', 'label': '851'} still non-finite retry_total=927 recovered_total=0
 NaN-skip ep3 batch3073 consec=1 total=927
+NaN-retry ep3 batch3075 first=nan cpu_finite=True input_absmax={'data': '124', 'data_img': '742', 'label': '1.15e+03'} still non-finite retry_total=928 recovered_total=0
+NaN-skip ep3 batch3075 consec=1 total=928
+NaN-retry ep3 batch3076 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '750', 'label': '891'} still non-finite retry_total=929 recovered_total=0
+NaN-skip ep3 batch3076 consec=2 total=929
+NaN-retry ep3 batch3080 first=nan cpu_finite=True input_absmax={'data': '160', 'data_img': '655', 'label': '821'} still non-finite retry_total=930 recovered_total=0
+NaN-skip ep3 batch3080 consec=1 total=930
+NaN-retry ep3 batch3083 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '543', 'label': '957'} still non-finite retry_total=931 recovered_total=0
+NaN-skip ep3 batch3083 consec=1 total=931
+NaN-retry ep3 batch3090 first=nan cpu_finite=True input_absmax={'data': '190', 'data_img': '843', 'label': '1.03e+03'} still non-finite retry_total=932 recovered_total=0
+NaN-skip ep3 batch3090 consec=1 total=932
+NaN-retry ep3 batch3094 first=nan cpu_finite=True input_absmax={'data': '206', 'data_img': '750', 'label': '1.1e+03'} still non-finite retry_total=933 recovered_total=0
+NaN-skip ep3 batch3094 consec=1 total=933
+NaN-retry ep3 batch3095 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '745', 'label': '1.11e+03'} still non-finite retry_total=934 recovered_total=0
+NaN-skip ep3 batch3095 consec=2 total=934
+NaN-retry ep3 batch3097 first=nan cpu_finite=True input_absmax={'data': '225', 'data_img': '960', 'label': '1.34e+03'} still non-finite retry_total=935 recovered_total=0
+NaN-skip ep3 batch3097 consec=1 total=935
+NaN-retry ep3 batch3099 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '588', 'label': '758'} still non-finite retry_total=936 recovered_total=0
+NaN-skip ep3 batch3099 consec=1 total=936
+NaN-retry ep3 batch3102 first=nan cpu_finite=True input_absmax={'data': '109', 'data_img': '628', 'label': '1.18e+03'} still non-finite retry_total=937 recovered_total=0
+NaN-skip ep3 batch3102 consec=1 total=937
+NaN-retry ep3 batch3103 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '598', 'label': '935'} still non-finite retry_total=938 recovered_total=0
+NaN-skip ep3 batch3103 consec=2 total=938
+NaN-retry ep3 batch3104 first=nan cpu_finite=True input_absmax={'data': '181', 'data_img': '789', 'label': '1.33e+03'} still non-finite retry_total=939 recovered_total=0
+NaN-skip ep3 batch3104 consec=3 total=939
+NaN-retry ep3 batch3105 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '681', 'label': '1.05e+03'} still non-finite retry_total=940 recovered_total=0
+NaN-retry ep3 batch3106 first=nan cpu_finite=True input_absmax={'data': '204', 'data_img': '740', 'label': '1.23e+03'} still non-finite retry_total=941 recovered_total=0
+NaN-retry ep3 batch3107 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '678', 'label': '1.03e+03'} still non-finite retry_total=942 recovered_total=0
+NaN-retry ep3 batch3108 first=nan cpu_finite=True input_absmax={'data': '114', 'data_img': '594', 'label': '1.16e+03'} still non-finite retry_total=943 recovered_total=0
+NaN-retry ep3 batch3110 first=nan cpu_finite=True input_absmax={'data': '111', 'data_img': '497', 'label': '755'} still non-finite retry_total=944 recovered_total=0
+NaN-skip ep3 batch3110 consec=1 total=944
+NaN-retry ep3 batch3112 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '476', 'label': '834'} still non-finite retry_total=945 recovered_total=0
+NaN-skip ep3 batch3112 consec=1 total=945
+NaN-retry ep3 batch3119 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '606', 'label': '903'} still non-finite retry_total=946 recovered_total=0
+NaN-skip ep3 batch3119 consec=1 total=946
+NaN-retry ep3 batch3125 first=nan cpu_finite=True input_absmax={'data': '203', 'data_img': '1.14e+03', 'label': '1.39e+03'} still non-finite retry_total=947 recovered_total=0
+NaN-skip ep3 batch3125 consec=1 total=947
+NaN-retry ep3 batch3128 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '759', 'label': '1.04e+03'} still non-finite retry_total=948 recovered_total=0
+NaN-skip ep3 batch3128 consec=1 total=948
+NaN-retry ep3 batch3132 first=nan cpu_finite=True input_absmax={'data': '244', 'data_img': '756', 'label': '773'} still non-finite retry_total=949 recovered_total=0
+NaN-skip ep3 batch3132 consec=1 total=949
+NaN-retry ep3 batch3134 first=nan cpu_finite=True input_absmax={'data': '225', 'data_img': '1.09e+03', 'label': '1.2e+03'} still non-finite retry_total=950 recovered_total=0
+NaN-skip ep3 batch3134 consec=1 total=950
+NaN-retry ep3 batch3137 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '748', 'label': '1.02e+03'} still non-finite retry_total=951 recovered_total=0
+NaN-skip ep3 batch3137 consec=1 total=951
+NaN-retry ep3 batch3141 first=nan cpu_finite=True input_absmax={'data': '236', 'data_img': '1.28e+03', 'label': '1.44e+03'} still non-finite retry_total=952 recovered_total=0
+NaN-skip ep3 batch3141 consec=1 total=952
+NaN-retry ep3 batch3142 first=nan cpu_finite=True input_absmax={'data': '110', 'data_img': '696', 'label': '1.01e+03'} still non-finite retry_total=953 recovered_total=0
+NaN-skip ep3 batch3142 consec=2 total=953
+NaN-retry ep3 batch3144 first=nan cpu_finite=True input_absmax={'data': '184', 'data_img': '838', 'label': '1.01e+03'} still non-finite retry_total=954 recovered_total=0
+NaN-skip ep3 batch3144 consec=1 total=954
+NaN-retry ep3 batch3147 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '524', 'label': '945'} still non-finite retry_total=955 recovered_total=0
+NaN-skip ep3 batch3147 consec=1 total=955
+NaN-retry ep3 batch3148 first=nan cpu_finite=True input_absmax={'data': '144', 'data_img': '601', 'label': '965'} still non-finite retry_total=956 recovered_total=0
+NaN-skip ep3 batch3148 consec=2 total=956
+NaN-retry ep3 batch3149 first=nan cpu_finite=True input_absmax={'data': '133', 'data_img': '585', 'label': '930'} still non-finite retry_total=957 recovered_total=0
+NaN-skip ep3 batch3149 consec=3 total=957
+NaN-retry ep3 batch3150 first=nan cpu_finite=True input_absmax={'data': '93.3', 'data_img': '597', 'label': '908'} still non-finite retry_total=958 recovered_total=0
+NaN-retry ep3 batch3151 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '741', 'label': '894'} still non-finite retry_total=959 recovered_total=0
+NaN-retry ep3 batch3152 first=nan cpu_finite=True input_absmax={'data': '144', 'data_img': '804', 'label': '999'} still non-finite retry_total=960 recovered_total=0
+NaN-retry ep3 batch3154 first=nan cpu_finite=True input_absmax={'data': '131', 'data_img': '848', 'label': '1.06e+03'} still non-finite retry_total=961 recovered_total=0
+NaN-skip ep3 batch3154 consec=1 total=961
+NaN-retry ep3 batch3155 first=nan cpu_finite=True input_absmax={'data': '85.8', 'data_img': '661', 'label': '788'} still non-finite retry_total=962 recovered_total=0
+NaN-skip ep3 batch3155 consec=2 total=962
+NaN-retry ep3 batch3156 first=nan cpu_finite=True input_absmax={'data': '87.4', 'data_img': '876', 'label': '1.36e+03'} still non-finite retry_total=963 recovered_total=0
+NaN-skip ep3 batch3156 consec=3 total=963
+NaN-retry ep3 batch3157 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '696', 'label': '845'} still non-finite retry_total=964 recovered_total=0
+NaN-retry ep3 batch3158 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '824', 'label': '982'} still non-finite retry_total=965 recovered_total=0
+NaN-retry ep3 batch3162 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '640', 'label': '804'} still non-finite retry_total=966 recovered_total=0
+NaN-skip ep3 batch3162 consec=1 total=966
+NaN-retry ep3 batch3164 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '620', 'label': '1.17e+03'} still non-finite retry_total=967 recovered_total=0
+NaN-skip ep3 batch3164 consec=1 total=967
+NaN-retry ep3 batch3166 first=nan cpu_finite=True input_absmax={'data': '153', 'data_img': '1.02e+03', 'label': '1.57e+03'} still non-finite retry_total=968 recovered_total=0
+NaN-skip ep3 batch3166 consec=1 total=968
+NaN-retry ep3 batch3167 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '837', 'label': '1.26e+03'} still non-finite retry_total=969 recovered_total=0
+NaN-skip ep3 batch3167 consec=2 total=969
+NaN-retry ep3 batch3168 first=nan cpu_finite=True input_absmax={'data': '136', 'data_img': '581', 'label': '908'} still non-finite retry_total=970 recovered_total=0
+NaN-skip ep3 batch3168 consec=3 total=970
+NaN-retry ep3 batch3169 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '596', 'label': '899'} still non-finite retry_total=971 recovered_total=0
+NaN-retry ep3 batch3171 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '726', 'label': '936'} still non-finite retry_total=972 recovered_total=0
+NaN-skip ep3 batch3171 consec=1 total=972
+NaN-retry ep3 batch3175 first=nan cpu_finite=True input_absmax={'data': '111', 'data_img': '578', 'label': '1.14e+03'} still non-finite retry_total=973 recovered_total=0
+NaN-skip ep3 batch3175 consec=1 total=973
+NaN-retry ep3 batch3176 first=nan cpu_finite=True input_absmax={'data': '154', 'data_img': '546', 'label': '794'} still non-finite retry_total=974 recovered_total=0
+NaN-skip ep3 batch3176 consec=2 total=974
+NaN-retry ep3 batch3177 first=nan cpu_finite=True input_absmax={'data': '94.3', 'data_img': '701', 'label': '1.17e+03'} still non-finite retry_total=975 recovered_total=0
+NaN-skip ep3 batch3177 consec=3 total=975
+NaN-retry ep3 batch3178 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '618', 'label': '916'} still non-finite retry_total=976 recovered_total=0
+NaN-retry ep3 batch3179 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '930', 'label': '1.05e+03'} still non-finite retry_total=977 recovered_total=0
+NaN-retry ep3 batch3180 first=nan cpu_finite=True input_absmax={'data': '145', 'data_img': '894', 'label': '1.08e+03'} still non-finite retry_total=978 recovered_total=0
+NaN-retry ep3 batch3182 first=nan cpu_finite=True input_absmax={'data': '179', 'data_img': '1.07e+03', 'label': '1.44e+03'} still non-finite retry_total=979 recovered_total=0
+NaN-skip ep3 batch3182 consec=1 total=979
+NaN-retry ep3 batch3184 first=nan cpu_finite=True input_absmax={'data': '145', 'data_img': '560', 'label': '822'} still non-finite retry_total=980 recovered_total=0
+NaN-skip ep3 batch3184 consec=1 total=980
+NaN-retry ep3 batch3185 first=nan cpu_finite=True input_absmax={'data': '110', 'data_img': '536', 'label': '840'} still non-finite retry_total=981 recovered_total=0
+NaN-skip ep3 batch3185 consec=2 total=981
+NaN-retry ep3 batch3186 first=nan cpu_finite=True input_absmax={'data': '192', 'data_img': '859', 'label': '1.04e+03'} still non-finite retry_total=982 recovered_total=0
+NaN-skip ep3 batch3186 consec=3 total=982
+NaN-retry ep3 batch3187 first=nan cpu_finite=True input_absmax={'data': '108', 'data_img': '742', 'label': '1.11e+03'} still non-finite retry_total=983 recovered_total=0
+NaN-retry ep3 batch3188 first=nan cpu_finite=True input_absmax={'data': '197', 'data_img': '738', 'label': '1.07e+03'} still non-finite retry_total=984 recovered_total=0
+NaN-retry ep3 batch3189 first=nan cpu_finite=True input_absmax={'data': '106', 'data_img': '619', 'label': '1.22e+03'} still non-finite retry_total=985 recovered_total=0
+NaN-retry ep3 batch3190 first=nan cpu_finite=True input_absmax={'data': '159', 'data_img': '847', 'label': '930'} still non-finite retry_total=986 recovered_total=0
+NaN-retry ep3 batch3191 first=nan cpu_finite=True input_absmax={'data': '199', 'data_img': '742', 'label': '1.04e+03'} still non-finite retry_total=987 recovered_total=0
+NaN-retry ep3 batch3192 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '658', 'label': '1.04e+03'} still non-finite retry_total=988 recovered_total=0
+NaN-retry ep3 batch3193 first=nan cpu_finite=True input_absmax={'data': '98', 'data_img': '449', 'label': '780'} still non-finite retry_total=989 recovered_total=0
+NaN-retry ep3 batch3194 first=nan cpu_finite=True input_absmax={'data': '169', 'data_img': '685', 'label': '1.15e+03'} still non-finite retry_total=990 recovered_total=0
+NaN-retry ep3 batch3195 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '677', 'label': '905'} still non-finite retry_total=991 recovered_total=0
+NaN-retry ep3 batch3196 first=nan cpu_finite=True input_absmax={'data': '162', 'data_img': '822', 'label': '1.06e+03'} still non-finite retry_total=992 recovered_total=0
+NaN-retry ep3 batch3197 first=nan cpu_finite=True input_absmax={'data': '117', 'data_img': '616', 'label': '920'} still non-finite retry_total=993 recovered_total=0
+NaN-retry ep3 batch3198 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '615', 'label': '939'} still non-finite retry_total=994 recovered_total=0
+NaN-retry ep3 batch3199 first=nan cpu_finite=True input_absmax={'data': '163', 'data_img': '678', 'label': '996'} still non-finite retry_total=995 recovered_total=0
+NaN-retry ep3 batch3200 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '584', 'label': '902'} still non-finite retry_total=996 recovered_total=0
+NaN-retry ep3 batch3201 first=nan cpu_finite=True input_absmax={'data': '115', 'data_img': '672', 'label': '947'} still non-finite retry_total=997 recovered_total=0
+NaN-retry ep3 batch3202 first=nan cpu_finite=True input_absmax={'data': '170', 'data_img': '809', 'label': '1.02e+03'} still non-finite retry_total=998 recovered_total=0
+NaN-retry ep3 batch3203 first=nan cpu_finite=True input_absmax={'data': '167', 'data_img': '543', 'label': '992'} still non-finite retry_total=999 recovered_total=0
+NaN-retry ep3 batch3204 first=nan cpu_finite=True input_absmax={'data': '162', 'data_img': '595', 'label': '888'} still non-finite retry_total=1000 recovered_total=0
+NaN-retry ep3 batch3205 first=nan cpu_finite=True input_absmax={'data': '132', 'data_img': '660', 'label': '956'} still non-finite retry_total=1001 recovered_total=0
+NaN-retry ep3 batch3206 first=nan cpu_finite=True input_absmax={'data': '145', 'data_img': '839', 'label': '1.44e+03'} still non-finite retry_total=1002 recovered_total=0
+NaN-retry ep3 batch3207 first=nan cpu_finite=True input_absmax={'data': '102', 'data_img': '548', 'label': '897'} still non-finite retry_total=1003 recovered_total=0
+NaN-retry ep3 batch3208 first=nan cpu_finite=True input_absmax={'data': '111', 'data_img': '543', 'label': '803'} still non-finite retry_total=1004 recovered_total=0
+NaN-retry ep3 batch3209 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '619', 'label': '977'} still non-finite retry_total=1005 recovered_total=0
+NaN-retry ep3 batch3210 first=nan cpu_finite=True input_absmax={'data': '209', 'data_img': '942', 'label': '1.24e+03'} still non-finite retry_total=1006 recovered_total=0
+NaN-retry ep3 batch3211 first=nan cpu_finite=True input_absmax={'data': '196', 'data_img': '1.02e+03', 'label': '1.14e+03'} still non-finite retry_total=1007 recovered_total=0
+NaN-retry ep3 batch3212 first=nan cpu_finite=True input_absmax={'data': '164', 'data_img': '708', 'label': '1.22e+03'} still non-finite retry_total=1008 recovered_total=0
+NaN-retry ep3 batch3213 first=nan cpu_finite=True input_absmax={'data': '169', 'data_img': '649', 'label': '1.07e+03'} still non-finite retry_total=1009 recovered_total=0
+NaN-retry ep3 batch3214 first=nan cpu_finite=True input_absmax={'data': '169', 'data_img': '664', 'label': '1.17e+03'} still non-finite retry_total=1010 recovered_total=0
+NaN-retry ep3 batch3215 first=nan cpu_finite=True input_absmax={'data': '165', 'data_img': '719', 'label': '1.05e+03'} still non-finite retry_total=1011 recovered_total=0
+NaN-retry ep3 batch3216 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '596', 'label': '792'} still non-finite retry_total=1012 recovered_total=0
+NaN-retry ep3 batch3219 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '640', 'label': '1.16e+03'} still non-finite retry_total=1013 recovered_total=0
+NaN-skip ep3 batch3219 consec=1 total=1013
+NaN-retry ep3 batch3220 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '525', 'label': '909'} still non-finite retry_total=1014 recovered_total=0
+NaN-skip ep3 batch3220 consec=2 total=1014
+NaN-retry ep3 batch3221 first=nan cpu_finite=True input_absmax={'data': '212', 'data_img': '983', 'label': '1.17e+03'} still non-finite retry_total=1015 recovered_total=0
+NaN-skip ep3 batch3221 consec=3 total=1015
+NaN-retry ep3 batch3222 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '828', 'label': '951'} still non-finite retry_total=1016 recovered_total=0
+NaN-retry ep3 batch3223 first=nan cpu_finite=True input_absmax={'data': '160', 'data_img': '676', 'label': '1.04e+03'} still non-finite retry_total=1017 recovered_total=0
+NaN-retry ep3 batch3224 first=nan cpu_finite=True input_absmax={'data': '109', 'data_img': '704', 'label': '1.08e+03'} still non-finite retry_total=1018 recovered_total=0
+NaN-retry ep3 batch3225 first=nan cpu_finite=True input_absmax={'data': '163', 'data_img': '801', 'label': '1.04e+03'} still non-finite retry_total=1019 recovered_total=0
+NaN-retry ep3 batch3226 first=nan cpu_finite=True input_absmax={'data': '104', 'data_img': '550', 'label': '844'} still non-finite retry_total=1020 recovered_total=0
+NaN-retry ep3 batch3227 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '667', 'label': '924'} still non-finite retry_total=1021 recovered_total=0
+NaN-retry ep3 batch3228 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '642', 'label': '992'} still non-finite retry_total=1022 recovered_total=0
+NaN-retry ep3 batch3229 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '510', 'label': '815'} still non-finite retry_total=1023 recovered_total=0
+NaN-retry ep3 batch3230 first=nan cpu_finite=True input_absmax={'data': '70.5', 'data_img': '492', 'label': '733'} still non-finite retry_total=1024 recovered_total=0
+NaN-retry ep3 batch3231 first=nan cpu_finite=True input_absmax={'data': '76', 'data_img': '460', 'label': '642'} still non-finite retry_total=1025 recovered_total=0
+NaN-retry ep3 batch3232 first=nan cpu_finite=True input_absmax={'data': '136', 'data_img': '635', 'label': '933'} still non-finite retry_total=1026 recovered_total=0
+NaN-retry ep3 batch3233 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '725', 'label': '1.38e+03'} still non-finite retry_total=1027 recovered_total=0
+NaN-retry ep3 batch3234 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '724', 'label': '913'} still non-finite retry_total=1028 recovered_total=0
+NaN-retry ep3 batch3236 first=nan cpu_finite=True input_absmax={'data': '145', 'data_img': '591', 'label': '959'} still non-finite retry_total=1029 recovered_total=0
+NaN-skip ep3 batch3236 consec=1 total=1029
+NaN-retry ep3 batch3238 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '645', 'label': '936'} still non-finite retry_total=1030 recovered_total=0
+NaN-skip ep3 batch3238 consec=1 total=1030
+NaN-retry ep3 batch3239 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '639', 'label': '957'} still non-finite retry_total=1031 recovered_total=0
+NaN-skip ep3 batch3239 consec=2 total=1031
+NaN-retry ep3 batch3240 first=nan cpu_finite=True input_absmax={'data': '134', 'data_img': '823', 'label': '1.36e+03'} still non-finite retry_total=1032 recovered_total=0
+NaN-skip ep3 batch3240 consec=3 total=1032
+NaN-retry ep3 batch3241 first=nan cpu_finite=True input_absmax={'data': '90.8', 'data_img': '789', 'label': '1.11e+03'} still non-finite retry_total=1033 recovered_total=0
+NaN-retry ep3 batch3242 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '643', 'label': '1.29e+03'} still non-finite retry_total=1034 recovered_total=0
+NaN-retry ep3 batch3243 first=nan cpu_finite=True input_absmax={'data': '251', 'data_img': '990', 'label': '1.3e+03'} still non-finite retry_total=1035 recovered_total=0
+NaN-retry ep3 batch3244 first=nan cpu_finite=True input_absmax={'data': '191', 'data_img': '760', 'label': '920'} still non-finite retry_total=1036 recovered_total=0
+NaN-retry ep3 batch3245 first=nan cpu_finite=True input_absmax={'data': '118', 'data_img': '571', 'label': '729'} still non-finite retry_total=1037 recovered_total=0
+NaN-retry ep3 batch3246 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '685', 'label': '1.12e+03'} still non-finite retry_total=1038 recovered_total=0
+NaN-retry ep3 batch3247 first=nan cpu_finite=True input_absmax={'data': '114', 'data_img': '716', 'label': '1.17e+03'} still non-finite retry_total=1039 recovered_total=0
+NaN-retry ep3 batch3248 first=nan cpu_finite=True input_absmax={'data': '115', 'data_img': '651', 'label': '923'} still non-finite retry_total=1040 recovered_total=0
+NaN-retry ep3 batch3249 first=nan cpu_finite=True input_absmax={'data': '147', 'data_img': '711', 'label': '998'} still non-finite retry_total=1041 recovered_total=0
+NaN-retry ep3 batch3250 first=nan cpu_finite=True input_absmax={'data': '133', 'data_img': '589', 'label': '896'} still non-finite retry_total=1042 recovered_total=0
+NaN-retry ep3 batch3251 first=nan cpu_finite=True input_absmax={'data': '127', 'data_img': '678', 'label': '957'} still non-finite retry_total=1043 recovered_total=0
+NaN-retry ep3 batch3253 first=nan cpu_finite=True input_absmax={'data': '95.3', 'data_img': '692', 'label': '1e+03'} still non-finite retry_total=1044 recovered_total=0
+NaN-skip ep3 batch3253 consec=1 total=1044
+NaN-retry ep3 batch3254 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '582', 'label': '1.17e+03'} still non-finite retry_total=1045 recovered_total=0
+NaN-skip ep3 batch3254 consec=2 total=1045
+NaN-retry ep3 batch3255 first=nan cpu_finite=True input_absmax={'data': '142', 'data_img': '945', 'label': '1.52e+03'} still non-finite retry_total=1046 recovered_total=0
+NaN-skip ep3 batch3255 consec=3 total=1046
+NaN-retry ep3 batch3256 first=nan cpu_finite=True input_absmax={'data': '196', 'data_img': '764', 'label': '874'} still non-finite retry_total=1047 recovered_total=0
+NaN-retry ep3 batch3257 first=nan cpu_finite=True input_absmax={'data': '118', 'data_img': '434', 'label': '676'} still non-finite retry_total=1048 recovered_total=0
+NaN-retry ep3 batch3258 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '533', 'label': '849'} still non-finite retry_total=1049 recovered_total=0
+NaN-retry ep3 batch3259 first=nan cpu_finite=True input_absmax={'data': '137', 'data_img': '710', 'label': '878'} still non-finite retry_total=1050 recovered_total=0
+NaN-retry ep3 batch3260 first=nan cpu_finite=True input_absmax={'data': '114', 'data_img': '626', 'label': '864'} still non-finite retry_total=1051 recovered_total=0
+NaN-retry ep3 batch3261 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '949', 'label': '1.42e+03'} still non-finite retry_total=1052 recovered_total=0
+NaN-retry ep3 batch3262 first=nan cpu_finite=True input_absmax={'data': '225', 'data_img': '1.04e+03', 'label': '1.15e+03'} still non-finite retry_total=1053 recovered_total=0
+NaN-retry ep3 batch3265 first=nan cpu_finite=True input_absmax={'data': '134', 'data_img': '478', 'label': '871'} still non-finite retry_total=1054 recovered_total=0
+NaN-skip ep3 batch3265 consec=1 total=1054
+NaN-retry ep3 batch3266 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '674', 'label': '1.18e+03'} still non-finite retry_total=1055 recovered_total=0
+NaN-skip ep3 batch3266 consec=2 total=1055
+NaN-retry ep3 batch3268 first=nan cpu_finite=True input_absmax={'data': '165', 'data_img': '536', 'label': '744'} still non-finite retry_total=1056 recovered_total=0
+NaN-skip ep3 batch3268 consec=1 total=1056
+NaN-retry ep3 batch3269 first=nan cpu_finite=True input_absmax={'data': '92.8', 'data_img': '704', 'label': '1.35e+03'} still non-finite retry_total=1057 recovered_total=0
+NaN-skip ep3 batch3269 consec=2 total=1057
+NaN-retry ep3 batch3270 first=nan cpu_finite=True input_absmax={'data': '127', 'data_img': '666', 'label': '1.22e+03'} still non-finite retry_total=1058 recovered_total=0
+NaN-skip ep3 batch3270 consec=3 total=1058
+NaN-retry ep3 batch3271 first=nan cpu_finite=True input_absmax={'data': '185', 'data_img': '920', 'label': '1.18e+03'} still non-finite retry_total=1059 recovered_total=0
+NaN-retry ep3 batch3272 first=nan cpu_finite=True input_absmax={'data': '179', 'data_img': '720', 'label': '851'} still non-finite retry_total=1060 recovered_total=0
+NaN-retry ep3 batch3273 first=nan cpu_finite=True input_absmax={'data': '129', 'data_img': '829', 'label': '1.38e+03'} still non-finite retry_total=1061 recovered_total=0
+NaN-retry ep3 batch3275 first=nan cpu_finite=True input_absmax={'data': '117', 'data_img': '801', 'label': '1.18e+03'} still non-finite retry_total=1062 recovered_total=0
+NaN-skip ep3 batch3275 consec=1 total=1062
+NaN-retry ep3 batch3276 first=nan cpu_finite=True input_absmax={'data': '149', 'data_img': '633', 'label': '1.07e+03'} still non-finite retry_total=1063 recovered_total=0
+NaN-skip ep3 batch3276 consec=2 total=1063
+NaN-retry ep3 batch3277 first=nan cpu_finite=True input_absmax={'data': '67.5', 'data_img': '605', 'label': '1.18e+03'} still non-finite retry_total=1064 recovered_total=0
+NaN-skip ep3 batch3277 consec=3 total=1064
+NaN-retry ep3 batch3278 first=nan cpu_finite=True input_absmax={'data': '112', 'data_img': '727', 'label': '901'} still non-finite retry_total=1065 recovered_total=0
+NaN-retry ep3 batch3279 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '470', 'label': '665'} still non-finite retry_total=1066 recovered_total=0
+NaN-retry ep3 batch3280 first=nan cpu_finite=True input_absmax={'data': '173', 'data_img': '618', 'label': '1.08e+03'} still non-finite retry_total=1067 recovered_total=0
+NaN-retry ep3 batch3281 first=nan cpu_finite=True input_absmax={'data': '97.8', 'data_img': '512', 'label': '835'} still non-finite retry_total=1068 recovered_total=0
+NaN-retry ep3 batch3282 first=nan cpu_finite=True input_absmax={'data': '174', 'data_img': '719', 'label': '952'} still non-finite retry_total=1069 recovered_total=0
+NaN-retry ep3 batch3283 first=nan cpu_finite=True input_absmax={'data': '124', 'data_img': '613', 'label': '1.19e+03'} still non-finite retry_total=1070 recovered_total=0
+NaN-retry ep3 batch3284 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '734', 'label': '1.28e+03'} still non-finite retry_total=1071 recovered_total=0
+NaN-retry ep3 batch3285 first=nan cpu_finite=True input_absmax={'data': '103', 'data_img': '490', 'label': '694'} still non-finite retry_total=1072 recovered_total=0
+NaN-retry ep3 batch3286 first=nan cpu_finite=True input_absmax={'data': '98.9', 'data_img': '723', 'label': '1.06e+03'} still non-finite retry_total=1073 recovered_total=0
+NaN-retry ep3 batch3287 first=nan cpu_finite=True input_absmax={'data': '120', 'data_img': '996', 'label': '1.54e+03'} still non-finite retry_total=1074 recovered_total=0
+NaN-retry ep3 batch3288 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '543', 'label': '998'} still non-finite retry_total=1075 recovered_total=0
+NaN-retry ep3 batch3289 first=nan cpu_finite=True input_absmax={'data': '153', 'data_img': '557', 'label': '780'} still non-finite retry_total=1076 recovered_total=0
+NaN-retry ep3 batch3290 first=nan cpu_finite=True input_absmax={'data': '135', 'data_img': '651', 'label': '1.2e+03'} still non-finite retry_total=1077 recovered_total=0
+NaN-retry ep3 batch3291 first=nan cpu_finite=True input_absmax={'data': '152', 'data_img': '671', 'label': '1.04e+03'} still non-finite retry_total=1078 recovered_total=0
+NaN-retry ep3 batch3292 first=nan cpu_finite=True input_absmax={'data': '108', 'data_img': '717', 'label': '1.26e+03'} still non-finite retry_total=1079 recovered_total=0
+NaN-retry ep3 batch3294 first=nan cpu_finite=True input_absmax={'data': '142', 'data_img': '763', 'label': '988'} still non-finite retry_total=1080 recovered_total=0
+NaN-skip ep3 batch3294 consec=1 total=1080
+NaN-retry ep3 batch3295 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '622', 'label': '1.04e+03'} still non-finite retry_total=1081 recovered_total=0
+NaN-skip ep3 batch3295 consec=2 total=1081
+NaN-retry ep3 batch3296 first=nan cpu_finite=True input_absmax={'data': '70.3', 'data_img': '616', 'label': '1.07e+03'} still non-finite retry_total=1082 recovered_total=0
+NaN-skip ep3 batch3296 consec=3 total=1082
+NaN-retry ep3 batch3297 first=nan cpu_finite=True input_absmax={'data': '95.3', 'data_img': '714', 'label': '995'} still non-finite retry_total=1083 recovered_total=0
+NaN-retry ep3 batch3299 first=nan cpu_finite=True input_absmax={'data': '188', 'data_img': '734', 'label': '983'} still non-finite retry_total=1084 recovered_total=0
+NaN-skip ep3 batch3299 consec=1 total=1084
+NaN-retry ep3 batch3300 first=nan cpu_finite=True input_absmax={'data': '97.2', 'data_img': '558', 'label': '999'} still non-finite retry_total=1085 recovered_total=0
+NaN-skip ep3 batch3300 consec=2 total=1085
+NaN-retry ep3 batch3301 first=nan cpu_finite=True input_absmax={'data': '92.4', 'data_img': '537', 'label': '851'} still non-finite retry_total=1086 recovered_total=0
+NaN-skip ep3 batch3301 consec=3 total=1086
+NaN-retry ep3 batch3302 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '712', 'label': '978'} still non-finite retry_total=1087 recovered_total=0
+NaN-retry ep3 batch3304 first=nan cpu_finite=True input_absmax={'data': '85.9', 'data_img': '556', 'label': '859'} still non-finite retry_total=1088 recovered_total=0
+NaN-skip ep3 batch3304 consec=1 total=1088
+NaN-retry ep3 batch3305 first=nan cpu_finite=True input_absmax={'data': '118', 'data_img': '646', 'label': '1.13e+03'} still non-finite retry_total=1089 recovered_total=0
+NaN-skip ep3 batch3305 consec=2 total=1089
+NaN-retry ep3 batch3306 first=nan cpu_finite=True input_absmax={'data': '210', 'data_img': '746', 'label': '917'} still non-finite retry_total=1090 recovered_total=0
+NaN-skip ep3 batch3306 consec=3 total=1090
+NaN-retry ep3 batch3308 first=nan cpu_finite=True input_absmax={'data': '109', 'data_img': '627', 'label': '1.06e+03'} still non-finite retry_total=1091 recovered_total=0
+NaN-skip ep3 batch3308 consec=1 total=1091
+NaN-retry ep3 batch3309 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '739', 'label': '1.01e+03'} still non-finite retry_total=1092 recovered_total=0
+NaN-skip ep3 batch3309 consec=2 total=1092
+NaN-retry ep3 batch3310 first=nan cpu_finite=True input_absmax={'data': '116', 'data_img': '681', 'label': '1.15e+03'} still non-finite retry_total=1093 recovered_total=0
+NaN-skip ep3 batch3310 consec=3 total=1093
+NaN-retry ep3 batch3311 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '730', 'label': '912'} still non-finite retry_total=1094 recovered_total=0
+NaN-retry ep3 batch3312 first=nan cpu_finite=True input_absmax={'data': '103', 'data_img': '474', 'label': '732'} still non-finite retry_total=1095 recovered_total=0
+NaN-retry ep3 batch3313 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '713', 'label': '1.03e+03'} still non-finite retry_total=1096 recovered_total=0
+NaN-retry ep3 batch3314 first=nan cpu_finite=True input_absmax={'data': '134', 'data_img': '587', 'label': '929'} still non-finite retry_total=1097 recovered_total=0
+NaN-retry ep3 batch3315 first=nan cpu_finite=True input_absmax={'data': '110', 'data_img': '624', 'label': '873'} still non-finite retry_total=1098 recovered_total=0
+NaN-retry ep3 batch3316 first=nan cpu_finite=True input_absmax={'data': '136', 'data_img': '620', 'label': '882'} still non-finite retry_total=1099 recovered_total=0
+NaN-retry ep3 batch3317 first=nan cpu_finite=True input_absmax={'data': '158', 'data_img': '816', 'label': '997'} still non-finite retry_total=1100 recovered_total=0
+NaN-retry ep3 batch3320 first=nan cpu_finite=True input_absmax={'data': '138', 'data_img': '517', 'label': '777'} still non-finite retry_total=1101 recovered_total=0
+NaN-skip ep3 batch3320 consec=1 total=1101
+NaN-retry ep3 batch3321 first=nan cpu_finite=True input_absmax={'data': '163', 'data_img': '771', 'label': '1.17e+03'} still non-finite retry_total=1102 recovered_total=0
+NaN-skip ep3 batch3321 consec=2 total=1102
+NaN-retry ep3 batch3322 first=nan cpu_finite=True input_absmax={'data': '153', 'data_img': '649', 'label': '799'} still non-finite retry_total=1103 recovered_total=0
+NaN-skip ep3 batch3322 consec=3 total=1103
+NaN-retry ep3 batch3324 first=nan cpu_finite=True input_absmax={'data': '185', 'data_img': '780', 'label': '1.03e+03'} still non-finite retry_total=1104 recovered_total=0
+NaN-skip ep3 batch3324 consec=1 total=1104
+NaN-retry ep3 batch3325 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '526', 'label': '987'} still non-finite retry_total=1105 recovered_total=0
+NaN-skip ep3 batch3325 consec=2 total=1105
+NaN-retry ep3 batch3327 first=nan cpu_finite=True input_absmax={'data': '153', 'data_img': '640', 'label': '850'} still non-finite retry_total=1106 recovered_total=0
+NaN-skip ep3 batch3327 consec=1 total=1106
+NaN-retry ep3 batch3328 first=nan cpu_finite=True input_absmax={'data': '149', 'data_img': '885', 'label': '1.36e+03'} still non-finite retry_total=1107 recovered_total=0
+NaN-skip ep3 batch3328 consec=2 total=1107
+NaN-retry ep3 batch3329 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '756', 'label': '1.04e+03'} still non-finite retry_total=1108 recovered_total=0
+NaN-skip ep3 batch3329 consec=3 total=1108
+NaN-retry ep3 batch3331 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '600', 'label': '929'} still non-finite retry_total=1109 recovered_total=0
+NaN-skip ep3 batch3331 consec=1 total=1109
+NaN-retry ep3 batch3332 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '631', 'label': '922'} still non-finite retry_total=1110 recovered_total=0
+NaN-skip ep3 batch3332 consec=2 total=1110
+NaN-retry ep3 batch3333 first=nan cpu_finite=True input_absmax={'data': '120', 'data_img': '508', 'label': '798'} still non-finite retry_total=1111 recovered_total=0
+NaN-skip ep3 batch3333 consec=3 total=1111
+NaN-retry ep3 batch3334 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '538', 'label': '867'} still non-finite retry_total=1112 recovered_total=0
+NaN-retry ep3 batch3335 first=nan cpu_finite=True input_absmax={'data': '134', 'data_img': '549', 'label': '838'} still non-finite retry_total=1113 recovered_total=0
+NaN-retry ep3 batch3336 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '721', 'label': '928'} still non-finite retry_total=1114 recovered_total=0
+NaN-retry ep3 batch3337 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '787', 'label': '1.11e+03'} still non-finite retry_total=1115 recovered_total=0
+NaN-retry ep3 batch3338 first=nan cpu_finite=True input_absmax={'data': '130', 'data_img': '578', 'label': '800'} still non-finite retry_total=1116 recovered_total=0
+NaN-retry ep3 batch3341 first=nan cpu_finite=True input_absmax={'data': '152', 'data_img': '696', 'label': '997'} still non-finite retry_total=1117 recovered_total=0
+NaN-skip ep3 batch3341 consec=1 total=1117
+NaN-retry ep3 batch3342 first=nan cpu_finite=True input_absmax={'data': '100', 'data_img': '542', 'label': '891'} still non-finite retry_total=1118 recovered_total=0
+NaN-skip ep3 batch3342 consec=2 total=1118
+NaN-retry ep3 batch3343 first=nan cpu_finite=True input_absmax={'data': '185', 'data_img': '847', 'label': '1.28e+03'} still non-finite retry_total=1119 recovered_total=0
+NaN-skip ep3 batch3343 consec=3 total=1119
+NaN-retry ep3 batch3347 first=nan cpu_finite=True input_absmax={'data': '80.8', 'data_img': '670', 'label': '1.2e+03'} still non-finite retry_total=1120 recovered_total=0
+NaN-skip ep3 batch3347 consec=1 total=1120
+NaN-retry ep3 batch3350 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '655', 'label': '1.01e+03'} still non-finite retry_total=1121 recovered_total=0
+NaN-skip ep3 batch3350 consec=1 total=1121
+NaN-retry ep3 batch3351 first=nan cpu_finite=True input_absmax={'data': '182', 'data_img': '834', 'label': '1.09e+03'} still non-finite retry_total=1122 recovered_total=0
+NaN-skip ep3 batch3351 consec=2 total=1122
+NaN-retry ep3 batch3352 first=nan cpu_finite=True input_absmax={'data': '131', 'data_img': '673', 'label': '970'} still non-finite retry_total=1123 recovered_total=0
+NaN-skip ep3 batch3352 consec=3 total=1123
+NaN-retry ep3 batch3353 first=nan cpu_finite=True input_absmax={'data': '130', 'data_img': '485', 'label': '721'} still non-finite retry_total=1124 recovered_total=0
+NaN-retry ep3 batch3355 first=nan cpu_finite=True input_absmax={'data': '199', 'data_img': '924', 'label': '1.03e+03'} still non-finite retry_total=1125 recovered_total=0
+NaN-skip ep3 batch3355 consec=1 total=1125
+NaN-retry ep3 batch3356 first=nan cpu_finite=True input_absmax={'data': '131', 'data_img': '615', 'label': '1.04e+03'} still non-finite retry_total=1126 recovered_total=0
+NaN-skip ep3 batch3356 consec=2 total=1126
+NaN-retry ep3 batch3357 first=nan cpu_finite=True input_absmax={'data': '179', 'data_img': '778', 'label': '798'} still non-finite retry_total=1127 recovered_total=0
+NaN-skip ep3 batch3357 consec=3 total=1127
+NaN-retry ep3 batch3359 first=nan cpu_finite=True input_absmax={'data': '148', 'data_img': '725', 'label': '997'} still non-finite retry_total=1128 recovered_total=0
+NaN-skip ep3 batch3359 consec=1 total=1128
+NaN-retry ep3 batch3360 first=nan cpu_finite=True input_absmax={'data': '173', 'data_img': '597', 'label': '922'} still non-finite retry_total=1129 recovered_total=0
+NaN-skip ep3 batch3360 consec=2 total=1129
+NaN-retry ep3 batch3361 first=nan cpu_finite=True input_absmax={'data': '149', 'data_img': '919', 'label': '1.13e+03'} still non-finite retry_total=1130 recovered_total=0
+NaN-skip ep3 batch3361 consec=3 total=1130
+NaN-retry ep3 batch3362 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '583', 'label': '741'} still non-finite retry_total=1131 recovered_total=0
+NaN-retry ep3 batch3363 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '696', 'label': '1.02e+03'} still non-finite retry_total=1132 recovered_total=0
+NaN-retry ep3 batch3364 first=nan cpu_finite=True input_absmax={'data': '87.7', 'data_img': '555', 'label': '794'} still non-finite retry_total=1133 recovered_total=0
+NaN-retry ep3 batch3365 first=nan cpu_finite=True input_absmax={'data': '161', 'data_img': '840', 'label': '1.56e+03'} still non-finite retry_total=1134 recovered_total=0
+NaN-retry ep3 batch3367 first=nan cpu_finite=True input_absmax={'data': '154', 'data_img': '1.08e+03', 'label': '1.81e+03'} still non-finite retry_total=1135 recovered_total=0
+NaN-skip ep3 batch3367 consec=1 total=1135
+NaN-retry ep3 batch3368 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '476', 'label': '827'} still non-finite retry_total=1136 recovered_total=0
+NaN-skip ep3 batch3368 consec=2 total=1136
+HEALTH ep3 step18500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+NaN-retry ep3 batch3370 first=nan cpu_finite=True input_absmax={'data': '112', 'data_img': '608', 'label': '1.01e+03'} still non-finite retry_total=1137 recovered_total=0
+NaN-skip ep3 batch3370 consec=1 total=1137
+NaN-retry ep3 batch3371 first=nan cpu_finite=True input_absmax={'data': '145', 'data_img': '565', 'label': '853'} still non-finite retry_total=1138 recovered_total=0
+NaN-skip ep3 batch3371 consec=2 total=1138
+NaN-retry ep3 batch3373 first=nan cpu_finite=True input_absmax={'data': '178', 'data_img': '855', 'label': '931'} still non-finite retry_total=1139 recovered_total=0
+NaN-skip ep3 batch3373 consec=1 total=1139
+NaN-retry ep3 batch3374 first=nan cpu_finite=True input_absmax={'data': '121', 'data_img': '579', 'label': '955'} still non-finite retry_total=1140 recovered_total=0
+NaN-skip ep3 batch3374 consec=2 total=1140
+NaN-retry ep3 batch3376 first=nan cpu_finite=True input_absmax={'data': '175', 'data_img': '654', 'label': '904'} still non-finite retry_total=1141 recovered_total=0
+NaN-skip ep3 batch3376 consec=1 total=1141
+NaN-retry ep3 batch3377 first=nan cpu_finite=True input_absmax={'data': '163', 'data_img': '612', 'label': '760'} still non-finite retry_total=1142 recovered_total=0
+NaN-skip ep3 batch3377 consec=2 total=1142
+NaN-retry ep3 batch3378 first=nan cpu_finite=True input_absmax={'data': '136', 'data_img': '577', 'label': '1.12e+03'} still non-finite retry_total=1143 recovered_total=0
+NaN-skip ep3 batch3378 consec=3 total=1143
+NaN-retry ep3 batch3379 first=nan cpu_finite=True input_absmax={'data': '94.6', 'data_img': '577', 'label': '1.02e+03'} still non-finite retry_total=1144 recovered_total=0
+NaN-retry ep3 batch3380 first=nan cpu_finite=True input_absmax={'data': '228', 'data_img': '782', 'label': '929'} still non-finite retry_total=1145 recovered_total=0
+NaN-retry ep3 batch3381 first=nan cpu_finite=True input_absmax={'data': '166', 'data_img': '866', 'label': '1.49e+03'} still non-finite retry_total=1146 recovered_total=0
+NaN-retry ep3 batch3383 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '726', 'label': '879'} still non-finite retry_total=1147 recovered_total=0
+NaN-skip ep3 batch3383 consec=1 total=1147
+NaN-retry ep3 batch3385 first=nan cpu_finite=True input_absmax={'data': '106', 'data_img': '537', 'label': '670'} still non-finite retry_total=1148 recovered_total=0
+NaN-skip ep3 batch3385 consec=1 total=1148
+NaN-retry ep3 batch3386 first=nan cpu_finite=True input_absmax={'data': '97.7', 'data_img': '546', 'label': '908'} still non-finite retry_total=1149 recovered_total=0
+NaN-skip ep3 batch3386 consec=2 total=1149
+NaN-retry ep3 batch3387 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '780', 'label': '1.52e+03'} still non-finite retry_total=1150 recovered_total=0
+NaN-skip ep3 batch3387 consec=3 total=1150
+NaN-retry ep3 batch3388 first=nan cpu_finite=True input_absmax={'data': '152', 'data_img': '618', 'label': '942'} still non-finite retry_total=1151 recovered_total=0
+NaN-retry ep3 batch3389 first=nan cpu_finite=True input_absmax={'data': '110', 'data_img': '505', 'label': '839'} still non-finite retry_total=1152 recovered_total=0
+NaN-retry ep3 batch3390 first=nan cpu_finite=True input_absmax={'data': '191', 'data_img': '906', 'label': '1.17e+03'} still non-finite retry_total=1153 recovered_total=0
+NaN-retry ep3 batch3391 first=nan cpu_finite=True input_absmax={'data': '147', 'data_img': '1.78e+03', 'label': '2.53e+03'} still non-finite retry_total=1154 recovered_total=0
+NaN-retry ep3 batch3392 first=nan cpu_finite=True input_absmax={'data': '105', 'data_img': '672', 'label': '925'} still non-finite retry_total=1155 recovered_total=0
+NaN-retry ep3 batch3393 first=nan cpu_finite=True input_absmax={'data': '183', 'data_img': '845', 'label': '995'} still non-finite retry_total=1156 recovered_total=0
+NaN-retry ep3 batch3395 first=nan cpu_finite=True input_absmax={'data': '142', 'data_img': '575', 'label': '1.06e+03'} still non-finite retry_total=1157 recovered_total=0
+NaN-skip ep3 batch3395 consec=1 total=1157
+NaN-retry ep3 batch3396 first=nan cpu_finite=True input_absmax={'data': '76', 'data_img': '411', 'label': '681'} still non-finite retry_total=1158 recovered_total=0
+NaN-skip ep3 batch3396 consec=2 total=1158
+NaN-retry ep3 batch3397 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '694', 'label': '855'} still non-finite retry_total=1159 recovered_total=0
+NaN-skip ep3 batch3397 consec=3 total=1159
+NaN-retry ep3 batch3399 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '568', 'label': '812'} still non-finite retry_total=1160 recovered_total=0
+NaN-skip ep3 batch3399 consec=1 total=1160
+NaN-retry ep3 batch3401 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '600', 'label': '931'} still non-finite retry_total=1161 recovered_total=0
+NaN-skip ep3 batch3401 consec=1 total=1161
+NaN-retry ep3 batch3403 first=nan cpu_finite=True input_absmax={'data': '133', 'data_img': '550', 'label': '748'} still non-finite retry_total=1162 recovered_total=0
+NaN-skip ep3 batch3403 consec=1 total=1162
+NaN-retry ep3 batch3406 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '642', 'label': '995'} still non-finite retry_total=1163 recovered_total=0
+NaN-skip ep3 batch3406 consec=1 total=1163
+NaN-retry ep3 batch3407 first=nan cpu_finite=True input_absmax={'data': '217', 'data_img': '938', 'label': '963'} still non-finite retry_total=1164 recovered_total=0
+NaN-skip ep3 batch3407 consec=2 total=1164
+NaN-retry ep3 batch3408 first=nan cpu_finite=True input_absmax={'data': '144', 'data_img': '698', 'label': '917'} still non-finite retry_total=1165 recovered_total=0
+NaN-skip ep3 batch3408 consec=3 total=1165
+NaN-retry ep3 batch3409 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '502', 'label': '970'} still non-finite retry_total=1166 recovered_total=0
+NaN-retry ep3 batch3411 first=nan cpu_finite=True input_absmax={'data': '133', 'data_img': '810', 'label': '1.53e+03'} still non-finite retry_total=1167 recovered_total=0
+NaN-skip ep3 batch3411 consec=1 total=1167
+NaN-retry ep3 batch3412 first=nan cpu_finite=True input_absmax={'data': '108', 'data_img': '543', 'label': '866'} still non-finite retry_total=1168 recovered_total=0
+NaN-skip ep3 batch3412 consec=2 total=1168
+NaN-retry ep3 batch3413 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '540', 'label': '834'} still non-finite retry_total=1169 recovered_total=0
+NaN-skip ep3 batch3413 consec=3 total=1169
+NaN-retry ep3 batch3414 first=nan cpu_finite=True input_absmax={'data': '112', 'data_img': '856', 'label': '1.28e+03'} still non-finite retry_total=1170 recovered_total=0
+NaN-retry ep3 batch3415 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '762', 'label': '1.03e+03'} still non-finite retry_total=1171 recovered_total=0
+NaN-retry ep3 batch3416 first=nan cpu_finite=True input_absmax={'data': '128', 'data_img': '533', 'label': '829'} still non-finite retry_total=1172 recovered_total=0
+NaN-retry ep3 batch3417 first=nan cpu_finite=True input_absmax={'data': '128', 'data_img': '808', 'label': '1.17e+03'} still non-finite retry_total=1173 recovered_total=0
+NaN-retry ep3 batch3418 first=nan cpu_finite=True input_absmax={'data': '210', 'data_img': '981', 'label': '1.21e+03'} still non-finite retry_total=1174 recovered_total=0
+NaN-retry ep3 batch3419 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '548', 'label': '889'} still non-finite retry_total=1175 recovered_total=0
+NaN-retry ep3 batch3420 first=nan cpu_finite=True input_absmax={'data': '102', 'data_img': '450', 'label': '765'} still non-finite retry_total=1176 recovered_total=0
+NaN-retry ep3 batch3421 first=nan cpu_finite=True input_absmax={'data': '124', 'data_img': '609', 'label': '895'} still non-finite retry_total=1177 recovered_total=0
+NaN-retry ep3 batch3422 first=nan cpu_finite=True input_absmax={'data': '167', 'data_img': '870', 'label': '1.01e+03'} still non-finite retry_total=1178 recovered_total=0
+NaN-retry ep3 batch3423 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '804', 'label': '1.32e+03'} still non-finite retry_total=1179 recovered_total=0
+NaN-retry ep3 batch3424 first=nan cpu_finite=True input_absmax={'data': '113', 'data_img': '465', 'label': '673'} still non-finite retry_total=1180 recovered_total=0
+NaN-retry ep3 batch3425 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '766', 'label': '1e+03'} still non-finite retry_total=1181 recovered_total=0
+NaN-retry ep3 batch3426 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '621', 'label': '853'} still non-finite retry_total=1182 recovered_total=0
+NaN-retry ep3 batch3428 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '620', 'label': '892'} still non-finite retry_total=1183 recovered_total=0
+NaN-skip ep3 batch3428 consec=1 total=1183
+NaN-retry ep3 batch3433 first=nan cpu_finite=True input_absmax={'data': '188', 'data_img': '807', 'label': '1.07e+03'} still non-finite retry_total=1184 recovered_total=0
+NaN-skip ep3 batch3433 consec=1 total=1184
+NaN-retry ep3 batch3434 first=nan cpu_finite=True input_absmax={'data': '126', 'data_img': '691', 'label': '1.16e+03'} still non-finite retry_total=1185 recovered_total=0
+NaN-skip ep3 batch3434 consec=2 total=1185
+NaN-retry ep3 batch3435 first=nan cpu_finite=True input_absmax={'data': '118', 'data_img': '655', 'label': '886'} still non-finite retry_total=1186 recovered_total=0
+NaN-skip ep3 batch3435 consec=3 total=1186
+NaN-retry ep3 batch3436 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '694', 'label': '1.07e+03'} still non-finite retry_total=1187 recovered_total=0
+NaN-retry ep3 batch3437 first=nan cpu_finite=True input_absmax={'data': '122', 'data_img': '496', 'label': '791'} still non-finite retry_total=1188 recovered_total=0
+NaN-retry ep3 batch3438 first=nan cpu_finite=True input_absmax={'data': '142', 'data_img': '662', 'label': '1.05e+03'} still non-finite retry_total=1189 recovered_total=0
+NaN-retry ep3 batch3439 first=nan cpu_finite=True input_absmax={'data': '170', 'data_img': '696', 'label': '872'} still non-finite retry_total=1190 recovered_total=0
+NaN-retry ep3 batch3440 first=nan cpu_finite=True input_absmax={'data': '144', 'data_img': '649', 'label': '841'} still non-finite retry_total=1191 recovered_total=0
+NaN-retry ep3 batch3443 first=nan cpu_finite=True input_absmax={'data': '129', 'data_img': '510', 'label': '792'} still non-finite retry_total=1192 recovered_total=0
+NaN-skip ep3 batch3443 consec=1 total=1192
+NaN-retry ep3 batch3444 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '1.02e+03', 'label': '1.35e+03'} still non-finite retry_total=1193 recovered_total=0
+NaN-skip ep3 batch3444 consec=2 total=1193
+NaN-retry ep3 batch3445 first=nan cpu_finite=True input_absmax={'data': '187', 'data_img': '784', 'label': '874'} still non-finite retry_total=1194 recovered_total=0
+NaN-skip ep3 batch3445 consec=3 total=1194
+NaN-retry ep3 batch3446 first=nan cpu_finite=True input_absmax={'data': '112', 'data_img': '422', 'label': '698'} still non-finite retry_total=1195 recovered_total=0
+NaN-retry ep3 batch3448 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '728', 'label': '872'} still non-finite retry_total=1196 recovered_total=0
+NaN-skip ep3 batch3448 consec=1 total=1196
+NaN-retry ep3 batch3449 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '904', 'label': '972'} still non-finite retry_total=1197 recovered_total=0
+NaN-skip ep3 batch3449 consec=2 total=1197
+NaN-retry ep3 batch3450 first=nan cpu_finite=True input_absmax={'data': '75.6', 'data_img': '557', 'label': '736'} still non-finite retry_total=1198 recovered_total=0
+NaN-skip ep3 batch3450 consec=3 total=1198
+NaN-retry ep3 batch3452 first=nan cpu_finite=True input_absmax={'data': '175', 'data_img': '914', 'label': '1.05e+03'} still non-finite retry_total=1199 recovered_total=0
+NaN-skip ep3 batch3452 consec=1 total=1199
+NaN-retry ep3 batch3453 first=nan cpu_finite=True input_absmax={'data': '210', 'data_img': '868', 'label': '1.06e+03'} still non-finite retry_total=1200 recovered_total=0
+NaN-skip ep3 batch3453 consec=2 total=1200
+NaN-retry ep3 batch3455 first=nan cpu_finite=True input_absmax={'data': '151', 'data_img': '589', 'label': '817'} still non-finite retry_total=1201 recovered_total=0
+NaN-skip ep3 batch3455 consec=1 total=1201
+NaN-retry ep3 batch3458 first=nan cpu_finite=True input_absmax={'data': '67.2', 'data_img': '762', 'label': '1.21e+03'} still non-finite retry_total=1202 recovered_total=0
+NaN-skip ep3 batch3458 consec=1 total=1202
+NaN-retry ep3 batch3459 first=nan cpu_finite=True input_absmax={'data': '206', 'data_img': '754', 'label': '886'} still non-finite retry_total=1203 recovered_total=0
+NaN-skip ep3 batch3459 consec=2 total=1203
+NaN-retry ep3 batch3460 first=nan cpu_finite=True input_absmax={'data': '95.3', 'data_img': '614', 'label': '1.1e+03'} still non-finite retry_total=1204 recovered_total=0
+NaN-skip ep3 batch3460 consec=3 total=1204
+NaN-retry ep3 batch3461 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '487', 'label': '835'} still non-finite retry_total=1205 recovered_total=0
+NaN-retry ep3 batch3462 first=nan cpu_finite=True input_absmax={'data': '172', 'data_img': '723', 'label': '937'} still non-finite retry_total=1206 recovered_total=0
+NaN-retry ep3 batch3464 first=nan cpu_finite=True input_absmax={'data': '181', 'data_img': '799', 'label': '1.06e+03'} still non-finite retry_total=1207 recovered_total=0
+NaN-skip ep3 batch3464 consec=1 total=1207
+NaN-retry ep3 batch3466 first=nan cpu_finite=True input_absmax={'data': '132', 'data_img': '665', 'label': '1.17e+03'} still non-finite retry_total=1208 recovered_total=0
+NaN-skip ep3 batch3466 consec=1 total=1208
+NaN-retry ep3 batch3467 first=nan cpu_finite=True input_absmax={'data': '152', 'data_img': '603', 'label': '914'} still non-finite retry_total=1209 recovered_total=0
+NaN-skip ep3 batch3467 consec=2 total=1209
+NaN-retry ep3 batch3468 first=nan cpu_finite=True input_absmax={'data': '135', 'data_img': '651', 'label': '879'} still non-finite retry_total=1210 recovered_total=0
+NaN-skip ep3 batch3468 consec=3 total=1210
+NaN-retry ep3 batch3469 first=nan cpu_finite=True input_absmax={'data': '114', 'data_img': '552', 'label': '893'} still non-finite retry_total=1211 recovered_total=0
+NaN-retry ep3 batch3471 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '499', 'label': '792'} still non-finite retry_total=1212 recovered_total=0
+NaN-skip ep3 batch3471 consec=1 total=1212
+NaN-retry ep3 batch3472 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '842', 'label': '1.14e+03'} still non-finite retry_total=1213 recovered_total=0
+NaN-skip ep3 batch3472 consec=2 total=1213
+NaN-retry ep3 batch3473 first=nan cpu_finite=True input_absmax={'data': '111', 'data_img': '512', 'label': '801'} still non-finite retry_total=1214 recovered_total=0
+NaN-skip ep3 batch3473 consec=3 total=1214
+NaN-retry ep3 batch3474 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '614', 'label': '807'} still non-finite retry_total=1215 recovered_total=0
+NaN-retry ep3 batch3475 first=nan cpu_finite=True input_absmax={'data': '174', 'data_img': '970', 'label': '1.09e+03'} still non-finite retry_total=1216 recovered_total=0
+NaN-retry ep3 batch3477 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '810', 'label': '942'} still non-finite retry_total=1217 recovered_total=0
+NaN-skip ep3 batch3477 consec=1 total=1217
+NaN-retry ep3 batch3478 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '804', 'label': '870'} still non-finite retry_total=1218 recovered_total=0
+NaN-skip ep3 batch3478 consec=2 total=1218
+NaN-retry ep3 batch3481 first=nan cpu_finite=True input_absmax={'data': '136', 'data_img': '577', 'label': '876'} still non-finite retry_total=1219 recovered_total=0
+NaN-skip ep3 batch3481 consec=1 total=1219
+NaN-retry ep3 batch3483 first=nan cpu_finite=True input_absmax={'data': '205', 'data_img': '970', 'label': '1.19e+03'} still non-finite retry_total=1220 recovered_total=0
+NaN-skip ep3 batch3483 consec=1 total=1220
+NaN-retry ep3 batch3485 first=nan cpu_finite=True input_absmax={'data': '182', 'data_img': '1e+03', 'label': '1.44e+03'} still non-finite retry_total=1221 recovered_total=0
+NaN-skip ep3 batch3485 consec=1 total=1221
+NaN-retry ep3 batch3487 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '730', 'label': '1.09e+03'} still non-finite retry_total=1222 recovered_total=0
+NaN-skip ep3 batch3487 consec=1 total=1222
+NaN-retry ep3 batch3488 first=nan cpu_finite=True input_absmax={'data': '153', 'data_img': '934', 'label': '1.02e+03'} still non-finite retry_total=1223 recovered_total=0
+NaN-skip ep3 batch3488 consec=2 total=1223
+NaN-retry ep3 batch3490 first=nan cpu_finite=True input_absmax={'data': '79.6', 'data_img': '684', 'label': '1.01e+03'} still non-finite retry_total=1224 recovered_total=0
+NaN-skip ep3 batch3490 consec=1 total=1224
+NaN-retry ep3 batch3491 first=nan cpu_finite=True input_absmax={'data': '117', 'data_img': '511', 'label': '739'} still non-finite retry_total=1225 recovered_total=0
+NaN-skip ep3 batch3491 consec=2 total=1225
+NaN-retry ep3 batch3494 first=nan cpu_finite=True input_absmax={'data': '118', 'data_img': '730', 'label': '1.21e+03'} still non-finite retry_total=1226 recovered_total=0
+NaN-skip ep3 batch3494 consec=1 total=1226
+NaN-retry ep3 batch3495 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '882', 'label': '1.1e+03'} still non-finite retry_total=1227 recovered_total=0
+NaN-skip ep3 batch3495 consec=2 total=1227
+NaN-retry ep3 batch3499 first=nan cpu_finite=True input_absmax={'data': '130', 'data_img': '760', 'label': '1.32e+03'} still non-finite retry_total=1228 recovered_total=0
+NaN-skip ep3 batch3499 consec=1 total=1228
+NaN-retry ep3 batch3501 first=nan cpu_finite=True input_absmax={'data': '139', 'data_img': '858', 'label': '897'} still non-finite retry_total=1229 recovered_total=0
+NaN-skip ep3 batch3501 consec=1 total=1229
+NaN-retry ep3 batch3502 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '724', 'label': '1.28e+03'} still non-finite retry_total=1230 recovered_total=0
+NaN-skip ep3 batch3502 consec=2 total=1230
+NaN-retry ep3 batch3504 first=nan cpu_finite=True input_absmax={'data': '160', 'data_img': '847', 'label': '967'} still non-finite retry_total=1231 recovered_total=0
+NaN-skip ep3 batch3504 consec=1 total=1231
+NaN-retry ep3 batch3505 first=nan cpu_finite=True input_absmax={'data': '176', 'data_img': '734', 'label': '1.08e+03'} still non-finite retry_total=1232 recovered_total=0
+NaN-skip ep3 batch3505 consec=2 total=1232
+NaN-retry ep3 batch3508 first=nan cpu_finite=True input_absmax={'data': '127', 'data_img': '508', 'label': '769'} still non-finite retry_total=1233 recovered_total=0
+NaN-skip ep3 batch3508 consec=1 total=1233
+NaN-retry ep3 batch3509 first=nan cpu_finite=True input_absmax={'data': '200', 'data_img': '960', 'label': '1.1e+03'} still non-finite retry_total=1234 recovered_total=0
+NaN-skip ep3 batch3509 consec=2 total=1234
+NaN-retry ep3 batch3510 first=nan cpu_finite=True input_absmax={'data': '176', 'data_img': '642', 'label': '1.05e+03'} still non-finite retry_total=1235 recovered_total=0
+NaN-skip ep3 batch3510 consec=3 total=1235
+NaN-retry ep3 batch3512 first=nan cpu_finite=True input_absmax={'data': '142', 'data_img': '674', 'label': '821'} still non-finite retry_total=1236 recovered_total=0
+NaN-skip ep3 batch3512 consec=1 total=1236
+NaN-retry ep3 batch3513 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '681', 'label': '972'} still non-finite retry_total=1237 recovered_total=0
+NaN-skip ep3 batch3513 consec=2 total=1237
+NaN-retry ep3 batch3514 first=nan cpu_finite=True input_absmax={'data': '135', 'data_img': '503', 'label': '830'} still non-finite retry_total=1238 recovered_total=0
+NaN-skip ep3 batch3514 consec=3 total=1238
+NaN-retry ep3 batch3515 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '775', 'label': '882'} still non-finite retry_total=1239 recovered_total=0
+NaN-retry ep3 batch3516 first=nan cpu_finite=True input_absmax={'data': '173', 'data_img': '761', 'label': '881'} still non-finite retry_total=1240 recovered_total=0
+NaN-retry ep3 batch3520 first=nan cpu_finite=True input_absmax={'data': '108', 'data_img': '488', 'label': '766'} still non-finite retry_total=1241 recovered_total=0
+NaN-skip ep3 batch3520 consec=1 total=1241
+NaN-retry ep3 batch3525 first=nan cpu_finite=True input_absmax={'data': '135', 'data_img': '741', 'label': '1.16e+03'} still non-finite retry_total=1242 recovered_total=0
+NaN-skip ep3 batch3525 consec=1 total=1242
+NaN-retry ep3 batch3526 first=nan cpu_finite=True input_absmax={'data': '152', 'data_img': '668', 'label': '909'} still non-finite retry_total=1243 recovered_total=0
+NaN-skip ep3 batch3526 consec=2 total=1243
+NaN-retry ep3 batch3527 first=nan cpu_finite=True input_absmax={'data': '174', 'data_img': '679', 'label': '940'} still non-finite retry_total=1244 recovered_total=0
+NaN-skip ep3 batch3527 consec=3 total=1244
+NaN-retry ep3 batch3529 first=nan cpu_finite=True input_absmax={'data': '192', 'data_img': '848', 'label': '1.16e+03'} still non-finite retry_total=1245 recovered_total=0
+NaN-skip ep3 batch3529 consec=1 total=1245
+NaN-retry ep3 batch3531 first=nan cpu_finite=True input_absmax={'data': '123', 'data_img': '446', 'label': '786'} still non-finite retry_total=1246 recovered_total=0
+NaN-skip ep3 batch3531 consec=1 total=1246
+NaN-retry ep3 batch3532 first=nan cpu_finite=True input_absmax={'data': '150', 'data_img': '799', 'label': '990'} still non-finite retry_total=1247 recovered_total=0
+NaN-skip ep3 batch3532 consec=2 total=1247
+NaN-retry ep3 batch3534 first=nan cpu_finite=True input_absmax={'data': '125', 'data_img': '534', 'label': '851'} still non-finite retry_total=1248 recovered_total=0
+NaN-skip ep3 batch3534 consec=1 total=1248
+NaN-retry ep3 batch3537 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '771', 'label': '1.16e+03'} still non-finite retry_total=1249 recovered_total=0
+NaN-skip ep3 batch3537 consec=1 total=1249
+NaN-retry ep3 batch3538 first=nan cpu_finite=True input_absmax={'data': '219', 'data_img': '897', 'label': '1.26e+03'} still non-finite retry_total=1250 recovered_total=0
+NaN-skip ep3 batch3538 consec=2 total=1250
+NaN-retry ep3 batch3541 first=nan cpu_finite=True input_absmax={'data': '155', 'data_img': '738', 'label': '1.1e+03'} still non-finite retry_total=1251 recovered_total=0
+NaN-skip ep3 batch3541 consec=1 total=1251
+NaN-retry ep3 batch3551 first=nan cpu_finite=True input_absmax={'data': '143', 'data_img': '645', 'label': '925'} still non-finite retry_total=1252 recovered_total=0
+NaN-skip ep3 batch3551 consec=1 total=1252
+NaN-retry ep3 batch3552 first=nan cpu_finite=True input_absmax={'data': '171', 'data_img': '824', 'label': '1.09e+03'} still non-finite retry_total=1253 recovered_total=0
+NaN-skip ep3 batch3552 consec=2 total=1253
+NaN-retry ep3 batch3553 first=nan cpu_finite=True input_absmax={'data': '157', 'data_img': '834', 'label': '1.17e+03'} still non-finite retry_total=1254 recovered_total=0
+NaN-skip ep3 batch3553 consec=3 total=1254
+NaN-retry ep3 batch3556 first=nan cpu_finite=True input_absmax={'data': '156', 'data_img': '716', 'label': '952'} still non-finite retry_total=1255 recovered_total=0
+NaN-skip ep3 batch3556 consec=1 total=1255
+NaN-retry ep3 batch3557 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '609', 'label': '796'} still non-finite retry_total=1256 recovered_total=0
+NaN-skip ep3 batch3557 consec=2 total=1256
+NaN-retry ep3 batch3560 first=nan cpu_finite=True input_absmax={'data': '160', 'data_img': '667', 'label': '1.07e+03'} still non-finite retry_total=1257 recovered_total=0
+NaN-skip ep3 batch3560 consec=1 total=1257
+NaN-retry ep3 batch3562 first=nan cpu_finite=True input_absmax={'data': '202', 'data_img': '762', 'label': '905'} still non-finite retry_total=1258 recovered_total=0
+NaN-skip ep3 batch3562 consec=1 total=1258
+NaN-retry ep3 batch3563 first=nan cpu_finite=True input_absmax={'data': '134', 'data_img': '951', 'label': '1.53e+03'} still non-finite retry_total=1259 recovered_total=0
+NaN-skip ep3 batch3563 consec=2 total=1259
+NaN-retry ep3 batch3565 first=nan cpu_finite=True input_absmax={'data': '168', 'data_img': '578', 'label': '899'} still non-finite retry_total=1260 recovered_total=0
+NaN-skip ep3 batch3565 consec=1 total=1260
+NaN-retry ep3 batch3570 first=nan cpu_finite=True input_absmax={'data': '146', 'data_img': '609', 'label': '844'} still non-finite retry_total=1261 recovered_total=0
+NaN-skip ep3 batch3570 consec=1 total=1261
+NaN-retry ep3 batch3571 first=nan cpu_finite=True input_absmax={'data': '99.3', 'data_img': '606', 'label': '1.14e+03'} still non-finite retry_total=1262 recovered_total=0
+NaN-skip ep3 batch3571 consec=2 total=1262
+NaN-retry ep3 batch3575 first=nan cpu_finite=True input_absmax={'data': '105', 'data_img': '485', 'label': '840'} still non-finite retry_total=1263 recovered_total=0
+NaN-skip ep3 batch3575 consec=1 total=1263
+NaN-retry ep3 batch3577 first=nan cpu_finite=True input_absmax={'data': '91.3', 'data_img': '446', 'label': '780'} still non-finite retry_total=1264 recovered_total=0
+NaN-skip ep3 batch3577 consec=1 total=1264
+NaN-retry ep3 batch3580 first=nan cpu_finite=True input_absmax={'data': '120', 'data_img': '794', 'label': '1.24e+03'} still non-finite retry_total=1265 recovered_total=0
+NaN-skip ep3 batch3580 consec=1 total=1265
+NaN-retry ep3 batch3582 first=nan cpu_finite=True input_absmax={'data': '140', 'data_img': '719', 'label': '966'} still non-finite retry_total=1266 recovered_total=0
+NaN-skip ep3 batch3582 consec=1 total=1266
+NaN-retry ep3 batch3586 first=nan cpu_finite=True input_absmax={'data': '148', 'data_img': '473', 'label': '789'} still non-finite retry_total=1267 recovered_total=0
+NaN-skip ep3 batch3586 consec=1 total=1267
+NaN-retry ep3 batch3587 first=nan cpu_finite=True input_absmax={'data': '132', 'data_img': '640', 'label': '905'} still non-finite retry_total=1268 recovered_total=0
+NaN-skip ep3 batch3587 consec=2 total=1268

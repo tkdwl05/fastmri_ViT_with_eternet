@@ -1,0 +1,336 @@
+SCRATCH START run=PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval recipe=DL BS=8 LR=0.0002 EPOCHS=50 STOP_AFTER_EPOCH=50 params=668.2M lambda_ssim=0.003075 s_bar=325.25 max_norm=1000 unet_init=copied from PureETER_UNET built right after seed_all(SEED) unet_init_checksum=5.9212156172e+02 data_seed=SEED+1000*epoch trainer=ampguard amp_grad_retry=1 amp_min_scale=1024 gru_fp32_modules=gru_h
+HEALTH ep0 step0 (init) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep1 batch0 loss=0.56413 amp_scale=65536 cpu_finite=True input_absmax={'data': '105', 'data_img': '924', 'label': '1.29e+03'} still non-finite retry_total=1 recovered_total=0
+HEALTH ep1 step500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step1500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step2500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step3500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step4000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step4500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step5000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep1 batch5279 loss=0.055095 amp_scale=131072 cpu_finite=True input_absmax={'data': '184', 'data_img': '805', 'label': '918'} still non-finite retry_total=2 recovered_total=0
+HEALTH ep1 step5500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step6000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step6500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step7000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step7500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step8000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep1 step8133 (epoch-end) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+Epoch 1/50  train_loss=0.06643  train_l1=0.06545  train_ssim_loss=0.31818  l1_over_ssim_term=66.9  gn_max=166  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=131072  amp_skip=2  grad_retry_total=2  grad_recovered_total=0  amp_floor_total=0
+GRAD-retry ep2 batch140 loss=0.25139 amp_scale=131072 cpu_finite=True input_absmax={'data': '99.2', 'data_img': '450', 'label': '867'} still non-finite retry_total=3 recovered_total=0
+HEALTH ep2 step8500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step9000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step9500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step10000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep2 batch2201 loss=0.079839 amp_scale=131072 cpu_finite=True input_absmax={'data': '109', 'data_img': '626', 'label': '750'} still non-finite retry_total=4 recovered_total=0
+HEALTH ep2 step10500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step11000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step11500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step12000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep2 batch4311 loss=0.045532 amp_scale=131072 cpu_finite=True input_absmax={'data': '164', 'data_img': '786', 'label': '1.28e+03'} still non-finite retry_total=5 recovered_total=0
+HEALTH ep2 step12500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step13000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step13500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step14000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step14500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep2 batch6578 loss=0.13651 amp_scale=131072 cpu_finite=True input_absmax={'data': '137', 'data_img': '498', 'label': '890'} still non-finite retry_total=6 recovered_total=0
+HEALTH ep2 step15000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step15500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step16000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep2 step16266 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 2/50  train_loss=0.04539  train_l1=0.04469  train_ssim_loss=0.22733  l1_over_ssim_term=63.9  gn_max=2.96  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=6  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.8657  val_psnr=31.93  val_nmse=0.0081  val_l1=12.7463  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep2 slices=64 ssim=0.8432 | shuffle_cross dSSIM=+0.00435±0.00255 (50/64, p=7.1e-06) | shuffle_adj dSSIM=-0.00001±0.00009 (34/64, p=0.71) | zero dSSIM=+0.08636±0.00539 (64/64, p=1.1e-19) | deep4 dSSIM=+0.02107±0.00185 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep3 step16500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch452 loss=0.12141 amp_scale=131072 cpu_finite=True input_absmax={'data': '164', 'data_img': '578', 'label': '810'} still non-finite retry_total=7 recovered_total=0
+HEALTH ep3 step17000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step17500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step18000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step18500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch2575 loss=0.11321 amp_scale=131072 cpu_finite=True input_absmax={'data': '91.8', 'data_img': '788', 'label': '1.17e+03'} still non-finite retry_total=8 recovered_total=0
+HEALTH ep3 step19000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step19500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step20000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step20500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch4618 loss=0.049737 amp_scale=131072 cpu_finite=True input_absmax={'data': '181', 'data_img': '728', 'label': '935'} still non-finite retry_total=9 recovered_total=0
+HEALTH ep3 step21000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step21500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step22000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step22500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step23000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep3 batch6874 loss=0.10506 amp_scale=131072 cpu_finite=True input_absmax={'data': '90.7', 'data_img': '536', 'label': '858'} still non-finite retry_total=10 recovered_total=0
+HEALTH ep3 step23500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step24000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep3 step24399 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 3/50  train_loss=0.03972  train_l1=0.03913  train_ssim_loss=0.19040  l1_over_ssim_term=66.8  gn_max=3.33  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=10  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep4 step24500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step25000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep4 batch827 loss=0.053674 amp_scale=131072 cpu_finite=True input_absmax={'data': '169', 'data_img': '689', 'label': '1.01e+03'} still non-finite retry_total=11 recovered_total=0
+HEALTH ep4 step25500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step26000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step26500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step27000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep4 batch2861 loss=0.039039 amp_scale=131072 cpu_finite=True input_absmax={'data': '146', 'data_img': '570', 'label': '871'} still non-finite retry_total=12 recovered_total=0
+HEALTH ep4 step27500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step28000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step28500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step29000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep4 batch5043 loss=0.088653 amp_scale=131072 cpu_finite=True input_absmax={'data': '146', 'data_img': '569', 'label': '937'} still non-finite retry_total=13 recovered_total=0
+HEALTH ep4 step29500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step30000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step30500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step31000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step31500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep4 batch7466 loss=0.151 amp_scale=131072 cpu_finite=True input_absmax={'data': '125', 'data_img': '524', 'label': '823'} still non-finite retry_total=14 recovered_total=0
+HEALTH ep4 step32000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step32500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep4 step32532 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 4/50  train_loss=0.03693  train_l1=0.03639  train_ssim_loss=0.17363  l1_over_ssim_term=68.2  gn_max=3.83  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=14  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.8998  val_psnr=33.92  val_nmse=0.0051  val_l1=10.2730  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep4 slices=64 ssim=0.8781 | shuffle_cross dSSIM=+0.00197±0.00090 (45/64, p=0.0016) | shuffle_adj dSSIM=-0.00000±0.00011 (30/64, p=0.71) | zero dSSIM=+0.04210±0.00329 (63/64, p=7e-18) | deep4 dSSIM=+0.01606±0.00131 (64/64, p=1.1e-19) | verdict {'deep_used': 'used', 'seq_used': 'used', 'seq_used_adj': 'not shown'}
+HEALTH ep5 step33000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step33500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step34000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep5 batch1619 loss=0.086043 amp_scale=131072 cpu_finite=True input_absmax={'data': '142', 'data_img': '547', 'label': '867'} still non-finite retry_total=15 recovered_total=0
+HEALTH ep5 step34500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step35000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step35500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step36000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep5 batch3654 loss=0.037168 amp_scale=131072 cpu_finite=True input_absmax={'data': '129', 'data_img': '656', 'label': '998'} still non-finite retry_total=16 recovered_total=0
+GRAD-retry ep5 batch3815 loss=0.12275 amp_scale=65536 cpu_finite=True input_absmax={'data': '168', 'data_img': '645', 'label': '1.06e+03'} still non-finite retry_total=17 recovered_total=0
+HEALTH ep5 step36500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step37000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step37500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step38000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step38500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step39000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step39500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step40000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step40500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep5 step40665 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 5/50  train_loss=0.03544  train_l1=0.03493  train_ssim_loss=0.16607  l1_over_ssim_term=68.4  gn_max=3.22  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=131072  amp_skip=3  grad_retry_total=17  grad_recovered_total=0  amp_floor_total=0
+GRAD-retry ep6 batch20 loss=0.039921 amp_scale=131072 cpu_finite=True input_absmax={'data': '143', 'data_img': '726', 'label': '949'} still non-finite retry_total=18 recovered_total=0
+HEALTH ep6 step41000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step41500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step42000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step42500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep6 batch1925 loss=0.31735 amp_scale=65536 cpu_finite=True input_absmax={'data': '126', 'data_img': '624', 'label': '830'} still non-finite retry_total=19 recovered_total=0
+HEALTH ep6 step43000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step43500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step44000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step44500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step45000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step45500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step46000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step46500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep6 batch6012 loss=0.03266 amp_scale=131072 cpu_finite=True input_absmax={'data': '140', 'data_img': '693', 'label': '805'} still non-finite retry_total=20 recovered_total=0
+HEALTH ep6 step47000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step47500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step48000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep6 step48500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep6 batch8075 loss=0.12301 amp_scale=131072 cpu_finite=True input_absmax={'data': '108', 'data_img': '621', 'label': '750'} still non-finite retry_total=21 recovered_total=0
+HEALTH ep6 step48798 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 6/50  train_loss=0.03477  train_l1=0.03427  train_ssim_loss=0.16229  l1_over_ssim_term=68.7  gn_max=7.86  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=21  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9025  val_psnr=34.17  val_nmse=0.0048  val_l1=9.9550  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep6 slices=64 ssim=0.8808 | shuffle_cross dSSIM=+0.00238±0.00104 (42/64, p=0.017) | shuffle_adj dSSIM=-0.00015±0.00011 (27/64, p=0.26) | zero dSSIM=+0.03286±0.00283 (63/64, p=7e-18) | deep4 dSSIM=+0.02272±0.00178 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep7 step49000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step49500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step50000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step50500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep7 batch1971 loss=0.061254 amp_scale=131072 cpu_finite=True input_absmax={'data': '130', 'data_img': '602', 'label': '931'} still non-finite retry_total=22 recovered_total=0
+HEALTH ep7 step51000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step51500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step52000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step52500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep7 batch3990 loss=0.077475 amp_scale=131072 cpu_finite=True input_absmax={'data': '168', 'data_img': '645', 'label': '749'} still non-finite retry_total=23 recovered_total=0
+HEALTH ep7 step53000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step53500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step54000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step54500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step55000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep7 batch6314 loss=0.097128 amp_scale=131072 cpu_finite=True input_absmax={'data': '102', 'data_img': '579', 'label': '724'} still non-finite retry_total=24 recovered_total=0
+HEALTH ep7 step55500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step56000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step56500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep7 step56931 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 7/50  train_loss=0.03382  train_l1=0.03333  train_ssim_loss=0.15881  l1_over_ssim_term=68.3  gn_max=3.08  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=3  grad_retry_total=24  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep8 step57000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep8 batch562 loss=0.048864 amp_scale=131072 cpu_finite=True input_absmax={'data': '148', 'data_img': '499', 'label': '808'} still non-finite retry_total=25 recovered_total=0
+HEALTH ep8 step57500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step58000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step58500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step59000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step59500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep8 batch2612 loss=0.06207 amp_scale=131072 cpu_finite=True input_absmax={'data': '110', 'data_img': '700', 'label': '1.12e+03'} still non-finite retry_total=26 recovered_total=0
+HEALTH ep8 step60000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step60500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step61000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step61500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep8 batch4571 loss=0.10115 amp_scale=65536 cpu_finite=True input_absmax={'data': '90.8', 'data_img': '539', 'label': '779'} still non-finite retry_total=27 recovered_total=0
+HEALTH ep8 step62000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step62500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step63000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step63500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step64000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step64500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step65000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep8 step65064 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 8/50  train_loss=0.03317  train_l1=0.03269  train_ssim_loss=0.15585  l1_over_ssim_term=68.2  gn_max=4.19  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=3  grad_retry_total=27  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9069  val_psnr=33.90  val_nmse=0.0051  val_l1=10.4185  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep8 slices=64 ssim=0.8856 | shuffle_cross dSSIM=+0.00146±0.00063 (40/64, p=0.06) | shuffle_adj dSSIM=+0.00002±0.00005 (29/64, p=0.53) | zero dSSIM=+0.01942±0.00231 (64/64, p=1.1e-19) | deep4 dSSIM=+0.01259±0.00098 (60/64, p=7.4e-14) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep9 step65500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep9 batch632 loss=0.079278 amp_scale=131072 cpu_finite=True input_absmax={'data': '149', 'data_img': '671', 'label': '851'} still non-finite retry_total=28 recovered_total=0
+HEALTH ep9 step66000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step66500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step67000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step67500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep9 batch2710 loss=0.030679 amp_scale=131072 cpu_finite=True input_absmax={'data': '200', 'data_img': '817', 'label': '894'} still non-finite retry_total=29 recovered_total=0
+HEALTH ep9 step68000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step68500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step69000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step69500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep9 batch4735 loss=0.027777 amp_scale=131072 cpu_finite=True input_absmax={'data': '123', 'data_img': '661', 'label': '1.05e+03'} still non-finite retry_total=30 recovered_total=0
+GRAD-retry ep9 batch4782 loss=0.21023 amp_scale=65536 cpu_finite=True input_absmax={'data': '127', 'data_img': '634', 'label': '851'} still non-finite retry_total=31 recovered_total=0
+HEALTH ep9 step70000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step70500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step71000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step71500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step72000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step72500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step73000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep9 step73197 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 9/50  train_loss=0.03271  train_l1=0.03223  train_ssim_loss=0.15392  l1_over_ssim_term=68.1  gn_max=3  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=31  grad_recovered_total=0  amp_floor_total=0
+GRAD-retry ep10 batch36 loss=0.10007 amp_scale=65536 cpu_finite=True input_absmax={'data': '98.1', 'data_img': '415', 'label': '765'} still non-finite retry_total=32 recovered_total=0
+HEALTH ep10 step73500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step74000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step74500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step75000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step75500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step76000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step76500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step77000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep10 batch4081 loss=0.066941 amp_scale=131072 cpu_finite=True input_absmax={'data': '191', 'data_img': '1.03e+03', 'label': '1.11e+03'} still non-finite retry_total=33 recovered_total=0
+HEALTH ep10 step77500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step78000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step78500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep10 batch5624 loss=0.08774 amp_scale=65536 cpu_finite=True input_absmax={'data': '104', 'data_img': '595', 'label': '738'} still non-finite retry_total=34 recovered_total=0
+HEALTH ep10 step79000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step79500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step80000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step80500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step81000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep10 step81330 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 10/50  train_loss=0.03214  train_l1=0.03167  train_ssim_loss=0.15168  l1_over_ssim_term=67.9  gn_max=3.31  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=3  grad_retry_total=34  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9031  val_psnr=33.78  val_nmse=0.0052  val_l1=10.4961  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep10 slices=64 ssim=0.8813 | shuffle_cross dSSIM=+0.00198±0.00093 (43/64, p=0.0081) | shuffle_adj dSSIM=-0.00016±0.00006 (16/64, p=7.7e-05) | zero dSSIM=+0.01507±0.00215 (62/64, p=2.3e-16) | deep4 dSSIM=+0.01547±0.00147 (64/64, p=1.1e-19) | verdict {'deep_used': 'used', 'seq_used': 'used', 'seq_used_adj': 'not shown'}
+HEALTH ep11 step81500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep11 batch580 loss=0.11506 amp_scale=65536 cpu_finite=True input_absmax={'data': '109', 'data_img': '559', 'label': '928'} still non-finite retry_total=35 recovered_total=0
+HEALTH ep11 step82000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step82500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step83000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step83500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step84000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step84500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep11 batch3529 loss=0.046254 amp_scale=65536 cpu_finite=True input_absmax={'data': '130', 'data_img': '595', 'label': '1.04e+03'} still non-finite retry_total=36 recovered_total=0
+HEALTH ep11 step85000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step85500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step86000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step86500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step87000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep11 batch6061 loss=0.10831 amp_scale=65536 cpu_finite=True input_absmax={'data': '59.4', 'data_img': '383', 'label': '570'} still non-finite retry_total=37 recovered_total=0
+HEALTH ep11 step87500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step88000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step88500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step89000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep11 step89463 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 11/50  train_loss=0.03179  train_l1=0.03133  train_ssim_loss=0.15028  l1_over_ssim_term=67.8  gn_max=3.02  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=3  grad_retry_total=37  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep12 step89500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step90000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step90500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep12 batch1474 loss=0.093892 amp_scale=65536 cpu_finite=True input_absmax={'data': '160', 'data_img': '514', 'label': '776'} still non-finite retry_total=38 recovered_total=0
+HEALTH ep12 step91000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step91500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step92000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step92500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step93000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep12 batch4036 loss=0.10677 amp_scale=65536 cpu_finite=True input_absmax={'data': '126', 'data_img': '734', 'label': '1.17e+03'} still non-finite retry_total=39 recovered_total=0
+HEALTH ep12 step93500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step94000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step94500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step95000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step95500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step96000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep12 batch6994 loss=0.074359 amp_scale=65536 cpu_finite=True input_absmax={'data': '103', 'data_img': '531', 'label': '893'} still non-finite retry_total=40 recovered_total=0
+HEALTH ep12 step96500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep12 step97596 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 12/50  train_loss=0.03152  train_l1=0.03106  train_ssim_loss=0.14915  l1_over_ssim_term=67.7  gn_max=4.14  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=32768  amp_skip=3  grad_retry_total=40  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9129  val_psnr=34.93  val_nmse=0.0040  val_l1=9.1676  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep12 slices=64 ssim=0.8913 | shuffle_cross dSSIM=+0.00115±0.00060 (41/64, p=0.033) | shuffle_adj dSSIM=-0.00003±0.00007 (34/64, p=0.71) | zero dSSIM=+0.00402±0.00127 (54/64, p=2e-08) | deep4 dSSIM=+0.01238±0.00102 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep13 step98000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step98500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step99000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step99500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step100000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step100500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep13 batch3003 loss=0.031935 amp_scale=131072 cpu_finite=True input_absmax={'data': '91', 'data_img': '536', 'label': '816'} still non-finite retry_total=41 recovered_total=0
+HEALTH ep13 step101000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step101500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step102000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep13 batch4874 loss=0.039191 amp_scale=65536 cpu_finite=True input_absmax={'data': '76.7', 'data_img': '537', 'label': '854'} still non-finite retry_total=42 recovered_total=0
+HEALTH ep13 step102500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step103000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step103500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step104000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step104500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105729 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 13/50  train_loss=0.03121  train_l1=0.03075  train_ssim_loss=0.14790  l1_over_ssim_term=67.6  gn_max=2.81  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=2  grad_retry_total=42  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep14 step106000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step106500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep14 batch778 loss=0.031084 amp_scale=131072 cpu_finite=True input_absmax={'data': '122', 'data_img': '501', 'label': '1e+03'} still non-finite retry_total=43 recovered_total=0
+GRAD-retry ep14 batch996 loss=0.094899 amp_scale=65536 cpu_finite=True input_absmax={'data': '107', 'data_img': '654', 'label': '987'} still non-finite retry_total=44 recovered_total=0
+HEALTH ep14 step107000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step107500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step108000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step108500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep14 batch2998 loss=0.0388 amp_scale=65536 cpu_finite=True input_absmax={'data': '138', 'data_img': '648', 'label': '1e+03'} still non-finite retry_total=45 recovered_total=0
+HEALTH ep14 step109000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step109500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step110000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step110500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step111000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step111500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep14 batch5885 loss=0.090775 amp_scale=65536 cpu_finite=True input_absmax={'data': '86.7', 'data_img': '365', 'label': '594'} still non-finite retry_total=46 recovered_total=0
+HEALTH ep14 step112000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step112500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step113000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step113500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep14 step113862 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 14/50  train_loss=0.03099  train_l1=0.03054  train_ssim_loss=0.14710  l1_over_ssim_term=67.5  gn_max=2.88  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=4  grad_retry_total=46  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9134  val_psnr=35.04  val_nmse=0.0039  val_l1=9.0317  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
+PROBE ep14 slices=64 ssim=0.8923 | shuffle_cross dSSIM=+0.00163±0.00087 (44/64, p=0.0037) | shuffle_adj dSSIM=-0.00010±0.00007 (28/64, p=0.38) | zero dSSIM=+0.00298±0.00117 (54/64, p=2e-08) | deep4 dSSIM=+0.01371±0.00102 (62/64, p=2.3e-16) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
+HEALTH ep15 step114000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step114500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step115000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep15 batch1224 loss=0.089181 amp_scale=65536 cpu_finite=True input_absmax={'data': '115', 'data_img': '765', 'label': '885'} still non-finite retry_total=47 recovered_total=0
+HEALTH ep15 step115500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step116000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step116500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step117000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step117500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step118000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep15 batch4602 loss=0.089449 amp_scale=65536 cpu_finite=True input_absmax={'data': '66.8', 'data_img': '436', 'label': '930'} still non-finite retry_total=48 recovered_total=0
+HEALTH ep15 step118500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step119000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step119500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step120000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step120500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step121000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step121500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep15 step121995 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 15/50  train_loss=0.03070  train_l1=0.03025  train_ssim_loss=0.14597  l1_over_ssim_term=67.4  gn_max=3.02  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=2  grad_retry_total=48  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep16 step122000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+GRAD-retry ep16 batch492 loss=0.071167 amp_scale=131072 cpu_finite=True input_absmax={'data': '116', 'data_img': '730', 'label': '1.2e+03'} still non-finite retry_total=49 recovered_total=0
+HEALTH ep16 step122500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep16 step123000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+RESUME start_epoch=15 best_val_ssim=0.9134 global_step=121995 data_seed=SEED+1000*epoch
+HEALTH ep16 step122000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
