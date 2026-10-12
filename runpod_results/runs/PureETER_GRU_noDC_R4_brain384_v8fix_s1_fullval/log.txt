@@ -281,3 +281,8 @@ HEALTH ep13 step103000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 HEALTH ep13 step103500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep13 step104000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep13 step104500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep13 step105729 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 13/50  train_loss=0.03121  train_l1=0.03075  train_ssim_loss=0.14790  l1_over_ssim_term=67.6  gn_max=2.81  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=2  grad_retry_total=42  grad_recovered_total=0  amp_floor_total=0
+HEALTH ep14 step106000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
