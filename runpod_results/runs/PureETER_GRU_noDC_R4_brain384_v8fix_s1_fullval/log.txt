@@ -544,3 +544,6 @@ Epoch 26/50  train_loss=0.02891  train_l1=0.02848  train_ssim_loss=0.13924  l1_o
 PROBE ep26 slices=64 ssim=0.8980 | shuffle_cross dSSIM=+0.00155±0.00078 (43/64, p=0.0081) | shuffle_adj dSSIM=-0.00002±0.00004 (28/64, p=0.38) | zero dSSIM=+0.00093±0.00035 (54/64, p=2e-08) | deep4 dSSIM=+0.01337±0.00091 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
 HEALTH ep27 step211500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep27 step212000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep27 step212500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep27 step213000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep27 step213500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
