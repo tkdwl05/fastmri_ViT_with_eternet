@@ -508,3 +508,8 @@ HEALTH ep27 step219591 (epoch-end) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01
 Epoch 27/50  train_loss=0.02848  train_l1=0.02806  train_ssim_loss=0.13615  l1_over_ssim_term=67.0  gn_max=1.29  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0
 HEALTH ep28 step220000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 HEALTH ep28 step220500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep28 step221000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep28 step221500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep28 step222000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep28 step222500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep28 step223000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
