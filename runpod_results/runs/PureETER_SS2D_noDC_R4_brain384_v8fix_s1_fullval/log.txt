@@ -699,3 +699,8 @@ HEALTH ep38 step302000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 HEALTH ep38 step302500 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 HEALTH ep38 step303000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep38 step303500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep38 step304000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep38 step304500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep38 step305000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep38 step305500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep38 step306000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
