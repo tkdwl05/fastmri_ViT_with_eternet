@@ -613,3 +613,9 @@ HEALTH ep33 step265000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 HEALTH ep33 step265500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep33 step266000 (step) near_dead(|w|<1e-06) seq=0.01% unet_deep=0.01% unet_all=0.01%
 HEALTH ep33 step266500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep33 step267000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep33 step267500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep33 step268000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep33 step268389 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+Epoch 33/50  train_loss=0.02803  train_l1=0.02762  train_ssim_loss=0.13417  l1_over_ssim_term=67.0  gn_max=1.55  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0
+HEALTH ep34 step268500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
