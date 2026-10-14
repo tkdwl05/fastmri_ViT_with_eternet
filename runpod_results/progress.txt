@@ -1,4 +1,4 @@
 eval_unet_s1_fullval.log: 
-run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch  29/50:  33%|███▎      | 2714/8133 [49:16<1:37:35,  1.08s/batch, L1=0.0359, LR=7.98e-05, Loss=0.0368, SSIM_c=0.6956, gn=0.0582][A
+run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch  29/50:  54%|█████▍    | 4381/8133 [1:19:18<1:07:34,  1.08s/batch, L1=0.0254, LR=7.86e-05, Loss=0.0258, SSIM_c=0.8937, gn=0.455][A
 run_PureETER_MAMBA1D_noDC_R4_brain384_v8fix_s1_fullval.log: Epoch   3/50:  44%|████▍     | 3588/8133 [44:00<55:03,  1.38batch/s, L1=0.0419, LR=1.99e-04, Loss=0.0425, SSIM_c=0.8271, gn=1.16][A
 run_PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval.log: 
