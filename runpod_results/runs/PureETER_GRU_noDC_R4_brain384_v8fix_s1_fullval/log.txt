@@ -799,3 +799,6 @@ HEALTH ep39 step317187 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01
 Epoch 39/50  train_loss=0.02786  train_l1=0.02744  train_ssim_loss=0.13550  l1_over_ssim_term=65.9  gn_max=1.04  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=65536  amp_skip=5  grad_retry_total=128  grad_recovered_total=0  amp_floor_total=0
 HEALTH ep40 step317500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep40 step318000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep40 step318500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep40 step319000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep40 step319500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
