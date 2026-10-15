@@ -780,3 +780,6 @@ HEALTH ep38 step309054 (epoch-end) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01
 Epoch 38/50  train_loss=0.02790  train_l1=0.02748  train_ssim_loss=0.13563  l1_over_ssim_term=65.9  gn_max=1.53  clipped=0  steps=8133  nan_retry_total=0  nan_recovered_total=0  nan_skip_total=0  amp_scale=131072  amp_skip=2  grad_retry_total=123  grad_recovered_total=0  amp_floor_total=0  val_ssim_m=0.9208  val_psnr=35.89  val_nmse=0.0032  val_l1=8.2306  val_batches=5461  val_retry=0  val_recovered=0  val_fp32=0  val_excluded=0
 PROBE ep38 slices=64 ssim=0.9005 | shuffle_cross dSSIM=+0.00182±0.00098 (46/64, p=0.00062) | shuffle_adj dSSIM=-0.00013±0.00009 (17/64, p=0.00023) | zero dSSIM=+0.00107±0.00038 (58/64, p=9e-12) | deep4 dSSIM=+0.01501±0.00098 (63/64, p=7e-18) | verdict {'deep_used': 'used', 'seq_used': 'not shown', 'seq_used_adj': 'not shown'}
 HEALTH ep39 step309500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep39 step310000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep39 step310500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep39 step311000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
