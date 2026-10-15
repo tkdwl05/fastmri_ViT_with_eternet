@@ -743,3 +743,6 @@ HEALTH ep37 step297000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% une
 RESUME start_epoch=36 best_val_ssim=0.9204 global_step=292788 data_seed=SEED+1000*epoch
 HEALTH ep37 step293000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep37 step293500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep37 step294000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep37 step294500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep37 step295000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
