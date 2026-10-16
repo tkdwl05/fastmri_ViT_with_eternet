@@ -213,3 +213,17 @@ v6_1 가 import 하지 않는 옛 버전들. 버전 진화 방향은 [docs/scrip
 | 대상 | 내용 |
 |---|---|
 | `paper/figs/conf_fig2_arms.{png,pdf}` → `paper/figs/conf_fig2_modules.{png,pdf}` | 금지어 'arm'이 남은 그림 파일 이름 변경(사용자 요청). 그림 내용에는 해당 단어 없음. 생성 스크립트 `paper/make_figs_conf_arch.py`의 저장 이름과 docstring, `paper/ieie/draft_ieie_v7.src.md`의 `@figure` 경로, `docs/paper_table_conventions.md`를 갱신하고 v7 두 판을 다시 빌드. 옛 PNG·PDF는 디스크에서 지움(git 이력에 보존). 구판 원고(IEIE v2·v3·archive)의 옛 경로 참조는 원문 보존 원칙에 따라 그대로 둠 |
+
+## 2026-10-16 — 교수님 원본 파일의 기존 수정 기록 (유지 결정)
+
+`docs/ssim_impl_compare_2026-10-15.md` §6·`docs/professor_settings_compare_2026-10-12.md` §6-2 에서 찾은, 초기 커밋 `7d4e4e0` 원본의 수정 3 건(+ 잔재 1 건). 모두 사용자 계정 커밋 = 우리 쪽 작업이고 교수님 수정이 아니다. **사용자 결정(10-16): 되돌리지 않고 기록만 한다**(복원하면 v7_titan 이후 모든 학습·스모크 하네스 md5 고정값과 재현성이 흔들림). 삭제·이동은 없음.
+
+| 원본 파일 | 수정 커밋 | 내용 | 영향 |
+|---|---|---|---|
+| `models/hybrid_eternet/u_choh_SSIM.py` | `afa89a0` (06-16 커밋, 작업은 05-22 `docs/eval_metric_redesign.md`) | `ssim()`·`SSIM.forward()` 에 `mask=None` 인자 추가 — 마스크를 같은 Gaussian 창으로 평활해 0.5 초과 화소에서만 SSIM 지도 평균. 05-20 무수정 규칙 뒤의 수정 | `mask=None` 이면 원본(`mySSIM.py` 와 같은 내용)과 같은 계산. v7_titan·v8·v8fix·v9·pod 런·스모크의 마스크 SSIM 손실이 이 분기를 씀 |
+| `models/hybrid_eternet/u_choh_model_ETER_ViT.py` | `0cdc914` (04-11)·`e0dc4c9` (04-15) | gradient checkpointing·h0, RefinementBlock head (규칙 이전 SS2D-ViT 작업) | 현행 v8·v9 코드는 import 하지 않음 |
+| `configs/myConfig_choh_model3.py` | `0cdc914` (04-11) | ViT-S·H=2 로 축소 (규칙 이전) | 현행 코드 미사용 |
+| `models/vit_pytorch/vit-pytorch-main/tests/.DS_Store` | `71478ad` (09-03) | macOS 잔재 삭제 (09-03 정리) | 없음 |
+
+검사 보강: `v8_eter_pure/sanity_pure_v8.py` 의 원본 무수정 검사가 `git status` 만 봐서 커밋된 수정을 "OK" 로 보고하던 것을, `git diff 7d4e4e0` 기준 `check_professor_originals()` 로 바꿨다(위 4 건은 지금 내용의 blob 해시로 고정 — 더 바뀌면 실패). CLAUDE.md §작업 규칙에도 같은 내용을 적었다.
+

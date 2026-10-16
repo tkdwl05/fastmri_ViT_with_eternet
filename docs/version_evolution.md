@@ -157,6 +157,8 @@ v6 best 에서 50ep fine-tune (LR 5e-5). blurring(§4②) 을 세 직교 처방�
 ### ① custom SSIM `val_range` 버그 (v5→v6 에서 발견)
 custom `u_choh_SSIM` 가 `val_range=None` 일 때 `L=1` 고정으로 SSIM 을 계산 → fastMRI raw 값이 1 미만이라 **점수가 구조적으로 과소평가**(같은 모델이 custom ~0.72 vs skimage ~0.86). skimage `data_range=per-slice(max−min)` 로 교체하며 V6 의 "성능 점프" 가 사실은 **측정 정합** 임이 드러남. → [[ss2d_v6_changes]].
 
+**(2026-10-16 정정)** 위 원인 서술은 방향이 틀렸다. L = 1 이 실제 값 범위보다 크면 안정화 상수 C1·C2 가 상대적으로 커져 SSIM 은 오히려 *부풀려진다*. 문제의 본질은 custom SSIM 이 L 을 예측값에서 자동 추정(최댓값 > 128 → 255, 아니면 1)해 같은 영상 쌍도 입력 단위에 따라 값이 크게 달라진다는 것이고, 낮게 나온 쪽은 L 이 실제 범위보다 작게 잡힌 경우(예: ×1e6 단위에서 L = 255)와 맞는다. 당시 학습의 입력 단위는 이 저장소에서 다시 확인하지 않았다(320 트랙, 재현 불가). 결론(“V6 의 성능 점프는 측정 정합”)은 그대로다. 근거 `docs/ssim_impl_compare_2026-10-15.md` §2·§5.
+
 ### ② visual-metric gap (v6 에서 발견 → v7_titan 재설계 동기)
 SSIM 0.89 인데 시각적으로 흐릿한 괴리. 원인 4가지: (a) **raw-amplitude SSIM 이 배경(≈50%)으로 부풀림**, (b) 비교 슬라이스 below-average 편향, (c) **L1+SSIM 의 mean-prediction blurring**, (d) 에러맵 colormap 조기 saturation. → v7_titan 의 **brain-mask + masked loss + composite metric** 으로 직접 대응. → [[visual_metric_gap_v6]], [[eval_metric_redesign]].
 

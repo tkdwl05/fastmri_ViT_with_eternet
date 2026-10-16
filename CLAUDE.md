@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠ 2026-10-07 학습 붕괴 발견 — 먼저 읽을 것
+
+v8(주 실험·E1·1b·U-Net 단독·pixel-GRU)과 v9 의 학습에서 **시퀀스 모듈 가중치와 U-Net 파라미터의 약 97% 가 epoch 5 이전에 0(|w|≈2e-40)으로 붕괴**했다 (원인: `main_train_pure_v8.py` 의 Adam 결합형 L2 weight_decay 3e-5 + 전역 clip 1.0 + ×1e6 강도 단위 L1; v9 트레이너도 동일). 따라서 아래에 적힌 GRU·SS2D·v9 비교 수치(0.9126/0.9140/0.9145 등)와 'SS2D ≥ GRU', 'U-Net 단독 ≈ ETER-net' 해석은 **시퀀스 모듈 효과가 아니다**. 상세·근거: `docs/v8_training_collapse_audit_2026-10-07.md`, 원자료 `results/audit_2026-10-07/`. 레시피 수정 스모크(10-08 완료, `results/smoke_recipe_fix/summary.md`): 원인 = 결합형 L2, 원 손실 균형을 유지한 DL 레시피(AdamW 분리형 감쇠·no-decay 그룹·clip 해제·슬라이스별 세기 정규화·λ_SSIM=λ/s̄)에서만 GRU 출력 사용 확인, SS2D 모듈은 전 조건 미학습. 10-08 부터 수정 레시피 트레이너 `main_train_pure_v8fix.py` 로 재실험(5 epoch 점검 → 50 epoch) — Transformer·E2·E3·radapt 재개는 보류.
+
 ## 프로젝트 개요
 
 fastMRI brain multicoil 데이터에 대한 MRI 재구성 모델 연구
@@ -24,18 +28,18 @@ ViT 인코더 + 시퀀스 모듈(GRU=ETER 또는 SS2D=Mamba) 하이브리드였�
 
 **진행 상태·큐·ETA·E1 결과표의 단일 출처 = `docs/v8_fairness_followup_plan.md`** (여기엔 복사하지 않는다 — 금방 낡음).
 큐 요지: E1 다중 시드(25ep×3시드, 09-18 완료 — 시드 간 차이의 부호가 일관되지 않음, 두 모델 동등) → 1b 50ep seed 1 쌍 GRU→SS2D(10-02 완료 — Δ 재현 안 됨, 학습 회차 간 변동과 구분되지 않음,
-런 폴더 `_s1_50ep`) → U-Net 단독 모델(시퀀스 모듈 제거, SEED=1, 10-04 완료 — 볼륨 SSIM 0.9127, IEIE 표 1 행) → **▶ pixel-GRU(SEED=1, 10-05 10:00 UTC 실행 시작)** → Transformer → E3 최소-GRU → E2 LR 스윕 → radapt 재개 → 추론-only 일괄.
+런 폴더 `_s1_50ep`) → U-Net 단독 모델(시퀀스 모듈 제거, SEED=1, 10-04 완료 — 볼륨 SSIM 0.9127, IEIE 표 1 행) → pixel-GRU(SEED=1, 10-07 완료 — 붕괴 결함 아래) → 레시피 수정 스모크(10-08 완료) → **▶ v8fix 5 epoch 점검(10-08~, U-Net 단독·GRU·SS2D)** → (사용자 결정) v8fix 50 epoch → Transformer → E3 최소-GRU → E2 LR 스윕 → radapt 재개 → 추론-only 일괄.
 각 단계 완료 후 다음 단계는 **수동 실행 시작**(자동 체인 없음 — E1 후 2.5일 유휴 재발 방지).
 
 ## 작업 규칙 (사용자 결정 — 이후 모든 작업에 적용)
 
-- **교수님 원본 파일 무수정**: 초기 커밋 `7d4e4e0` 에서 들어온 파일(루트 `choh_train_ViT_ETER_R4regular_240916py` — 확장자 없음이 의도적 복원 상태, `scripts_legacy/*`, `dataloaders/myDataloader_*`, `configs/myConfig_choh_ViT_*`·`myConfig_temp.py`, `models/hybrid_eternet/myUNet_DF.py`·`u_choh_*`, vendored `models/mae`·`models/vit_pytorch`)은 삭제·이동·수정하지 않는다(`docs/cleanup_log.md` §6, 2026-05-20). 확장은 **새 파일 추가**로만(v8/v9 가 그렇게 했음). 출처 확인: `git log --follow --diff-filter=A --format=%h -- <path> | tail -1` 이 `7d4e4e0` 이면 원본. 프로젝트 공유 원본(`ss2d.py`·`u_choh_model_SS2D_ViT_v4.py`·`dataloader_h5_v5.py`)도 v9 이후 무수정 관례.
-- **지표는 표준 지표만**(SSIM 주 평가 지표 + PSNR/nMSE/L1). 자체 설계 composite 은 보고·비교·문서에서 인용 금지(2026-08-07) — 인용 수치는 v8 SS2D 0.9140 / GRU 0.9126, v9 unleashed 0.9145(슬라이스 단위; **IEIE 초안은 2026-09-04 부터 fastMRI 관례대로 볼륨 단위 0.9141 / 0.9127 / 0.9146 을 대표 수치로 사용** — 순위·유의성은 두 단위에서 동일, `paper/tables/ieie_table1_block.md` 첫 블록). 단, 실행 중·정지 중 트레이너의 best-ckpt 선택 기준(composite)은 학습 무결성을 위해 소급 변경하지 않는다(`log.txt` 의 `val_composite` 열은 그래서 남아 있음 — 읽되 인용하지 말 것).
+- **교수님 원본 파일 무수정**: 초기 커밋 `7d4e4e0` 에서 들어온 파일(루트 `choh_train_ViT_ETER_R4regular_240916py` — 확장자 없음이 의도적 복원 상태, `scripts_legacy/*`, `dataloaders/myDataloader_*`, `configs/myConfig_choh_ViT_*`·`myConfig_temp.py`, `models/hybrid_eternet/myUNet_DF.py`·`u_choh_*`, vendored `models/mae`·`models/vit_pytorch`)은 삭제·이동·수정하지 않는다(`docs/cleanup_log.md` §6, 2026-05-20). 확장은 **새 파일 추가**로만(v8/v9 가 그렇게 했음). 출처 확인: `git log --follow --diff-filter=A --format=%h -- <path> | tail -1` 이 `7d4e4e0` 이면 원본. 프로젝트 공유 원본(`ss2d.py`·`u_choh_model_SS2D_ViT_v4.py`·`dataloader_h5_v5.py`)도 v9 이후 무수정 관례. **이미 있는 수정 3 건(모두 우리 쪽 작업, 2026-10-16 사용자 결정으로 유지·기록 — `docs/cleanup_log.md` 2026-10-16)**: `u_choh_SSIM.py`(05-22 v7_titan 평가 재설계 때 `mask=` 인자 추가, 커밋 afa89a0 — `mask=None` 은 원본과 같은 계산, v7_titan 이후 모든 학습의 마스크 SSIM 손실이 이 분기를 씀), `u_choh_model_ETER_ViT.py`·`configs/myConfig_choh_model3.py`(04-11·04-15, 규칙 이전 SS2D-ViT 작업 — 현행 v8·v9 코드는 쓰지 않음). 무수정 검사는 `git status` 가 아니라 `git diff 7d4e4e0` 기준(`v8_eter_pure/sanity_pure_v8.py` 의 `check_professor_originals`, 알려진 수정은 내용 해시로 고정).
+- **지표는 표준 지표만**(SSIM 주 평가 지표 + PSNR/nMSE/L1). 자체 설계 composite 은 보고·비교·문서에서 인용 금지(2026-08-07) — 인용 수치는 v8 SS2D 0.9140 / GRU 0.9126, v9 unleashed 0.9145(슬라이스 단위; **IEIE 초안은 2026-09-04 부터 볼륨 단위 평균(fastMRI 관례) 0.9141 / 0.9127 / 0.9146 을 대표 수치로 사용** — fastMRI 와 같은 것은 볼륨 평균뿐이고, SSIM 은 뇌 마스크 안 평균·data_range = 마스크 안 GT max−min 이라 fastMRI 공식 평가(마스크 없음·볼륨 최댓값)와 다르다(`docs/ssim_impl_compare_2026-10-15.md`) — 순위·유의성은 두 단위에서 동일, `paper/tables/ieie_table1_block.md` 첫 블록). 단, 실행 중·정지 중 트레이너의 best-ckpt 선택 기준(composite)은 학습 무결성을 위해 소급 변경하지 않는다(`log.txt` 의 `val_composite` 열은 그래서 남아 있음 — 읽되 인용하지 말 것).
 - **비교 기준 모델 = 교수님 원본 ETER-Net(GRU)**. SS2D 는 "현재 최고 성능 비교 모델"이지 기준 모델이 아니다 — 1차(주) 비교는 "각 모델 vs 원본 GRU", 모델 간 pairwise 는 2차(2026-09-02).
 - **비교 모델 이름**: 3번째 비교 모델은 문서·표·env 에서 **"Transformer"** 로 표기(구현 세부 "axial attention" 은 설계문서 안에서만). 4번째 비교 모델은 "pixel-GRU". **'팔(arm)'이라는 용어는 쓰지 않는다**(2026-09-28 사용자 결정) — 네트워크 전체는 '(비교) 모델', 교수님 원본은 '기준 모델', 바꿔 끼우는 부분은 '시퀀스 모듈'(구성·후보), 실험 한 칸은 '실험 조건'. 코드 식별자(`ARMS` env, `--arm`, 파일명 `axial_transformer_arm_design.md`)는 인터페이스라 유지.
 - **용어**: 원고·문서·메모리는 `docs/terminology_glossary.md`(2026-10-01 확정) 규칙을 따른다. 교수님 문구와 겹치는 보류 9건은 현행 유지.
 - **v1~v6(이전 8GB 머신, 320)** 결과는 384 서버 트랙의 근거·비교 대상으로 쓰지 않는다(역사 기록 전용). v5 는 비정상 조기종료라 baseline 에서도 제외.
-- **GPU0 단독 순차 큐** — GPU1 은 전 큐에서 사용하지 않는다(교수님 작업용). 큐 순서를 바꾸면 `docs/v8_fairness_followup_plan.md` 의 큐 표부터 갱신.
+- **GPU 사용 범위** — 2026-10-10 교수님 허락으로 **GPU0·GPU1 모두 사용 가능**(그전에는 GPU0 단독, GPU1 = 교수님 작업용). 단, 현재 컨테이너는 GPU0 만 노출되어 있어(08-31 재구성 때 UUID·디바이스 노드로 GPU0 만 지정) GPU1 을 쓰려면 호스트에서 컨테이너를 다시 만들어야 한다(`infra/docker/RUNBOOK.md`). 큐 순서를 바꾸면 `docs/v8_fairness_followup_plan.md` 의 큐 표부터 갱신.
 - **실행 중 런의 코드 편집 금지**: GPU0 런이 도는 동안 그 런의 트레이너·공유 config·런처 `*.sh` 를 고치지 않는다 — 트레이너/config 는 supervisor 재시작 시 새 코드로 반영되고, bash 는 실행 중 스크립트를 이어서 읽는다.
 - **활성 런 보호**: 정리·이동·삭제 시 진행 중 런 폴더(`logs/PureETER_*_v8_s*/`, `v8_eter_pure/runs/multiseed/`, 활성 `wandb/run-*`)와 radapt 정지 ckpt(`logs/PureETER_SS2D_V9_radapt_multiAR_brain384/`)는 건드리지 않는다. 파일 삭제는 `docs/cleanup_log.md` 에 날짜별로 기록.
 - **git**: `*.sh` 는 기본 무시(예외 = `.gitignore` 화이트리스트: `infra/docker/*.sh`·`v9_mamba_radapt/runs/{post_reboot_rearm,clean_stop_pre_outage,snapshot_pre_outage}.sh`) — 런처 스크립트는 로컬 전용이므로 재현 절차는 문서/CLAUDE.md 에 적는다. 커밋 prefix 관례 `paper:`/`docs:`/`v8:`/`infra:`/`viz:`/`feat:`. 작업 브랜치 `docs/summary-2026-06-02`(main 보다 앞섬, 주기적으로 main 에 merge). 인증은 SSH(§환경).
@@ -56,7 +60,7 @@ ViT 인코더 + 시퀀스 모듈(GRU=ETER 또는 SS2D=Mamba) 하이브리드였�
 
 - `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1(MDPI 공학형, 스코프 v8+v9 unleashed). `references.bib` 서지 전건 확정. 주장 범위(09-02 잠금): "SSM>RNN" 일반화가 아니라 **"SS2D 치환 > 원 bi-GRU 설계"로 한정** + 메커니즘/파라미터화 교란 요인 한계 항목. IEIE v7 초록의 "세 지표 모두 우위" 는 1b 결과 후 유지/완화 결정(09-21). 역사: `paper/archive/draft_ko_v1.*`, 개발 이력 문서 `paper/project_story_v1_to_v9.md`.
 - **`paper/make_tables.py` — 표를 md+tex 로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 재실행.** 그림 `make_fig{1_architecture,2_curves,3_qualitative,4_per_slice}.py`·`make_figs_conf_arch.py` → `paper/figs/`.
-- **그림 조판 규칙**: 빌더가 그림을 page 폭 6.69 in(학술대회판 단 폭 3.15 in)에 맞춰 삽입하므로 figsize 폭을 그 값으로 **직접 조판**(더 넓게 그리면 글자가 비례 축소), 최소 글자 6.5 pt, Liberation Sans(`paper/fonts/`), 600 dpi. 고전적 논문 블록 다이어그램 문법(한 줄 라벨 균일 블록·화살표 위 크기 표기·실데이터 썸네일)이고 양식 도우미의 단일 출처는 `make_figs_conf_arch.py`. `check_docx_structure.py` 는 dpi 만 보고 글자 크기는 못 보므로 렌더 PNG 를 눈으로 확인.
+- **그림 조판 규칙**: 빌더가 그림을 page 폭 6.69 in(학술대회판 단 폭 3.15 in)에 맞춰 삽입하므로 figsize 폭을 그 값으로 **직접 조판**(더 넓게 그리면 글자가 비례 축소), 최소 글자 6.5 pt, Liberation Sans(`paper/fonts/`), 600 dpi. 고전적 논문 블록 다이어그램 문법(한 줄 라벨 균일 블록·화살표 위 크기 표기·실데이터 썸네일)이고 양식 도우미의 단일 출처는 `make_figs_conf_arch.py`. `check_docx_structure.py` 는 dpi 만 보고 글자 크기는 못 보므로 렌더 PNG 를 눈으로 확인. 10-07 그림 갱신: 그림 1 은 화살표 숫자 '20' 을 점선에서 띄운 것만 변경(U-Net 단독 표시는 넣지 않기로 함 — 사용자 10-07), 그림 3 색 막대 라벨 간격 수정(R_IN 0.42·labelpad 4), 그림 2 대안 B `conf_fig2_modules_impl`(원 구현대로 한 스텝 = 한 채널의 연속 32행 — 교수님 확인 후 A/B 선택), 그림 3 시드 1판 `fig3_qualitative_col_seed1`(U-Net 단독·2회차 ETER-net·SS2D; 입력 `paper/make_fig3_seed1_inputs.py` → `results/vis/multimodel_compare_seed1/`, 조판 `make_fig3_qualitative.py --src …`). 수정 방향 정리 = `paper/ieie/reviews/2026-10-01/IEIE_수정방향_20261007.md`(git 무시).
 - **`paper/ieie/` — IEIE 투고 초안. ★v8(10-05) = 최신 통합본** `draft_ieie_v8.src.md`: 교수님 10-01 검토본(추적 변경 수락)+본문 수정 목록 전체+1b·U-Net 단독 결과, 표 1 = `paper/tables/ieie_table1_block_v8.md`(make_tables.py 생성 — run 1·run 2·U-Net only, 공개 모델 행 없음). 학술대회판 ≈5.2~5.5쪽(5쪽 초과 가능 → 감축 라운드). 아래 v7 설명은 이전 판 기준: 단일 소스 `draft_ieie_v7.src.md` → `build_ieie_docx.py`(학술지판, 서면 심사용 blind 4쪽 — `check_blind()`) / `build_ieie_conf_docx.py`(학술대회판, 학술대회 논문집 1~5쪽, 저자 `***` 자리표시자 유지). 두 판은 내용 동일·저자만 차이. 저장소 루트에서 `CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_*.py [--src …] [--out …]`. 2026 추계학술대회 마감 **2026-10-19**, MDPI SI 마감 11-30.
   - **소스 규칙**: 인라인 수식 `$…$`(빌더가 OMML 변환 — 평문 `y_c`·`f_θ` 첨자 금지, `\mathbb` 미지원), 디스플레이 `$$…$$` 한 줄, 캡션 **`@cap_en` 필수(두 판 영문만, 09-14)**·`@cap_ko` 선택, 표 수치는 `paper/tables/ieie_table1_block.md`·`ieie_table_ref_block.md` 그대로(볼륨 단위).
   - **문체 규칙(교수님 09-14 검토)**: 구어체 금지, 문장 성분(주어·목적어·서술어·조사) 완성, 주어–서술어 일치, 수식의 모든 변수를 말로 설명, 약어는 첫 등장에서 풀어 씀(RSS·ACS·SSIM·PSNR·nMSE·MSE·fp16/32), 구성요소=모듈·네트워크 전체=모델.
@@ -132,10 +136,14 @@ SEQ_MODEL=pixelgru USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pu
 SEED=1 ARMS=unet SMOKE_BS=8 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_seed1_50ep.sh \
   > v8_eter_pure/runs/multiseed_outer_unet_s1_50ep.log 2>&1 < /dev/null & disown
 # 진행 확인: tail -2 logs/PureETER_UNET_noDC_R4_brain384_v8_s1_50ep/log.txt ; nvidia-smi
-# ★ 현재 단계: pixel-GRU 50ep SEED=1 (10-05 10:00 UTC 실행 시작; 같은 런처 ARMS=pixelgru — 재기동도 같은 명령)
-SEED=1 ARMS=pixelgru SMOKE_BS=8 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_seed1_50ep.sh \
-  > v8_eter_pure/runs/multiseed_outer_pixelgru_s1_50ep.log 2>&1 < /dev/null & disown
-# 진행 확인: tail -2 logs/PureETER_PIXELGRU_noDC_R4_brain384_v8_s1_50ep/log.txt ; nvidia-smi   (완료 후 다음 단계 Transformer 는 수동 실행 시작)
+# ★ 현재 단계 (10-08 13:20 UTC~): v8fix 5 epoch 점검 — 수정 레시피 DL 트레이너 `v8_eter_pure/main_train_pure_v8fix.py`(기존 트레이너 무수정),
+#   unet → gru → ss2d (SEED=1, 50 epoch 일정, epoch 5 에서 정지·PAUSED_ep5) → 평가 `eval_v8fix.py` → results/eval/v8fix_ep5/. 약 1.3~1.5일.
+#   재기동도 같은 명령(PAUSED/DONE 런 skip, 미완 런 전체 상태 재개). exit 3 = ALERT_COLLAPSE(가중치 소멸 감지), exit 2 = 재개 설정 불일치 → 런처 중단.
+CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8fix_gate.sh > v8_eter_pure/runs/v8fix_gate_outer.log 2>&1 < /dev/null & disown
+# 진행 확인: tail -3 logs/PureETER_{UNET,GRU,SS2D}_noDC_R4_brain384_v8fix_s1/log.txt (HEALTH·PROBE 줄) ; tail v8_eter_pure/runs/v8fix_gate_outer.log
+# 50 epoch 까지 이어 학습(점검 통과 후, 사용자 결정): STOP_AFTER_EPOCH=50 을 붙인 같은 명령 (STOP 을 빼면 기본 5 라 아무것도 안 함).
+#   정지 중에는 v8_eter_pure/smoke_recipe_fix.py(레시피 함수 단일 출처)를 고치지 말 것 — 재개 시 판이 다르면 거부.
+# 레시피 수정 스모크(10-07 12:26 → 10-08 05:53 UTC 완료, 18 job — 결과 감사 문서 §(7)): run_smoke_recipe_fix.sh, 결과 results/smoke_recipe_fix/summary.md
 #   ⚠ 런처는 끝나도 init 이 회수하지 않아 좀비로 남는다 — 종료 감시는 kill -0 이 아니라 `ps -o stat=` 의 Z 를 확인
 # 1b(완료, 10-02): 같은 런처 기본값 ARMS="gru ss2d" → logs/PureETER_{GRU,SS2D}_noDC_R4_brain384_v8_s1_50ep/, 짝 평가 results/eval/v8_nodc_s1_50ep/
 # E1 다중 시드 런처(완료): v8_eter_pure/runs/run_v8_multiseed.sh — SEEDS × ARMS × EPOCHS env, 완료 런 skip
@@ -181,9 +189,9 @@ GPU 를 쓰는 스크립트는 GPU0 에서 학습이 도는 중이면 실행하�
 ## 환경
 
 - conda 환경 **`base`**(`/opt/conda`) — `mri_env` 는 이전 머신 이름이며 이 머신에 없다.
-- GPU: **TITAN RTX 24GB × 2** — 정책상 **GPU0 단독**, GPU1 은 항상 비워둔다.
+- GPU: **TITAN RTX 24GB × 2** — 10-10 부터 GPU0·GPU1 모두 사용 허락(교수님). 현재 컨테이너에는 GPU0 만 보인다(`nvidia-smi -L` 1 개) — GPU1 추가는 컨테이너 재생성 필요.
 - 컨테이너: Docker 이미지 **`mri:v1`**(`infra/docker/Dockerfile`, 2026-08-31 재구성 — 절차 `infra/docker/RUNBOOK.md`, 스크립트 00_backup→10_preflight→20_build→30_run→40_restore→50_verify). torch 2.3.1 / numpy 1.26.4 는 mamba_ssm 2.2.2 wheel ABI 때문에 동결.
-- **컨테이너 재시작 후 재개 = 큐 표의 *현재 단계* 런처 재실행**(현재 pixel-GRU: `SEED=1 ARMS=pixelgru SMOKE_BS=8 … run_v8_seed1_50ep.sh`, 완료 런 skip·전체 상태 재개 — 위 §실행). `post_reboot_rearm.sh` 는 GPU0 점유를 확인하지 않고 radapt 를 띄우는 radapt 전용 스크립트라 큐 6단계 전에는 쓰지 않는다 — `infra/docker/RUNBOOK.md` [7] 은 아직 radapt 기준으로 적혀 있다.
+- **컨테이너 재시작 후 재개 = 큐 표의 *현재 단계* 런처 재실행**(현재 v8fix 5 epoch 점검: `run_v8fix_gate.sh`, PAUSED/DONE 런 skip·미완 런 전체 상태 재개 — 위 §실행). `post_reboot_rearm.sh` 는 GPU0 점유를 확인하지 않고 radapt 를 띄우는 radapt 전용 스크립트라 큐 6단계 전에는 쓰지 않는다 — `infra/docker/RUNBOOK.md` [7] 은 아직 radapt 기준으로 적혀 있다.
 - **NVML/`/dev/nvidia0` EPERM 반복 재발**: 원인은 cgroup device allowlist 탈락(드라이버·이미지 문제 아님) → `30_host_run.sh` 가 `--device` 를 명시. 실행 중 CUDA 컨텍스트는 살아남지만 **새 프로세스 실행 시작이 실패**하므로 장기 런은 `MAX_RETRY=200` supervisor 로 띄운다.
 - wandb `WANDB_MODE=online`(미동기 `offline-run-*` 는 sync 안 된 것).
 - git 인증 **SSH**(`git@github.com` remote, `~/.ssh/id_ed25519`). push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
