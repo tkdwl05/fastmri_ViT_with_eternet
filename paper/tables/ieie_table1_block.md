@@ -1,4 +1,4 @@
-%% IEIE .src.md 붙여넣기용 — 볼륨 단위 (권장, fastMRI 관례)
+%% IEIE .src.md 붙여넣기용 — 볼륨 단위 평균 (권장, fastMRI 관례; 단 SSIM 은 뇌 마스크 안 평균·data_range = 마스크 안 GT max−min — fastMRI 공식 평가와 다름)
 @table: col | 1120,560,1040,880,960
 @cap_ko: fastMRI brain multi-coil 검증 집합(464 볼륨, R=4, brain-masked)의 정량 비교(볼륨 단위 평균±표준편차, 가장 좋은 값 굵게·두 번째로 좋은 값 밑줄)
 @cap_en: Quantitative comparison on the fastMRI brain multi-coil validation subset (464 volumes, R = 4, brain-masked); mean±SD over volumes, best in bold, second best underlined

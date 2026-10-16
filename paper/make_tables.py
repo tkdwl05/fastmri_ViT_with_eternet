@@ -366,7 +366,7 @@ def conv_main_table(unit):
 blk_vol = conv_main_table("volume")
 blk_slice = conv_main_table("slice")
 open(os.path.join(OUT, "ieie_table1_block.md"), "w").write(
-    "%% IEIE .src.md 붙여넣기용 — 볼륨 단위 (권장, fastMRI 관례)\n" + "\n".join(blk_vol)
+    "%% IEIE .src.md 붙여넣기용 — 볼륨 단위 평균 (권장, fastMRI 관례; 단 SSIM 은 뇌 마스크 안 평균·data_range = 마스크 안 GT max−min — fastMRI 공식 평가와 다름)\n" + "\n".join(blk_vol)
     + "\n\n%% 슬라이스 단위 변형 (현행 문서·초안의 대표 수치 0.9126/0.9140/0.9145 와 일치)\n" + "\n".join(blk_slice) + "\n")
 print("  wrote ieie_table1_block.md")
 

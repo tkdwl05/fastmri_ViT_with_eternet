@@ -45,15 +45,21 @@ COLS = [  # (npz key, header line 1, header line 2)
     ("gru",      "ETER-net", "(bi-GRU)"),
     ("ss2d",     "SS2D", "(controlled)"),
     ("v9",       "SS2D", "(enhanced)"),
+    # 10-07: 2회차(시드 1) 모델과 U-Net 단독(시드 1) — --src 로 그 npz 폴더를 줄 때만 사용(기본 8열에는 없음)
+    ("unetonly", "U-Net only", ""),
+    ("gru2",     "ETER-net", "(bi-GRU)"),
+    ("ss2d2",    "SS2D", "(controlled)"),
 ]
+DEFAULT_KEYS = ["gt", "zf", "unet", "varnet", "promptmr", "gru", "ss2d", "v9"]   # --methods 미지정 시(기존 8열 그대로)
 NARROW_HDR = {"gt": ("Ground", "truth"), "zf": ("Zero-", "filled"), "unet": ("U-Net†", ""),
-              "varnet": ("E2E-", "VarNet†"), "promptmr": ("Prompt", "MR+")}
+              "varnet": ("E2E-", "VarNet†"), "promptmr": ("Prompt", "MR+"), "unetonly": ("U-Net", "only")}
 ERR_VMAX = 0.10
 
 
-def load_slice(idx):
-    z = np.load(os.path.join(SRC, f"recon_{idx:04d}.npz"))
-    meta = json.load(open(os.path.join(SRC, f"metrics_{idx:04d}.json")))
+def load_slice(idx, src=None):
+    src = src or SRC
+    z = np.load(os.path.join(src, f"recon_{idx:04d}.npz"))
+    meta = json.load(open(os.path.join(src, f"metrics_{idx:04d}.json")))
     rec = {k[4:]: z[k] for k in z.files if k.startswith("rec_")}
     return z["gt"], z["brain_mask"], rec, meta["meta"], meta["metrics"]
 
@@ -69,16 +75,18 @@ def main():
     # 09-09 통합판(학술지 4쪽 = 학술대회판 동일 내용): 단 폭 3.15 in 에 열을 골라 넣는 축약형 — 예) --methods gt,zf,gru,ss2d --fig-w 3.15
     ap.add_argument("--methods", default=None, help="comma-separated npz keys to show, in order (default: all 8 columns)")
     ap.add_argument("--fig-w", type=float, default=PAGE_W, help="total figure width in inches (6.69 page / 3.15 column)")
+    ap.add_argument("--src", default=SRC, help="recon_<idx>.npz / metrics_<idx>.json 폴더 (기본 results/vis/multimodel_compare)")
     args = ap.parse_args()
     slices = [int(s) for s in args.slices.split(",") if s.strip()]
     os.makedirs(OUT, exist_ok=True)
-    cols = COLS if not args.methods else [c for k in args.methods.split(",") for c in COLS if c[0] == k.strip()]
+    cols = ([c for c in COLS if c[0] in DEFAULT_KEYS] if not args.methods
+            else [c for k in args.methods.split(",") for c in COLS if c[0] == k.strip()])
     if args.fig_w < 4.0:   # 단 폭: 한 줄 헤더가 패널(≈0.62 in)보다 길어지므로 두 줄로 나눈다
         cols = [(k, *NARROW_HDR.get(k, (h1, h2))) for k, h1, h2 in cols]
 
     n_rows = 2 * len(slices) + (1 if args.gain_slice >= 0 else 0)
     n_cols = len(cols)
-    L_IN, R_IN = 0.30, 0.38              # row-label margin / colourbar tick+label margin (inches, same at every width)
+    L_IN, R_IN = 0.30, 0.42              # row-label margin / colourbar tick+label margin (inches, same at every width; 10-07 0.38→0.42)
     CB = 0.10                            # colourbar column = 0.10 panel width (inside the grid)
     W = args.panel_in if args.panel_in else (args.fig_w - L_IN - R_IN) / (n_cols + CB)   # 0.749 in at page width (8 cols)
     dpi = int(round(384 / W))            # one slice pixel = one image pixel (512 dpi at page width)
@@ -101,7 +109,7 @@ def main():
 
     r = 0
     for si, idx in enumerate(slices):
-        gt, bm, rec, meta, met = load_slice(idx)
+        gt, bm, rec, meta, met = load_slice(idx, args.src)
         gmax = max(float(gt.max()), 1e-8)
         mb = bm > 0.5
         for ci, (key, h1, h2) in enumerate(cols):
@@ -132,7 +140,7 @@ def main():
         r += 2
 
     if args.gain_slice >= 0:
-        gt, bm, rec, meta, met = load_slice(args.gain_slice)
+        gt, bm, rec, meta, met = load_slice(args.gain_slice, args.src)
         gmax = max(float(gt.max()), 1e-8)
         for ci, (key, h1, h2) in enumerate(cols):
             ax = fig.add_subplot(gs[r, ci])
@@ -151,7 +159,7 @@ def main():
         cax = fig.add_subplot(gs[1:2 * len(slices), n_cols])
         cb = fig.colorbar(im_err, cax=cax, ticks=[0, 0.05, 0.10])
         cb.ax.tick_params(labelsize=FS["cbar_tick"], length=2, width=0.5, pad=1.5)
-        cb.set_label(r"|$\hat{x}$ − $x^{*}$| / max($x^{*}$)", fontsize=FS["cbar_label"], labelpad=1.5)
+        cb.set_label(r"|$\hat{x}$ − $x^{*}$| / max($x^{*}$)", fontsize=FS["cbar_label"], labelpad=4.0)   # 10-07: 1.5→4.0 (윗첨자가 눈금 숫자와 겹침)
 
     for ext in ("png", "pdf"):
         fig.savefig(os.path.join(OUT, f"{args.out_name}.{ext}"), dpi=dpi)

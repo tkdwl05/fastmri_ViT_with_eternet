@@ -260,7 +260,7 @@ def fig1(th):
     # concat
     cx = 1.42
     arrow(ax, (sx + sw, yc), (cx - 0.055, yc))
-    lab(ax, (sx + sw + cx - 0.055) / 2, yc + 0.03, "20", fs=5.0)
+    lab(ax, (sx + sw + cx - 0.055) / 2 + 0.012, yc + 0.03, "20", fs=4.8)   # 10-07: 점선 테두리에서 띄움
     op(ax, cx, yc, "C", fs=6.0)
     # U-Net
     ux, uw = 1.55, 0.48
@@ -343,7 +343,11 @@ def scan_grid(ax, x, y, s, direction, n=4, color=EDGE_B):
             arrow(ax, (x + v, y + 0.02), (x + v, y + s - 0.02), color=color, lw=0.6, mutation=3.5)
 
 
-def fig2(th):
+def fig2(th, variant="rows"):
+    """variant="rows": 기존 판(한 스텝 = k-space 한 행으로 표현).
+    variant="impl" (10-07): 원 구현대로 — (32, 384, 384) 입력을 순열 없이 (384, 12,288) 로 펼치므로
+    스텝 t = 채널 ⌊t/12⌋ 의 연속된 32개 행(32×384). 교수님 확인 결과에 따라 둘 중 하나를 쓴다."""
+    impl = variant == "impl"
     H = 2.30
     fig, ax = canvas(H, y_lo=0.50)             # 10-01: 하단 설명 두 줄 삭제 → 아래 0.50 in 잘라냄(높이 1.80 in)
     y0 = 1.40                                  # (a) chain baseline
@@ -354,20 +358,30 @@ def fig2(th):
     text(ax, 0.28, H - 0.05, "bi-GRU module (ETER-net)", fs=FS, ha="left", va="top")
     text(ax, W - 0.04, H - 0.05, "637.1M (model 668.2M)", fs=FS_S, color=MUTED, ha="right", va="top")
     ts, tx, ty = 0.34, 0.06, y0 + 0.20
+    if impl:
+        for k in (2, 1):                       # 뒤에 겹친 사각형 = 채널 축(32채널)
+            ax.add_patch(Rectangle((tx + 0.025 * k, ty + 0.025 * k), ts, ts, fc="white", ec=EDGE, lw=0.4, zorder=2))
     thumb(ax, tx, ty, ts, th["ksp_und"])
-    ax.add_line(Line2D([tx, tx + ts], [ty + ts * 0.5] * 2, color=EDGE_R, lw=0.9, zorder=5))
-    lab(ax, 0.04, ty - 0.03, "$x_t$ = k-space row $t$", ha="left", va="top", fs=5.0, color=INK, max_w=0.56)
-    lab(ax, 0.04, ty - 0.12, "12,288-d (32×384)", ha="left", va="top", fs=5.0, max_w=0.54)
+    if impl:
+        bh_ = ts / 12                          # 32/384 = 1/12 높이의 띠
+        ax.add_patch(Rectangle((tx, ty + ts * 0.5 - bh_ / 2), ts, bh_, fc=EDGE_R, ec=EDGE_R, lw=0.6,
+                               alpha=0.45, zorder=5))
+        lab(ax, 0.04, ty - 0.03, "$x_t$: 32 rows × 384", ha="left", va="top", fs=5.0, color=INK, max_w=0.56)
+        lab(ax, 0.04, ty - 0.12, "of one channel", ha="left", va="top", fs=5.0, max_w=0.54)
+    else:
+        ax.add_line(Line2D([tx, tx + ts], [ty + ts * 0.5] * 2, color=EDGE_R, lw=0.9, zorder=5))
+        lab(ax, 0.04, ty - 0.03, "$x_t$ = k-space row $t$", ha="left", va="top", fs=5.0, color=INK, max_w=0.56)
+        lab(ax, 0.04, ty - 0.12, "12,288-d (32×384)", ha="left", va="top", fs=5.0, max_w=0.54)
     arrow(ax, (tx + ts + 0.01, ty + ts * 0.5), (0.58, ty + ts * 0.5))
     x_end, y_mid, y_top = unrolled_birnn(ax, 0.60, y0, cw=0.16, gap=0.085)
     y_mid = y0 + 0.315                         # centre of the two-row block (= layer output)
-    text(ax, 1.05, y_top, "stage 1: rows — 384 steps", fs=5.0, color=INK2,
-         va="bottom", max_w=1.6)
+    text(ax, 1.05, y_top, "stage 1 — 384 steps (12,288-d each)" if impl else "stage 1: rows — 384 steps",
+         fs=5.0, color=INK2, va="bottom", max_w=1.6)
     bx, bw2 = 1.84, 0.62
     arrow(ax, (x_end + 0.01, y_mid), (bx, y_mid))
     lab(ax, (x_end + bx) / 2, y_mid + 0.03, "transpose", fs=4.8, max_w=bx - x_end - 0.03)
-    box(ax, bx, y_mid - 0.125, bw2, 0.25, "stage 2: columns", sub="384 steps", fc=FILL_R, ec=EDGE_R,
-        fs=5.4, sub_fs=4.7)
+    box(ax, bx, y_mid - 0.125, bw2, 0.25, "stage 2" if impl else "stage 2: columns", sub="384 steps",
+        fc=FILL_R, ec=EDGE_R, fs=5.4, sub_fs=4.7)
     arrow(ax, (bx + bw2, y_mid), (bx + bw2 + 0.28, y_mid))
     lab(ax, bx + bw2 + 0.14, y_mid + 0.03, "reshape", fs=4.8, max_w=0.25)
     text(ax, bx + bw2 + 0.30, y_mid, "20×384$^2$", fs=5.2, ha="left")
@@ -410,7 +424,7 @@ def fig2(th):
     box(ax, 2.74, yr, 0.36, bh, "1×1 conv", sub="128 → 20", fs=5.6, sub_fs=5.2)
     lab(ax, 2.92, yr - 0.03, "20×384$^2$", va="top", fs=5.0, color=INK)
     # 10-01 교수님 검토: 식은 본문 식 (2)에 있으므로 그림에서 빼고, 작은 변수 설명 줄도 뺀다.
-    save(fig, "conf_fig2_modules")
+    save(fig, "conf_fig2_modules_impl" if impl else "conf_fig2_modules")
 
 
 # ═════════════════════════ Fig. 3 — enhanced SS2D ═════════════════════════
@@ -496,6 +510,7 @@ if __name__ == "__main__":
     th = load_thumbs()
     fig1(th)
     fig2(th)
+    fig2(th, variant="impl")
     fig3(th)
     if _OVERFLOW:
         for s, w_in, mw in _OVERFLOW:
