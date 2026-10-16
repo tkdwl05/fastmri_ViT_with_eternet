@@ -894,3 +894,6 @@ PROBE ep44 slices=64 ssim=0.9009 | shuffle_cross dSSIM=+0.00181±0.00101 (46/64,
 HEALTH ep45 step358000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep45 step358500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
 HEALTH ep45 step359000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep45 step359500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep45 step360000 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
+HEALTH ep45 step360500 (step) near_dead(|w|<1e-06) seq=0.00% unet_deep=0.01% unet_all=0.01%
