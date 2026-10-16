@@ -5,7 +5,8 @@ v8 sanity: "오직 sequence model(±DC)만 다름" + 차원 계약 + 교수님 �
   1. 4 variant {gru,ss2d}×{noDC,DC} 생성 + forward (BS=1, 384²) → 출력 (1,1,384,384).
   2. 같은 DC 레벨에서 GRU/SS2D 의 U-Net DFU in_channels / n_hidden / depth / wf 동일.
   3. no-DC GRU 가 교수님 ETER_hybrid_GRU_DFU 와 동일 차원(gru_h/gru_v/unet param shape) 인지.
-  4. git: models/hybrid_eternet/*, models/mamba_eternet/ss2d.py 무수정.
+  4. git: 교수님 원본(초기 커밋 7d4e4e0 의 원본 파일)이 7d4e4e0 과 같은지 — git status 가 아니라 git diff 7d4e4e0 기준이라
+     커밋된 수정도 잡는다(2026-10-16). 알려진 수정 3 건은 내용 해시로 고정(KNOWN_MODIFIED). models/mamba_eternet/ss2d.py 는 git status.
 실행: conda activate mri_env && python v8_eter_pure/sanity_pure_v8.py
 """
 
@@ -27,6 +28,47 @@ from u_pure_eternet_gru import PureETER_GRU
 from u_pure_eternet_ss2d import PureETER_SS2D
 
 DEV = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# 교수님 원본 = 초기 커밋 7d4e4e0 에서 온 아래 경로의 파일 (CLAUDE.md §작업 규칙, docs/cleanup_log.md 2026-05-20 §6)
+ORIG_COMMIT = '7d4e4e0'
+ORIG_PREFIXES = ('choh_train_ViT_ETER_R4regular_240916py', 'scripts_legacy/', 'dataloaders/myDataloader_',
+                 'configs/myConfig_choh_ViT_', 'configs/myConfig_temp.py', 'configs/myConfig_choh_model3.py',
+                 'models/hybrid_eternet/', 'models/mae/', 'models/vit_pytorch/')
+# 이미 알려진 수정 — 모두 우리 쪽 작업이고 2026-10-16 사용자 결정으로 유지·기록(docs/cleanup_log.md 2026-10-16).
+# 값 = 지금 내용의 git blob 해시 (내용이 더 바뀌면 실패) 또는 'D'(삭제).
+KNOWN_MODIFIED = {
+    'models/hybrid_eternet/u_choh_SSIM.py': '12354d6883b29d8cae8165031a8ba98cb5eda814',            # afa89a0 (05-22 작업): mask 인자 추가, mask=None = 원본 계산
+    'models/hybrid_eternet/u_choh_model_ETER_ViT.py': 'e6391ef2c9f42e1e208cb759dde123900c2d2fc5',  # 0cdc914·e0dc4c9 (04-11·04-15, 규칙 이전)
+    'configs/myConfig_choh_model3.py': '0f8748636dc90640b36671180cf455d9fa057858',                 # 0cdc914 (04-11, 규칙 이전)
+    'models/vit_pytorch/vit-pytorch-main/tests/.DS_Store': 'D',                                    # 71478ad (09-03) macOS 잔재 삭제
+}
+
+
+def _git(*args):
+    return subprocess.run(['git', '-C', _PROJECT_ROOT] + list(args), capture_output=True, text=True, check=True).stdout
+
+
+def check_professor_originals():
+    """교수님 원본이 7d4e4e0 과 같은지 (작업 트리 기준 — 커밋된 수정·커밋 안 된 수정 모두). 알려진 수정은 해시가 같을 때만 통과."""
+    orig = [f for f in _git('ls-tree', '-r', '--name-only', ORIG_COMMIT).splitlines() if f.startswith(ORIG_PREFIXES)]
+    changed = [ln.split('\t') for ln in _git('diff', '--name-status', ORIG_COMMIT, '--', *orig).splitlines() if ln.strip()]
+    bad, known = [], []
+    for st, path in ((c[0], c[-1]) for c in changed):
+        want = KNOWN_MODIFIED.get(path)
+        if want is None:
+            bad.append(f'{st} {path}')
+        elif want == 'D':
+            (known if st == 'D' else bad).append(f'{st} {path}')
+        else:
+            ok = os.path.exists(os.path.join(_PROJECT_ROOT, path)) and _git('hash-object', path).strip() == want
+            (known if ok else bad).append(f'{st} {path}' + ('' if ok else ' (알려진 수정과 내용이 다름)'))
+    print(f"    원본 {len(orig)} 파일 vs {ORIG_COMMIT}: 알려진 수정 {len(known)} 건 (기록됨, 유지)")
+    for k in known:
+        print(f"      - {k}")
+    if bad:
+        print("    [WARN] 알려지지 않은 원본 변경:\n      " + "\n      ".join(bad))
+        raise SystemExit("교수님 원본 파일이 수정됨 — 통제 비교 무효일 수 있음. 확인 요망.")
+    return known
 H = W = C.IMAGE_SIZE[0]
 
 
@@ -90,10 +132,10 @@ def main():
     assert results['gru_noDC'][0] == expected_in, "in_channels 계약 위반"
     print(f"  [contract] in_channels == 2*H2+2*coil == {expected_in}  OK")
 
-    # 4) 교수님/프로젝트 원본 파일 무수정 (git)
+    # 4) 교수님/프로젝트 원본 파일 무수정 (git) — 교수님 원본은 7d4e4e0 대비, 프로젝트 공유 원본은 git status
     print("\n  [git] 교수님 원본 파일 무수정 확인:")
-    targets = ['models/hybrid_eternet/', 'models/mamba_eternet/ss2d.py',
-               'models/hybrid_eternet/hybrid_eternet_fastmri-main/model.py']
+    check_professor_originals()
+    targets = ['models/hybrid_eternet/', 'models/mamba_eternet/ss2d.py']
     dirty = subprocess.run(
         ['git', '-C', _PROJECT_ROOT, 'status', '--porcelain'] + targets,
         capture_output=True, text=True,
