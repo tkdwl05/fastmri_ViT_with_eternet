@@ -97,5 +97,36 @@ CLAUDE.md 슬림화로 옮겨 온 IEIE·그림 파이프라인 세부(규칙 자
 - **저자 자리표시자**: 학술대회판 `@author_ko/@affil_ko/@email/@author_en/@affil_en` 은 `***` 유지 — 저자 override 파일을 만들지 않는다(사용자 결정 09-15).
 - **그림**: IEIE 두 판 모두 단 폭 3.15 in 3장 — `conf_fig1_pipeline`·`conf_fig2_modules`(`paper/make_figs_conf_arch.py`)·`fig3_qualitative_col`(`python paper/make_fig3_qualitative.py --methods gt,zf,gru,ss2d --slices 3368 --gain-slice 3368 --fig-w 3.15 --out-name fig3_qualitative_col` — `--slices` 를 빼면 기본 3슬라이스(7행)로 v7 의 3행 그림을 덮어쓴다, 라벨 'sequence module $f_\theta$'). 표 1 하나(본 연구 4행 + 공개 모델 참고 결과 3행), 참고문헌 11편(v7).
 - **그림 스크립트 관계**: 학술지판 그림 1(`make_fig1_architecture.py`, page 폭 6.69 in 3-패널)은 도우미·색·글꼴을 `make_figs_conf_arch.py` 에서 import — 양식 규칙의 단일 출처는 학술대회판 스크립트. 그림 3 은 `results/vis/multimodel_compare/recon_*.npz` 조판 전용(추론은 루트 `visualize_multimodel_compare.py`, CPU). 글꼴 `paper/fonts/` Liberation Sans(OFL) 등록, 렌더러 실측 자동 축소·overflow 보고. 블록 다이어그램 문법·인쇄 크기 규칙은 §4-6.
+- **그림 3 v8fix 판(10-17, 검수 결함 수정)**: `fig3_qualitative_col_v8fix` 는 600 dpi 로 고정 — 단 폭 3.15 in 4열에서 384 px 슬라이스를 1:1 로 넣으면 648 dpi(2041 px)라 '3.15 in × 600 dpi = 1890 px' 규칙과 어긋나므로, `make_fig3_qualitative.py --dpi 600` 으로 패널을 384 → 약 356 px 로 antialiased 리샘플한다(1:1 화소 대응은 포기; `--dpi` 를 빼면 이전처럼 1:1·nearest). 색 막대 라벨은 `--liberation-cbar-label`(mathtext 글꼴 = Liberation Sans/Italic, 대체 글꼴 없음, '*' 는 윗첨자가 아닌 본 크기 6.5 pt) — 기본 라벨은 DejaVu Sans 로 그려지고 윗첨자 '*' 가 4.55 pt 였다. 열 머리글은 `--header 'gru=ETER-net|' --header 'ss2d=|SS2D(controlled)'` 로 정확한 모델 이름. 세 옵션 모두 기본값이면 이전 그림(`fig3_qualitative_col`·`_seed1`)이 바이트 단위로 같다. PDF 글꼴 = LiberationSans·LiberationSans-Italic 뿐. 입력 `paper/make_fig3_v8fix_inputs.py`(best epoch = 각 런 DONE: U-Net only 48·ETER-net 46(pod3 회수 DONE 사본)·SS2D(controlled) 50 — `eval_v8fix.ckpt_epoch_info` 의 log.txt 4자리 동률 첫 epoch(SS2D 46)는 인용하지 않는다). 두 슬라이스(3368·4689)는 모두 체크포인트 선정에 쓴 검증 batch 0~2 안에 있다 — 정량 결과(test_full)와 다른 집합임을 캡션·본문에 밝힌다.
 - **점검기 기댓값**(`python paper/ieie/check_docx_structure.py`, 기본 = v7 두 파일): FAIL 0, WARN 은 학술대회판 `***`×7 뿐, 영문 캡션 4/4, 디스플레이 수식 3 / 인라인 96. 보고되는 국문 캡션 개수는 인접 본문의 '표 1' 언급을 세는 false positive 다.
 - **쪽수·감축**: §6 쪽수 항목 참조(학술지판 Word 실측 7쪽 > 규정 4쪽, 학술대회판 5쪽 초과 가능; 감축은 별도 라운드).
+
+## 8. 10-18 v9 학술대회판 5쪽 감축 — 표 1 관례 변경과 Word 실측 보정
+
+사용자 승인(2026-10-18, "어 반영하자")으로 v9 학술대회판(`paper/ieie/draft_ieie_v9.src.md`)에 적용했다. 근거·미리보기·Word 내보내기 PDF는 검토 폴더(git 무시)에 있다.
+
+- **Word 실측 보정**: 학술대회 양식(HY신명조 9 pt, 2단)은 Word가 빌더 추정(`build_ieie_conf_docx.py` 의 `estimate_pages`)보다 약 10% 길게 조판한다. 실제 줄 간격은 약 13.9 pt(추정은 12.96 pt)이다. HY신명조 숫자는 0.625 em이고 '±'는 전각이다. 빌더 추정 4.845쪽이던 판이 Word에서는 6쪽(6쪽에 약 31줄)이었다. 쪽수는 Word 실측으로만 판정한다. 감축 판은 빌더 추정 4.64쪽이고 Word 5쪽 이내다(사용자 확인).
+- **표 1(주 블록) 변경** — 4.4절 표 관례에서 다음만 바꾼다. 대안 블록 `ieie_table1_block_v9_official.md` 는 그대로 둔다.
+  - Params (M) 열을 삭제한다. 파라미터 수는 본문에 있다(2.1 U-Net·U-Net only 31.1M, 2.2 ETER-net 668.2M·SS2D(controlled) 31.2M).
+  - 열 폭은 1025,1340,1035,1135 twips이다. 8 pt 실측 폭으로 계산해 각 칸이 한 줄에 들어간다. SS2D 라벨은 `SS2D<br>(controlled)` 두 줄로 쓴다.
+  - 캡션은 "on the fastMRI brain test_full split (558 volumes, R=4, brain-masked)"이다. 학습 1회와 검증 분할 선택은 본문 2.3에 있다.
+  - 주석은 짧은 판이다. '표의'를 넣지 않아 본문에만 있는 평균에도 적용된다.
+  - 모두 `paper/make_tables_v8fix.py`(`WIDTHS_MAIN`·`HEADER_MAIN`·`LABEL_MAIN`·`NOTE_ROUND_MAIN`)에서 만든다. 손편집은 금지한다.
+- **빌더**:
+  - 참고문헌 저자 3인 이상은 '첫 저자 et al.'로 쓴다(`build_ieie_docx.fmt_authors`, 이전 7인 이상).
+  - 학술대회판은 참고문헌 뒤 빈 문단을 넣지 않는다(`build_ieie_conf_docx.py`).
+
+## 9. 10-19 서면 심사용 4쪽판 — 별도 소스와 논문지 양식 Word 실측
+
+2026 추계 학부생 논문경진대회 규정은 프로시딩 게재용 "Double Column 1페이지 이상 5페이지 이내, 전자공학회 학술대회 양식"과 서면 심사용 "4 페이지, 전자공학회 논문지 양식"(저자·소속 표기 시 탈락)이다. 사용자 결정(2026-10-19)으로 서면 심사용만 별도 소스로 만들었으며, 두 판의 내용은 이제 다르다.
+
+- **파일:** `paper/ieie/draft_ieie_v9_review.src.md` → `build_ieie_docx.py --src …` → `draft_ieie_v9_review.{md,docx}`(Word 실측 4쪽, 사용자 확인). 학술대회판은 `draft_ieie_v9.src.md` → `build_ieie_conf_docx.py`. 같은 학술대회판 소스를 논문지 양식으로 빌드한 `draft_ieie_v9.docx`(약 7쪽)는 제출용이 아니다.
+- **4쪽판에서 뺀 것:** 그림 2·그림 3·정성 비교 절, S6 상태공간 식과 변수 설명, SS2D 출력 RMS·교체 시험 수치, 참고문헌 MambaMIR, 세부 문구(AXT2 58%·슬라이스 수·SSIM 우위 비율·손실 항 비율 등). 남은 수치는 모두 학술대회판 원고나 `paper/tables/ieie_v9_tokens.md`에 있는 값이고, 표 1은 생성기 블록 그대로다.
+- **같은 날 학술대회판 수정:** 2.5단계 무결성 경미 수정 4건(절제 실험 구절 삭제, SS2D 출력 RMS 중립 서술, $\hat{x}$ = 원래 세기의 복원 영상·손실 식은 $\hat{x}/s$, 공식 평가 정의에 [10])을 반영했다. [7]의 권·쪽 보완은 보류.
+- **논문지 양식의 Word 조판(9월 v6 Word 저장본의 쪽 나눔으로 맞춤):**
+  - 본문 10 pt·줄 간격 배수 1.6에서 실제 줄 간격은 약 19~20 pt다(단 하나에 약 34줄).
+  - 첫 쪽 제목·요약 상자는 행 높이 최소 9717 twips(약 17 cm)로 고정되어 있어, 첫 쪽에는 본문이 거의 들어가지 않는다.
+  - 양식 스타일에는 '다음 문단과 함께'와 '줄 분리 방지'가 꺼져 있다.
+  - 같은 내용이 학술대회 양식 5쪽이면 논문지 양식에서는 약 7쪽이다.
+- **쪽수 판정:** Word 실측만 기준으로 한다. `check_docx_structure.py`의 쪽수 추정은 첫 쪽 상자 높이를 반영하지 않아 짧게 나온다. 참고용 보정 시뮬레이터는 검토 폴더(git 무시)에 있다.
+- **blind:** Word에서 저장하면 만든 이·마지막 수정자가 다시 기록될 수 있으므로, 제출 전 문서 검사로 개인 정보를 지운다.
