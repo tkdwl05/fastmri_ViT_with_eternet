@@ -154,7 +154,8 @@ def fmt_person(name: str) -> str:
 
 def fmt_authors(field: str) -> str:
     people = [fmt_person(p) for p in re.split(r"\s+and\s+", field.replace("\n", " "))]
-    if len(people) > 6:
+    # 2026-10-18 학술대회판 5쪽 감축(사용자 승인): 저자 3인 이상은 첫 저자 + et al. (이전: 7인 이상)
+    if len(people) > 2:
         return people[0] + " et al."
     if people[-1] == "et al.":
         return ", ".join(people[:-1]) + " et al."

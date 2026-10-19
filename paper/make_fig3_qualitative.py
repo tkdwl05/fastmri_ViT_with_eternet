@@ -76,20 +76,51 @@ def main():
     ap.add_argument("--methods", default=None, help="comma-separated npz keys to show, in order (default: all 8 columns)")
     ap.add_argument("--fig-w", type=float, default=PAGE_W, help="total figure width in inches (6.69 page / 3.15 column)")
     ap.add_argument("--src", default=SRC, help="recon_<idx>.npz / metrics_<idx>.json 폴더 (기본 results/vis/multimodel_compare)")
+    # 10-17: 색 막대 눈금 글자 크기(기본 = 이전과 같은 FS['cbar_tick'] 6.0 pt → 이전 빌드 그대로). 6.5 pt 규칙판은 --cbar-tick-pt 6.5
+    ap.add_argument("--cbar-tick-pt", type=float, default=None, help="colourbar tick label size in pt (default: 6.0, unchanged)")
+    # 10-17 (v8fix 판 검수): 아래 세 옵션은 모두 기본값이면 이전 빌드와 바이트 단위로 같다.
+    #   --dpi N        : 저장 dpi 를 N 으로 고정(기본 = 384/패널 폭 → 슬라이스 1 px = 이미지 1 px). 단 폭 4열에서 1:1 은 648 dpi 라
+    #                    "3.15 in @ 600 dpi = 1890 px" 규칙을 맞추려면 --dpi 600 (패널 384 → 약 356 px 로 리샘플).
+    #   --interp NAME  : imshow 보간(기본 = 1:1 일 때 nearest, --dpi 를 주면 antialiased — 축소 시 nearest 는 행·열을 건너뛰어 줄무늬가 생김)
+    #   --liberation-cbar-label : 색 막대 라벨을 Liberation Sans 만으로 — mathtext 글꼴을 custom(Liberation Sans/Italic, fallback 없음)으로
+    #                    두고 라벨을 '|$\hat{x}$ − $x$*| / max($x$*)' 로 쓴다('*' 는 수식 밖 본 크기 6.5 pt). 기본 mathtext 라벨은
+    #                    DejaVu Sans 로 그려지고 윗첨자 '*' 가 0.7×6.5 = 4.55 pt 가 된다. (결합 곡절 U+0302 평문은 matplotlib 가
+    #                    음의 left bearing 을 반영하지 않아 곡절이 x 오른쪽으로 밀려 쓰지 않음.)
+    #   --header KEY=LINE1|LINE2 (반복 가능): 열 머리글 두 줄을 직접 지정(단 폭 NARROW_HDR 적용 뒤에 덮어씀). 예) --header 'gru=ETER-net|'
+    ap.add_argument("--dpi", type=int, default=None, help="force output dpi (default: 384 / panel width, 1:1 pixels)")
+    ap.add_argument("--interp", default=None, help="imshow interpolation (default: nearest at 1:1, antialiased with --dpi)")
+    ap.add_argument("--liberation-cbar-label", action="store_true",
+                    help="colourbar label in Liberation Sans only (custom mathtext fontset, no superscript)")
+    ap.add_argument("--header", action="append", default=[], metavar="KEY=LINE1|LINE2",
+                    help="override a column header (two lines separated by '|'); may be repeated")
     args = ap.parse_args()
+    if args.cbar_tick_pt is not None:
+        FS["cbar_tick"] = args.cbar_tick_pt
+    if args.liberation_cbar_label:   # 이 그림의 mathtext 는 색 막대 라벨뿐 — 그 글꼴을 Liberation Sans 로, 없는 글리프는 오류(대체 글꼴 금지)
+        rcParams.update({"mathtext.fontset": "custom", "mathtext.rm": "Liberation Sans",
+                         "mathtext.it": "Liberation Sans:italic", "mathtext.bf": "Liberation Sans:bold",
+                         "mathtext.sf": "Liberation Sans", "mathtext.cal": "Liberation Sans:italic",
+                         "mathtext.fallback": None})
+    interp = args.interp or ("antialiased" if args.dpi else "nearest")
+    hdr_over = {}
+    for h in args.header:
+        k, _, v = h.partition("=")
+        l1, _, l2 = v.partition("|")
+        hdr_over[k.strip()] = (l1, l2)
     slices = [int(s) for s in args.slices.split(",") if s.strip()]
     os.makedirs(OUT, exist_ok=True)
     cols = ([c for c in COLS if c[0] in DEFAULT_KEYS] if not args.methods
             else [c for k in args.methods.split(",") for c in COLS if c[0] == k.strip()])
     if args.fig_w < 4.0:   # 단 폭: 한 줄 헤더가 패널(≈0.62 in)보다 길어지므로 두 줄로 나눈다
         cols = [(k, *NARROW_HDR.get(k, (h1, h2))) for k, h1, h2 in cols]
+    cols = [(k, *hdr_over.get(k, (h1, h2))) for k, h1, h2 in cols]
 
     n_rows = 2 * len(slices) + (1 if args.gain_slice >= 0 else 0)
     n_cols = len(cols)
     L_IN, R_IN = 0.30, 0.42              # row-label margin / colourbar tick+label margin (inches, same at every width; 10-07 0.38→0.42)
     CB = 0.10                            # colourbar column = 0.10 panel width (inside the grid)
     W = args.panel_in if args.panel_in else (args.fig_w - L_IN - R_IN) / (n_cols + CB)   # 0.749 in at page width (8 cols)
-    dpi = int(round(384 / W))            # one slice pixel = one image pixel (512 dpi at page width)
+    dpi = args.dpi if args.dpi else int(round(384 / W))   # default: one slice pixel = one image pixel (512 dpi at page width)
     fig_w = (n_cols + CB) * W + L_IN + R_IN
     fig_h = n_rows * W + 0.34            # + column headers
     fig = plt.figure(figsize=(fig_w, fig_h))
@@ -119,8 +150,8 @@ def main():
                 for sp in ax.spines.values():
                     sp.set_visible(False)
             if key == "gt":
-                ax0.imshow(gt / gmax, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
-                ax1.imshow(np.where(mb, 0.0, np.nan), cmap=hot, vmin=0, vmax=ERR_VMAX, interpolation="nearest")
+                ax0.imshow(gt / gmax, cmap="gray", vmin=0, vmax=1, interpolation=interp)
+                ax1.imshow(np.where(mb, 0.0, np.nan), cmap=hot, vmin=0, vmax=ERR_VMAX, interpolation=interp)
                 ax1.text(0.5, 0.5, "|error|\n(brain mask)", transform=ax1.transAxes, fontsize=FS["errlabel"],
                          color="white", ha="center", va="center")
                 # row labels (contrast) on the left
@@ -128,9 +159,9 @@ def main():
                          rotation=90, fontsize=FS["rowlabel"], ha="right", va="center")
             elif key in rec:
                 x = rec[key] / gmax
-                ax0.imshow(x, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
+                ax0.imshow(x, cmap="gray", vmin=0, vmax=1, interpolation=interp)
                 im_err = ax1.imshow(np.where(mb, np.abs(x - gt / gmax), np.nan), cmap=hot,
-                                    vmin=0, vmax=ERR_VMAX, interpolation="nearest")
+                                    vmin=0, vmax=ERR_VMAX, interpolation=interp)
                 show_metrics(ax0, met.get(key))
             else:
                 ax0.text(0.5, 0.5, "n/a", transform=ax0.transAxes, ha="center", va="center", fontsize=7)
@@ -150,7 +181,7 @@ def main():
             src = gt if key == "gt" else rec.get(key)
             if src is None:
                 continue
-            ax.imshow(np.clip(args.gain * src / gmax, 0, 1), cmap="gray", vmin=0, vmax=1, interpolation="nearest")
+            ax.imshow(np.clip(args.gain * src / gmax, 0, 1), cmap="gray", vmin=0, vmax=1, interpolation=interp)
             if key == "gt":
                 ax.text(-0.06, 0.5, f"×{args.gain:g} gain",
                         transform=ax.transAxes, rotation=90, fontsize=FS["rowlabel"], ha="right", va="center")
@@ -159,7 +190,10 @@ def main():
         cax = fig.add_subplot(gs[1:2 * len(slices), n_cols])
         cb = fig.colorbar(im_err, cax=cax, ticks=[0, 0.05, 0.10])
         cb.ax.tick_params(labelsize=FS["cbar_tick"], length=2, width=0.5, pad=1.5)
-        cb.set_label(r"|$\hat{x}$ − $x^{*}$| / max($x^{*}$)", fontsize=FS["cbar_label"], labelpad=4.0)   # 10-07: 1.5→4.0 (윗첨자가 눈금 숫자와 겹침)
+        if args.liberation_cbar_label:   # 10-17: Liberation Sans 만, '*' 는 수식 밖 본 크기(윗첨자 축소 없음)
+            cb.set_label(r"|$\hat{x}$ − $x$*| / max($x$*)", fontsize=FS["cbar_label"], labelpad=4.0)
+        else:
+            cb.set_label(r"|$\hat{x}$ − $x^{*}$| / max($x^{*}$)", fontsize=FS["cbar_label"], labelpad=4.0)   # 10-07: 1.5→4.0 (윗첨자가 눈금 숫자와 겹침)
 
     for ext in ("png", "pdf"):
         fig.savefig(os.path.join(OUT, f"{args.out_name}.{ext}"), dpi=dpi)

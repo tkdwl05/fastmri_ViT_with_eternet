@@ -300,7 +300,7 @@ class DocxConf:
             inner = crun(f"[{n}] ", sz=18) + "".join(crun(t, sz=18, i=it) for t, it in runs)
             self.body.append(cpara(inner, style="11", ind='<w:ind w:left="308" w:hanging="308"/>'))
             self.h_body += text_height(f"[{n}] " + "".join(t for t, _ in runs), 18, COL_PT - 308 / 20.0)
-        self.body.append(cpara(style="11", ind='<w:ind w:left="308" w:hanging="308"/>', mark=PFONT + '<w:sz w:val="18"/>'))
+        # 2026-10-18: 참고문헌 뒤 빈 문단은 넣지 않는다 — Word 에서 이 문단 하나가 6쪽으로 넘어갔음(사용자 Word 확인).
 
     def estimate_pages(self) -> tuple:
         """1쪽 = 제목 블록 아래 두 단, 2쪽부터 = 온전한 두 단. (단 높이 합으로 본문 높이를 나눈 근사)"""

@@ -20,7 +20,17 @@ IEIE 학술대회판 전용 세부 아키텍처 그림 3장 — 고전적 블록
 R=4 equispaced 마스크, offset 3)로 만들고, zero-filled·SS2D 복원·GT 는 results/vis/multimodel_compare/recon_4689.npz 에서 읽는다.
 둘 중 하나라도 없으면 합성 자리표시 썸네일로 대체하고 경고를 출력한다.
 
-실행: CUDA_VISIBLE_DEVICES="" python paper/make_figs_conf_arch.py
+실행: CUDA_VISIBLE_DEVICES="" python paper/make_figs_conf_arch.py          (v8 판 4장 — 기존과 바이트 동일 PNG)
+v9 판(2026-10-17, IEIE v9 초안 — 모든 글자 ≥ 6.5 pt 재배치, 손실 L_1 + λ(1−SSIM), 복원 썸네일 = v8fix SS2D(controlled)):
+      CUDA_VISIBLE_DEVICES="" python paper/make_figs_conf_arch.py --suffix _v9 \
+          --npz results/vis/multimodel_compare_v8fix/recon_4689.npz
+      → conf_fig1_pipeline_v9 · conf_fig2_modules_v9 · conf_fig2_modules_impl_v9 (.png/.pdf). conf_fig3_enhanced 는 v9 에서 만들지 않음.
+      v9 판은 그리는 동안만 mathtext 첨자 축소를 끈다(SHRINK_FACTOR 1.0, 아래첨자 내림 0.6 x-height) — 첨자도 6.5 pt. 384² 는 384×384.
+      그린 뒤 자체 점검(audit_text, 저장과 같은 600 dpi 래스터): Text 공칭 크기와 mathtext 가 실제로 그리는 글리프(첨자 포함) ≥ 6.5 pt ·
+      유니코드 첨자 문자 금지 · 그림 밖 잘림 · 글자 겹침 · 같은 줄 글자 간격 ≥ 0.06 in · 글자 잉크 ↔ 상자·원·화살표·선·영상 간격 ≥ 0.02 in
+      (상자 안 글자는 테두리까지) · 상자 넘침 → 위반 시 exit 1. 저장된 PNG 의 실제 픽셀 크기를 출력. STIX 대체 글리프(⊙·ℱ·h 위 화살표)는
+      목록으로 보고(PDF 에 STIXGeneral-Regular 가 함께 들어감 — v8 PDF 와 같음).
+      v8 판(인자 없음)은 고정 이름으로 저장하므로 --suffix·--npz 와 함께 쓰면 거부한다(커밋된 v8 그림 보호).
 """
 import os
 import sys
@@ -28,6 +38,7 @@ import warnings
 
 import numpy as np
 import matplotlib
+import matplotlib.text
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -56,6 +67,10 @@ if _found:
     rcParams["mathtext.it"] = "Liberation Sans:italic"
     rcParams["mathtext.bf"] = "Liberation Sans:bold"
     rcParams["mathtext.fallback"] = "stixsans"
+    # \mathcal·\mathsf 기본값(cursive·sans)은 글꼴을 찾지 못해 findfont 경고를 낸다 — 이 그림들은 쓰지 않지만 경고를 없애려고
+    # Liberation Sans 로 지정(출력 무변화: v8 PNG 바이트 동일 확인). 유니코드 수학 기호(⊙·ℱ 등)는 위 fallback(STIX)으로 그려진다.
+    rcParams["mathtext.cal"] = "Liberation Sans:italic"
+    rcParams["mathtext.sf"] = "Liberation Sans"
 else:
     warnings.warn("paper/fonts/LiberationSans-*.ttf 없음 → DejaVu Sans 폴백")
     rcParams["font.family"] = "DejaVu Sans"
@@ -81,6 +96,7 @@ LW_BOX = 0.6
 LW_ARR = 0.7
 
 _OVERFLOW = []
+_MIN_FS = 4.6                 # text() 자동 축소 하한(pt). v9 레이아웃은 6.5 로 올려 축소를 금지한다(넘치면 _OVERFLOW 기록).
 
 
 def canvas(h, y_lo=0.0, w=None):
@@ -97,14 +113,14 @@ def canvas(h, y_lo=0.0, w=None):
 
 
 def text(ax, x, y, s, fs=FS, color=INK, ha="center", va="center", max_w=None, z=5, **kw):
-    """텍스트 배치. max_w(in) 를 넘으면 4.6 pt 까지 자동 축소(렌더러 실측)."""
+    """텍스트 배치. max_w(in) 를 넘으면 _MIN_FS(기본 4.6 pt) 까지 자동 축소(렌더러 실측)."""
     t = ax.text(x, y, s, fontsize=fs, color=color, ha=ha, va=va, zorder=z, **kw)
     if max_w is not None:
         fig = ax.figure
         r = fig.canvas.get_renderer()
         while True:
             w_in = t.get_window_extent(renderer=r).width / fig.dpi
-            if w_in <= max_w or t.get_fontsize() <= 4.6:
+            if w_in <= max_w or t.get_fontsize() <= _MIN_FS:
                 break
             t.set_fontsize(t.get_fontsize() - 0.25)
         if w_in > max_w + 1e-3:
@@ -180,8 +196,9 @@ SLICE_NO = 7
 NPZ = os.path.join(ROOT, "results", "vis", "multimodel_compare", "recon_4689.npz")
 
 
-def load_thumbs():
-    """고정 대표 슬라이스 4689 의 실제 영상. dict(ksp_full, mask2d, ksp_und, zf, recon, gt)."""
+def load_thumbs(npz=NPZ):
+    """고정 대표 슬라이스 4689 의 실제 영상. dict(ksp_full, mask2d, ksp_und, zf, recon, gt).
+    npz: zero-filled·복원·GT 출처(기본 = v8 붕괴 런의 recon_4689.npz, v9 는 --npz 로 v8fix 판). 복원 = rec_ss2d."""
     out = {}
     try:
         sys.path.insert(0, ROOT)
@@ -207,7 +224,7 @@ def load_thumbs():
         ms = np.zeros(40, np.float32); ms[3::4] = 1; ms[18:21] = 1
         out.update(ksp_full=kf, ksp_und=kf * m1[None, :], mask2d=np.repeat(ms[None, :], 40, 0))
     try:
-        d = np.load(NPZ)
+        d = np.load(npz)
         out.update(zf=d["rec_zf"], recon=d["rec_ss2d"], gt=d["gt"])
     except Exception as e:                                             # pragma: no cover
         warnings.warn(f"복원 썸네일 로드 실패({e!r}) → 합성 자리표시")
@@ -506,14 +523,550 @@ def fig3(th):
     save(fig, "conf_fig3_enhanced")
 
 
-if __name__ == "__main__":
-    th = load_thumbs()
-    fig1(th)
-    fig2(th)
-    fig2(th, variant="impl")
-    fig3(th)
-    if _OVERFLOW:
-        for s, w_in, mw in _OVERFLOW:
-            print(f"  ! overflow ({w_in:.2f} > {mw:.2f} in): {s!r}")
+# ═════════════════════════ v9 판 (2026-10-17) — 모든 글자 ≥ 6.5 pt ═════════════════════════
+# IEIE v9 초안용. 위 v8 판 함수(fig1·fig2·fig3)는 그대로 두어 v8 그림을 재현할 수 있게 하고,
+# 같은 단 폭 3.15 in 에서 글자를 6.5 pt 로 올린 재배치 판을 새 함수로 둔다(출력 이름 = <name><suffix>).
+# 재배치(글자 폭 때문에 한 줄에 다 들어가지 않음 — 6.5 pt 실측 폭 합 ≈ 4.0 in > 3.1 in):
+#   그림 1  주 행 = ỹ_c → f_θ → Ⓒ → U-Net, 아래 행 = zero-filled(왼쪽) · 정답(GT)·복원(오른쪽, U-Net 출력이 꺾여 내려옴).
+#           GT·복원 라벨은 두 줄(이름 / 기호, 설명) — 기호를 둘째 줄로 내려 두 라벨 사이를 띄움. 손실 괄호는 라벨 아래,
+#           손실 식은 v9 식 (3)과 같게 L_1 + λ(1−SSIM). 화살표 숫자 각주는 비어 있던 오른쪽 위로.
+#   그림 2  (a) 체인을 오른쪽으로 옮겨 입력 라벨과 띄우고, stage 2 출력(reshape)은 상자 아래로.
+#           (b) 앞 두 블록은 세로로 쌓고, 오른쪽 블록(스캔·S6·merge·출력)을 쌓은 블록과 위아래를 맞춰 빈 띠를 없앰.
+#           S6 출력은 세로 모음선(bus)에 들어간 뒤 한 줄로 Ⓒ 에 들어간다(Ⓒ 위아래에 붙어 들어가지 않게).
+# 아래첨자·위첨자(2026-10-17 검증 지적): matplotlib mathtext 는 첨자를 SHRINK_FACTOR(0.7) 배로 그려 6.5 pt 라벨의
+#   첨자가 4.55 pt 가 된다. v9 그림은 '모든 글자 ≥ 6.5 pt' 규칙을 문자 그대로 지키도록 그리는 동안만 SHRINK_FACTOR 를
+#   MIN_PT / FS9 = 1.0 으로 바꾼다(첨자 = 본 글자 크기, 위치만 올리고 내림). 384² 는 '384×384' 로 풀어 쓴다.
+#   자체 점검은 Text 의 공칭 크기만이 아니라 mathtext 가 실제로 그리는 글리프 크기(첨자 포함)까지 잰다.
+import contextlib
+
+import matplotlib._mathtext as _mtx
+import matplotlib.mathtext as _mtt
+
+FS9 = 6.5                     # v9 기본 글자 크기(pt)
+MIN_PT = 6.5                  # 자체 점검 기준: 첨자 포함 모든 글리프
+SCRIPT_SHRINK_V9 = MIN_PT / FS9   # = 1.0 — 첨자도 6.5 pt
+SCRIPT_SUB1_V9 = 0.6          # 아래첨자 내림(x-height 배, 기본 0.3) — 같은 크기 첨자가 본 글자와 한 단어처럼 붙어 보이지 않게
+CLEAR_IN = 0.02               # 글자(잉크) ↔ 상자·선·영상 최소 간격(in). 상자 안 글자는 상자 테두리까지의 안쪽 간격
+TEXT_GAP_IN = 0.06            # 같은 줄(세로 범위가 겹치는) 두 글자 사이 최소 가로 간격(in) — 두 라벨이 한 구절처럼 붙어 읽히지 않게
+_UNI_SCRIPTS = set("⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")   # 유니코드 첨자 문자(공칭 크기만 6.5 pt 이고 실제 글자는 작음) → 금지
+
+
+def _clear_text_caches():
+    _mtt.MathTextParser._parse_cached.cache_clear()
+    f = getattr(matplotlib.text, "_get_text_metrics_with_cache_impl", None)
+    if f is not None:
+        f.cache_clear()
+
+
+@contextlib.contextmanager
+def _v9_typesetting():
+    """v9 그림을 그리는 동안만: 첨자 축소 해제(SHRINK_FACTOR = 1.0)·아래첨자 내림 0.6 x-height + text() 자동 축소 하한 6.5 pt.
+    파싱 결과 캐시를 앞뒤로 비워 v8 판(같은 프로세스에서 그려도)에 영향이 없게 한다."""
+    global _MIN_FS
+    fc = _mtx.FontConstantsBase
+    old = (_mtx.SHRINK_FACTOR, _MIN_FS, fc.sub1)
+    _mtx.SHRINK_FACTOR, _MIN_FS, fc.sub1 = SCRIPT_SHRINK_V9, MIN_PT, SCRIPT_SUB1_V9
+    _clear_text_caches()
+    try:
+        yield
+    finally:
+        _mtx.SHRINK_FACTOR, _MIN_FS, fc.sub1 = old
+        _clear_text_caches()
+
+
+def box9(ax, x, y, w, h, label, sub=None, fc=FILL, ec=EDGE, lw=LW_BOX, r=0.035, z=3, dy=0.056):
+    """v9 블록: 한 줄 라벨(+ 선택 부라벨) 모두 6.5 pt. 두 줄일 때 중심 ±dy."""
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}",
+                                fc=fc, ec=ec, lw=lw, zorder=z))
+    yc = y + h / 2
+    if sub is None:
+        text(ax, x + w / 2, yc, label, fs=FS9, max_w=w - 0.03, z=z + 1)
     else:
-        print("no text overflow")
+        text(ax, x + w / 2, yc + dy, label, fs=FS9, max_w=w - 0.03, z=z + 1)
+        text(ax, x + w / 2, yc - dy, sub, fs=FS9, color=INK2, max_w=w - 0.03, z=z + 1)
+    return (x, y, w, h)
+
+
+# ───────── self-check ─────────
+def _math_glyphs(t):
+    """mathtext 라벨이 실제로 그리는 글리프의 (크기 pt, 글꼴 파일 이름, 글리프 이름) 목록. 수식이 아니면 []."""
+    s, ismath = t._preprocess_math(t.get_text())
+    if not ismath:
+        return []
+    vp = _mtt.MathTextParser("path").parse(s, dpi=72, prop=t.get_fontproperties())
+    out = []
+    for g in vp.glyphs:
+        font, size, num = g[0], g[1], g[2]
+        gname = f"{chr(num)} U+{num:04X}" if isinstance(num, int) else str(num)
+        out.append((float(size), os.path.basename(font.fname), gname))
+    return out
+
+
+def _ink_bboxes(fig, texts):
+    """각 글자의 실제 잉크 영역(표시 좌표 px, 현재 fig.dpi). 그 글자 하나만 보이게 Agg 로 그려 불투명 픽셀(α > 25 %)의
+    범위를 잰다 — mathtext 첨자·악센트·대체 글리프까지 저장 결과와 같은 래스터로 잰다."""
+    ax = fig.axes[0]
+    others = [a for a in fig.findobj() if a is not fig and a is not ax]
+    vis = {a: a.get_visible() for a in others}
+    out = []
+    try:
+        for a in others:
+            a.set_visible(False)
+        hpx = None
+        for t in texts:
+            t.set_visible(True)
+            fig.canvas.draw()
+            alpha = np.asarray(fig.canvas.buffer_rgba())[..., 3]
+            hpx = alpha.shape[0]
+            rows, cols = np.nonzero(alpha > 64)
+            t.set_visible(False)
+            if rows.size == 0:
+                out.append(None)
+                continue
+            out.append(matplotlib.transforms.Bbox([[cols.min(), hpx - (rows.max() + 1)], [cols.max() + 1, hpx - rows.min()]]))
+    finally:
+        for a, v in vis.items():
+            a.set_visible(v)
+    return out
+
+
+def _graphics(ax, r, dpi):
+    """그림 요소(상자·원·화살표·선·영상)의 표시 좌표 범위(선 두께 절반만큼 넓힘)."""
+    out = []
+    for p in ax.patches:
+        if not p.get_visible():
+            continue
+        bb = p.get_window_extent(renderer=r)
+        pad = p.get_linewidth() * dpi / 72.0 / 2
+        filled = bool(p.get_fill()) and p.get_facecolor()[3] > 0 and not isinstance(p, FancyArrowPatch)
+        out.append(dict(bb=bb.padded(pad), z=p.get_zorder(), filled=filled,
+                        kind=type(p).__name__, container=not isinstance(p, FancyArrowPatch)))
+    for ln in ax.lines:
+        if not ln.get_visible():
+            continue
+        bb = ln.get_window_extent(renderer=r)
+        out.append(dict(bb=bb.padded(ln.get_linewidth() * dpi / 72.0 / 2), z=ln.get_zorder(), filled=False,
+                        kind="Line2D", container=False))
+    for im in ax.images:
+        out.append(dict(bb=im.get_window_extent(renderer=r), z=im.get_zorder(), filled=True, kind="image",
+                        container=False))
+    return out
+
+
+def _inside(a, b, tol=0.0):
+    return a.x0 >= b.x0 - tol and a.x1 <= b.x1 + tol and a.y0 >= b.y0 - tol and a.y1 <= b.y1 + tol
+
+
+def _gap(a, b):
+    dx = max(b.x0 - a.x1, a.x0 - b.x1, 0.0)
+    dy = max(b.y0 - a.y1, a.y0 - b.y1, 0.0)
+    return dx, dy
+
+
+def audit_text(fig, name, enforce=True):
+    """그린 뒤 자체 점검(위반 목록 반환; enforce=False 면 보고만).
+      1. 보이는 모든 Text 의 공칭 크기 ≥ MIN_PT, 그리고 mathtext 가 실제로 그리는 글리프(첨자 포함) 크기 ≥ MIN_PT.
+         유니코드 첨자 문자(²·₁ 등) 사용 금지.
+      2. 글자 잉크가 그림 밖으로 잘리지 않음.
+      3. 글자끼리 겹치지 않음, 같은 줄의 두 글자 사이 가로 간격 ≥ TEXT_GAP_IN.
+      4. 글자 잉크 ↔ 상자·원·화살표·선·영상 간격 ≥ CLEAR_IN (상자 안 글자는 테두리까지 안쪽 간격 ≥ CLEAR_IN;
+         글자가 놓인 불투명 상자 뒤로 지나가는 선은 가려지므로 제외).
+    수식 글리프 중 Liberation Sans 가 아닌 글꼴(STIX 수학 기호 대체 글리프)도 목록으로 보고한다."""
+    dpi0 = fig.dpi
+    fig.set_dpi(DPI)                                              # 점검은 저장과 같은 600 dpi 래스터에서
+    try:
+        return _audit_text(fig, name, enforce)
+    finally:
+        fig.set_dpi(dpi0)
+
+
+def _audit_text(fig, name, enforce):
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    dpi = fig.dpi
+    ax = fig.axes[0]
+    texts = [t for t in fig.findobj(matplotlib.text.Text) if t.get_visible()]
+    shown = [t for t in texts if t.get_text().strip()]
+    bad = []
+    # 1. sizes
+    fs_nominal = min(t.get_fontsize() for t in texts)
+    glyph_min, n_math, fallback = float("inf"), 0, set()
+    for t in texts:
+        if t.get_fontsize() < MIN_PT - 1e-9:
+            bad.append(f"font {t.get_fontsize():.2f} pt < {MIN_PT}: {t.get_text()!r}")
+    for t in shown:
+        if _UNI_SCRIPTS & set(t.get_text()):
+            bad.append(f"unicode super/subscript character (renders small): {t.get_text()!r}")
+        gl = _math_glyphs(t)
+        if gl:
+            n_math += 1
+            m = min(g[0] for g in gl)
+            glyph_min = min(glyph_min, m)
+            if m < MIN_PT - 1e-6:
+                bad.append(f"rendered math glyph {m:.2f} pt < {MIN_PT} (sub/superscript): {t.get_text()!r}")
+            fallback |= {f"{g[2]} ({g[1]})" for g in gl if not g[1].startswith("LiberationSans")}
+    # 2./3. clipping and text-text
+    ink = [(t, b) for t, b in zip(shown, _ink_bboxes(fig, shown)) if b is not None]
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    fb = fig.bbox
+    tol = 0.5                                                     # px
+    for t, b in ink:
+        if b.x0 < fb.x0 - tol or b.y0 < fb.y0 - tol or b.x1 > fb.x1 + tol or b.y1 > fb.y1 + tol:
+            bad.append(f"clipped by figure edge: {t.get_text()!r} "
+                       f"({b.x0 / dpi:.3f},{b.y0 / dpi:.3f})-({b.x1 / dpi:.3f},{b.y1 / dpi:.3f}) in")
+    min_tt = (float("inf"), "")
+    for i in range(len(ink)):
+        for j in range(i + 1, len(ink)):
+            (ta, a), (tb, b) = ink[i], ink[j]
+            dx, dy = _gap(a, b)
+            if dx == 0 and dy == 0:
+                bad.append(f"text overlap: {ta.get_text()!r} × {tb.get_text()!r}")
+            elif dy == 0:                                         # same line (vertical ranges overlap)
+                g = dx / dpi
+                if g < min_tt[0]:
+                    min_tt = (g, f"{ta.get_text()!r} | {tb.get_text()!r}")
+                if g < TEXT_GAP_IN - 1e-9:
+                    bad.append(f"same-line text gap {g:.3f} in < {TEXT_GAP_IN}: {ta.get_text()!r} | {tb.get_text()!r}")
+    # 4. text vs graphics
+    gr = _graphics(ax, r, dpi)
+    min_tg = (float("inf"), "")
+    for t, b in ink:
+        tz = t.get_zorder()
+        holders = [g for g in gr if g["filled"] and g["container"] and g["z"] < tz and _inside(b, g["bb"])]
+        for g in gr:
+            gb = g["bb"]
+            dx, dy = _gap(b, gb)
+            if dx == 0 and dy == 0:
+                if g["container"] and g["z"] < tz and _inside(b, gb):
+                    c = min(b.x0 - gb.x0, gb.x1 - b.x1, b.y0 - gb.y0, gb.y1 - b.y1) / dpi
+                    what = f"inside {g['kind']}"
+                elif any(h["z"] > g["z"] for h in holders):
+                    continue                                      # hidden behind the opaque box the text sits in
+                else:
+                    bad.append(f"text touches/crosses {g['kind']}: {t.get_text()!r}")
+                    continue
+            else:
+                c = float(np.hypot(dx, dy)) / dpi
+                what = f"to {g['kind']}"
+            if c < min_tg[0]:
+                min_tg = (c, f"{t.get_text()!r} {what}")
+            if c < CLEAR_IN - 1e-9:
+                bad.append(f"clearance {c:.3f} in < {CLEAR_IN} ({what}): {t.get_text()!r}")
+    w_in, h_in = fig.get_size_inches()
+    print(f"[audit] {name}: {len(texts)} visible Text ({len(shown)} non-empty, {n_math} with mathtext); "
+          f"min nominal font {fs_nominal:.2f} pt; min rendered math glyph (incl. sub/superscripts) "
+          f"{glyph_min:.2f} pt; size {w_in:.3f}×{h_in:.3f} in")
+    print(f"[audit]   min text–graphic clearance {min_tg[0]:.3f} in ({min_tg[1]}); "
+          f"min same-line text gap {min_tt[0]:.3f} in ({min_tt[1]})")
+    if fallback:
+        print(f"[audit]   math glyphs not in Liberation Sans (mathtext.fallback = stixsans): {', '.join(sorted(fallback))}")
+    for m in bad:
+        print(f"  ! {m}")
+    return bad if enforce else []
+
+
+def save9(fig, name):
+    """save() 와 같고, 저장된 PNG 의 실제 픽셀 크기를 읽어 출력한다."""
+    save(fig, name)
+    try:
+        from PIL import Image
+        with Image.open(os.path.join(FIG_DIR, f"{name}.png")) as im:
+            print(f"[audit]   {name}.png = {im.size[0]}×{im.size[1]} px @ {DPI} dpi "
+                  f"({im.size[0] / DPI:.3f}×{im.size[1] / DPI:.3f} in)")
+    except Exception as e:                                         # pragma: no cover
+        print(f"[audit]   (PNG size not read: {e!r})")
+
+
+# ───────── Fig. 1 (v9) ─────────
+def fig1_v9(th, suffix="_v9"):
+    with _v9_typesetting():
+        return _fig1_v9(th, suffix)
+
+
+def _fig1_v9(th, suffix):
+    T, T2 = 0.32, 0.30            # ỹ thumbnail / zero-filled·GT·reconstruction thumbnails
+    R_OP = 0.055                  # Ⓒ radius
+    R_DOT = 0.064                 # ⊙ radius (STIX ⊙ glyph is nearly as large as the circle — keep ≥ 0.02 in to the arrows)
+    # 세로 기준선(아래→위): 손실 식 → 괄호 → 아래 행 라벨 2줄 → 아래 행 영상(중심 zc) → 주 행(중심 yc) → ⊙ → y_c
+    y_loss = 0.170                # loss 줄 (va=top)
+    yl = 0.205                    # 손실 괄호 가로선
+    zc = 0.735                    # 아래 행 영상 중심
+    l1 = zc - T2 / 2 - 0.115      # 아래 행 라벨 1 줄 기준선(va=baseline)
+    l2 = l1 - 0.150               # 2 줄 기준선
+    yc = zc + 0.50                # 주 행 중심
+    y1 = yc - T / 2
+    yo = yc + 0.40                # ⊙ 중심
+    yk = yo + R_DOT + 0.10        # y_c 썸네일 아래
+    H = yk + T + 0.035
+    fig, ax = canvas(H)
+    vmax = float(th["gt"].max())
+
+    # ── data preparation: y_c ⊙ M → ỹ (left column) ──
+    xL, xc0 = 0.04, 0.04 + T / 2
+    thumb(ax, xL, yk, T, th["ksp_full"])
+    text(ax, 0.42, yk + T * 0.70, "fully-sampled k-space $y_c$", fs=FS9, ha="left")
+    lab(ax, 0.42, yk + T * 0.28, "16 coils, 384×384 (crop/pad), Re/Im", ha="left", va="center", fs=FS9)
+    arrow(ax, (xc0, yk), (xc0, yo + R_DOT))
+    op(ax, xc0, yo, r"$\odot$", r=R_DOT, fs=FS9)
+    ms = 0.25
+    thumb(ax, 0.42, yo - ms / 2, ms, th["mask2d"], vmin=0, vmax=1)
+    arrow(ax, (0.42, yo), (xc0 + R_DOT, yo))
+    text(ax, 0.71, yo + 0.062, "mask $M$", fs=FS9, ha="left")
+    lab(ax, 0.71, yo - 0.062, "R = 4 equispaced, 8 % ACS", ha="left", va="center", fs=FS9)
+    arrow(ax, (xc0, yo - R_DOT), (xc0, y1 + T))
+    # footnote in the free top-right corner
+    lab(ax, W - 0.04, yk + T * 0.70, "numbers on arrows:", ha="right", va="center", fs=FS9)
+    lab(ax, W - 0.04, yk + T * 0.28, "channels (384×384)", ha="right", va="center", fs=FS9)
+
+    # ── main row ──
+    thumb(ax, xL, y1, T, th["ksp_und"])
+    text(ax, 0.03, y1 - 0.035, r"$\tilde{y}_c = M \odot y_c$", fs=FS9, ha="left", va="top")
+    lab(ax, 0.03, y1 - 0.185, "undersampled", ha="left", va="top", fs=FS9)
+    xb = 0.65                                       # branch point (right of the ỹ labels)
+    dot(ax, xb, yc)
+    arrow(ax, (xL + T, yc), (xb, yc), head=False)
+    g_lab = 0.165                                   # arrow length that carries a 2-digit channel label
+    sx, sw, sh = xb + g_lab, 0.92, 0.50
+    sy = yc - sh / 2
+    ax.add_patch(FancyBboxPatch((sx, sy), sw, sh, boxstyle="round,pad=0,rounding_size=0.035",
+                                fc="white", ec=INK, lw=0.7, ls=(0, (2.2, 1.4)), zorder=3))
+    text(ax, sx + sw / 2, sy + sh - 0.085, "sequence module $f_\\theta$", fs=FS9, max_w=sw - 0.02, z=4)
+    text(ax, sx + sw / 2, sy + sh - 0.195, "(only part replaced)", fs=FS9, color=MUTED, max_w=sw - 0.02, z=4)
+    bw, bh, bm = 0.35, 0.15, 0.04
+    box9(ax, sx + bm, sy + 0.045, bw, bh, "bi-GRU", fc=FILL_R, ec=EDGE_R)
+    text(ax, sx + sw / 2, sy + 0.045 + bh / 2, "or", fs=FS9, color=MUTED, z=4)
+    box9(ax, sx + sw - bm - bw, sy + 0.045, bw, bh, "SS2D", fc=FILL_B, ec=EDGE_B)
+    arrow(ax, (xb, yc), (sx, yc))
+    lab(ax, (xb + sx) / 2, yc + 0.03, "32", fs=FS9)
+    cx = sx + sw + g_lab + R_OP
+    arrow(ax, (sx + sw, yc), (cx - R_OP, yc))
+    lab(ax, (sx + sw + cx - R_OP) / 2, yc + 0.03, "20", fs=FS9)
+    op(ax, cx, yc, "C", fs=FS9)
+    ux, uw, uh = cx + R_OP + g_lab, 0.58, 0.40
+    ax.add_patch(FancyBboxPatch((ux, yc - uh / 2), uw, uh, boxstyle="round,pad=0,rounding_size=0.035",
+                                fc=FILL, ec=EDGE, lw=LW_BOX, zorder=3))
+    text(ax, ux + uw / 2, yc + 0.105, "U-Net $g_\\varphi$", fs=FS9, max_w=uw - 0.03, z=4)
+    text(ax, ux + uw / 2, yc - 0.020, "31.1M, same", fs=FS9, color=INK2, max_w=uw - 0.03, z=4)
+    text(ax, ux + uw / 2, yc - 0.125, "architecture", fs=FS9, color=INK2, max_w=uw - 0.03, z=4)
+    arrow(ax, (cx + R_OP, yc), (ux, yc))
+    lab(ax, (cx + R_OP + ux) / 2, yc + 0.03, "52", fs=FS9)
+
+    # ── bottom row: zero-filled (left), ground truth · reconstruction (right) ──
+    zx = 0.92
+    polyline(ax, [(xb, yc), (xb, zc), (zx, zc)])
+    lab(ax, (xb + zx) / 2 + 0.005, zc + 0.03, "$ℱ^{-1}$", fs=FS9, color=INK)
+    thumb(ax, zx, zc - T2 / 2, T2, th["zf"], vmin=0, vmax=vmax)
+    text(ax, zx + T2 / 2, l1, "zero-filled coil images", fs=FS9, va="baseline")
+    polyline(ax, [(zx + T2, zc), (cx, zc), (cx, yc - R_OP)])
+    lab(ax, (zx + T2 + cx) / 2, zc + 0.03, "32", fs=FS9)
+    gxc = cx + 0.035 + T2 / 2                       # GT thumbnail just right of the concat line
+    rxc = W - 0.04 - 0.29                           # reconstruction centre: its widest label ends at the right margin
+    thumb(ax, gxc - T2 / 2, zc - T2 / 2, T2, th["gt"], vmin=0, vmax=vmax)
+    text(ax, gxc, l1, "ground truth", fs=FS9, va="baseline")
+    lab(ax, gxc, l2, "$x^{*}$, dataset RSS", va="baseline", fs=FS9)
+    thumb(ax, rxc - T2 / 2, zc - T2 / 2, T2, th["recon"], vmin=0, vmax=vmax)
+    text(ax, rxc, l1, "reconstruction", fs=FS9, va="baseline")
+    lab(ax, rxc, l2, r"$\hat{x}$, magnitude", va="baseline", fs=FS9)
+    polyline(ax, [(ux + uw, yc), (rxc, yc), (rxc, zc + T2 / 2)])          # U-Net output → x̂
+    # loss bracket below the two labels
+    yt = l2 - 0.065
+    for xx in (gxc, rxc):
+        ax.add_line(Line2D([xx, xx], [yt, yl], color=INK2, lw=LW_ARR, ls=(0, (1.2, 1.2)), zorder=4))
+    ax.add_line(Line2D([gxc, rxc], [yl, yl], color=INK2, lw=LW_ARR, ls=(0, (1.2, 1.2)), zorder=4))
+    text(ax, W - 0.04, y_loss, "loss: $L_1 + \\lambda(1-\\mathrm{SSIM})$, brain mask", fs=FS9, ha="right", va="top")
+    bad = audit_text(fig, f"conf_fig1_pipeline{suffix}")
+    save9(fig, f"conf_fig1_pipeline{suffix}")
+    return bad
+
+
+# ───────── Fig. 2 (v9) ─────────
+def unrolled_birnn_v9(ax, x0, y0, n=4, cw=0.15, ch=0.14, gap=0.07, fc=FILL_R, ec=EDGE_R, ell_after=2):
+    """unrolled_birnn 과 같은 그림, 글자 6.5 pt 와 그에 맞춘 세로 간격. (끝 x, 출력 y 라벨 위 끝) 반환."""
+    xs = [x0 + i * (cw + gap) for i in range(n)]
+    yb = y0 + 0.165
+    yf = yb + ch + 0.04
+    idx = [str(i + 1) for i in range(n - 1)] + ["L"]
+    for i, x in enumerate(xs):
+        xc = x + cw / 2
+        if i == ell_after:
+            text(ax, xc, yf + ch / 2, "…", fs=7, color=INK2)
+            text(ax, xc, yb + ch / 2, "…", fs=7, color=INK2)
+            continue
+        ax.add_line(Line2D([xc, xc], [y0 + 0.125, yf + ch + 0.035], color=INK, lw=LW_ARR, zorder=2))
+        for yy in (yb, yf):
+            arrow(ax, (xc, yy - 0.03), (xc, yy), mutation=4, z=2)
+        arrow(ax, (xc, yf + ch), (xc, yf + ch + 0.045), mutation=4, z=2)
+        for yy, s in ((yf, r"$\vec{h}$"), (yb, r"$\overleftarrow{h}$")):
+            box(ax, x, yy, cw, ch, "", fc=fc, ec=ec, fs=FS9, r=0.02)
+            text(ax, xc, yy + ch / 2 - 0.012, s, fs=FS9, z=4)     # 화살표 악센트가 위로 올라가므로 조금 내려 상자 안 간격을 맞춤
+        text(ax, xc, y0, f"$x_{{{idx[i]}}}$", fs=FS9, va="bottom")
+        text(ax, xc, yf + ch + 0.065, f"$y_{{{idx[i]}}}$", fs=FS9, va="bottom")
+    for i in range(n - 1):
+        xa, xb = xs[i] + cw, xs[i + 1]
+        arrow(ax, (xa, yf + ch / 2), (xb, yf + ch / 2), mutation=4)
+        arrow(ax, (xb, yb + ch / 2), (xa, yb + ch / 2), mutation=4)
+    return xs[-1] + cw, (yb + yf + ch) / 2, yf + ch + 0.065 + 0.125
+
+
+def fig2_v9(th, variant="rows", suffix="_v9"):
+    with _v9_typesetting():
+        return _fig2_v9(th, variant, suffix)
+
+
+def _fig2_v9(th, variant, suffix):
+    """fig2 와 같은 내용(두 판), 글자 ≥ 6.5 pt 재배치."""
+    impl = variant == "impl"
+    # ── (b) vertical plan (bottom → top): 2 label lines under the grids → 4 grids (centre ym) → S6 label = top line ──
+    #    left column: k-space label (top line) → LN·Linear·SiLU → DWConv (its output bends up to ym)
+    gs, gg = 0.21, 0.05
+    gy0 = 0.025 + 0.11 + 0.12 + 0.03           # bottom of the lower grids ("4-way scan" + scan-direction lines below)
+    ym = gy0 + gs + gg / 2                     # (b) main line = centre of the 2×2 grids
+    gtop = gy0 + 2 * gs + gg
+    t0 = gtop + 0.13                           # top of the (b) content (k-space / S6 ×4 labels)
+    ptop_b = t0 + 0.15                         # (b) title top
+    # ── (a) ──
+    y0 = ptop_b + 0.15                         # (a) chain baseline (x_t labels bottom)
+    yb = y0 + 0.165
+    ch = 0.155
+    yf = yb + ch + 0.04
+    y_mid = (yb + yf + ch) / 2
+    y_lab_top = yf + ch + 0.065 + 0.105
+    y_stage = y_lab_top + 0.015                # stage-1 label (va=bottom)
+    H = y_stage + 0.105 + 0.02 + 0.12         # + stage label + gap + title line
+    fig, ax = canvas(H)
+
+    # ─────────── (a) bi-GRU module ───────────
+    text(ax, 0.04, H - 0.035, "(a)", fs=FS_P, weight="bold", ha="left", va="top")
+    text(ax, 0.28, H - 0.035, "bi-GRU module (ETER-net)", fs=FS9, ha="left", va="top")
+    text(ax, W - 0.04, H - 0.035, "637.1M (model 668.2M)", fs=FS9, color=MUTED, ha="right", va="top")
+    ts, tx = 0.34, 0.06
+    ty = y_mid - ts / 2
+    if impl:
+        for k in (2, 1):
+            ax.add_patch(Rectangle((tx + 0.025 * k, ty + 0.025 * k), ts, ts, fc="white", ec=EDGE, lw=0.4, zorder=2))
+    thumb(ax, tx, ty, ts, th["ksp_und"])
+    if impl:
+        bh_ = ts / 12
+        ax.add_patch(Rectangle((tx, ty + ts * 0.5 - bh_ / 2), ts, bh_, fc=EDGE_R, ec=EDGE_R, lw=0.6,
+                               alpha=0.45, zorder=5))
+        lab(ax, 0.04, ty - 0.035, "$x_t$: 32 rows × 384", ha="left", va="top", fs=FS9, color=INK)
+        lab(ax, 0.04, ty - 0.170, "of one channel", ha="left", va="top", fs=FS9)
+    else:
+        ax.add_line(Line2D([tx, tx + ts], [ty + ts * 0.5] * 2, color=EDGE_R, lw=0.9, zorder=5))
+        lab(ax, 0.04, ty - 0.035, "$x_t$ = k-space row $t$", ha="left", va="top", fs=FS9, color=INK)
+        lab(ax, 0.04, ty - 0.170, "12,288-d (32×384)", ha="left", va="top", fs=FS9)
+    x0c = 0.82
+    arrow(ax, (tx + ts + 0.01 + (0.05 if impl else 0), y_mid), (x0c - 0.02, y_mid))
+    x_end, _, _ = unrolled_birnn_v9(ax, x0c, y0, ch=ch)
+    text(ax, (x0c + x_end) / 2, y_stage, "stage 1 — 384 steps (12,288-d each)" if impl else "stage 1: rows — 384 steps",
+         fs=FS9, color=INK2, va="bottom")
+    bx, bw2, bh2 = 2.13, 0.76, 0.26
+    arrow(ax, (x_end + 0.01, y_mid), (bx, y_mid))
+    lab(ax, (x_end + bx) / 2, y_mid + 0.045, "transpose", fs=FS9)
+    box9(ax, bx, y_mid - bh2 / 2, bw2, bh2, "stage 2" if impl else "stage 2: columns", sub="384 steps",
+         fc=FILL_R, ec=EDGE_R)
+    ox = bx + bw2 / 2
+    arrow(ax, (ox, y_mid - bh2 / 2), (ox, y0 + 0.02))
+    lab(ax, ox - 0.045, (y_mid - bh2 / 2 + y0 + 0.02) / 2, "reshape", fs=FS9, ha="right", va="center")
+    text(ax, ox, y0 - 0.005, "20×384×384", fs=FS9, va="top")
+
+    # ─────────── (b) SS2D module ───────────
+    text(ax, 0.04, ptop_b, "(b)", fs=FS_P, weight="bold", ha="left", va="top")
+    text(ax, 0.28, ptop_b, "SS2D module", fs=FS9, ha="left", va="top")
+    text(ax, W - 0.04, ptop_b, "0.12M (model 31.2M)", fs=FS9, color=MUTED, ha="right", va="top")
+    bh, lw_, bx0 = 0.25, 0.68, 0.04
+    yA = t0 - 0.12 - bh                        # LN·Linear·SiLU box bottom (input label above it, top at t0)
+    lab(ax, bx0, yA + bh + 0.03, "k-space 32×384×384", ha="left", fs=FS9)
+    box9(ax, bx0, yA, lw_, bh, "LN·Linear·SiLU", sub="32 → 128")
+    yD = yA - 0.07 - bh                        # DWConv box bottom (stacked below)
+    arrow(ax, (bx0 + lw_ / 2, yA), (bx0 + lw_ / 2, yD + bh))
+    box9(ax, bx0, yD, lw_, bh, "DWConv 3×3", sub="SiLU, 128")
+    gx0 = 0.96                                 # grids right of the DWConv box (their labels below clear its right edge)
+    for d, i, j in (("r", 0, 1), ("l", 1, 1), ("d", 0, 0), ("u", 1, 0)):
+        scan_grid(ax, gx0 + i * (gs + gg), gy0 + j * (gs + gg), gs, d)
+    gxc = gx0 + gs + gg / 2
+    gright = gx0 + 2 * gs + gg
+    text(ax, gxc, gy0 - 0.03, "4-way scan", fs=FS9, va="top")
+    lab(ax, gxc, gy0 - 0.14, "rows →←, columns ↓↑", va="top", fs=FS9)
+    xk = bx0 + lw_ + 0.08                      # DWConv output bends up to the grid centre line
+    polyline(ax, [(bx0 + lw_, yD + bh / 2), (xk, yD + bh / 2), (xk, ym), (gx0 - 0.005, ym)])
+    s6x, s6w, s6h, pitch = gright + 0.13, 0.25, 0.115, 0.13
+    ys6 = [ym + (k - 1.5) * pitch - s6h / 2 for k in range(4)]   # S6 stack centred on ym
+    for yy in ys6:
+        box9(ax, s6x, yy, s6w, s6h, "S6", fc=FILL_B, ec=EDGE_B, r=0.02)
+        arrow(ax, (gright + 0.005, yy + s6h / 2), (s6x, yy + s6h / 2), mutation=4)
+    text(ax, s6x + s6w / 2, t0, "S6 ×4 (parallel)", fs=FS9, va="top")
+    mx = s6x + s6w + 0.045                     # vertical merge bus: the four outputs join here, then one line into Ⓒ
+    for yy in ys6:
+        ax.add_line(Line2D([s6x + s6w, mx], [yy + s6h / 2] * 2, color=INK, lw=LW_ARR, zorder=4,
+                           solid_capstyle="projecting"))
+    ax.add_line(Line2D([mx, mx], [ys6[0] + s6h / 2, ys6[-1] + s6h / 2], color=INK, lw=LW_ARR, zorder=4,
+                       solid_capstyle="projecting"))
+    ccx = mx + 0.045 + 0.055                   # Ⓒ right of the bus
+    ax.add_line(Line2D([mx, ccx - 0.055], [ym, ym], color=INK, lw=LW_ARR, zorder=4))
+    op(ax, ccx, ym, "C", fs=FS9)
+    lx, lw2 = ccx + 0.055 + 0.06, 0.50
+    box9(ax, lx, ym - bh / 2, lw2, bh, "LN·Linear", sub="512 → 128")
+    arrow(ax, (ccx + 0.055, ym), (lx, ym))
+    cx2, cw2 = lx + lw2 + 0.06, 0.46
+    arrow(ax, (lx + lw2, ym), (cx2, ym))
+    box9(ax, cx2, ym - bh / 2, cw2, bh, "1×1 conv", sub="128 → 20")
+    lab(ax, cx2 + cw2 / 2, ym - bh / 2 - 0.03, "20×384×384", va="top", fs=FS9, color=INK)
+    name = ("conf_fig2_modules_impl" if impl else "conf_fig2_modules") + suffix
+    bad = audit_text(fig, name)
+    save9(fig, name)
+    return bad
+
+
+def _parse_args(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1] if __doc__ else None)
+    ap.add_argument("--suffix", default="", help="출력 이름 접미사(예: _v9). 주면 기본 레이아웃 = v9")
+    ap.add_argument("--npz", default=None, help="zero-filled·복원(rec_ss2d)·GT 썸네일 npz (기본 = v8 recon_4689.npz)")
+    ap.add_argument("--layout", choices=("v8", "v9"), default=None,
+                    help="v8 = 기존 그림(글자 4.7~6.5 pt, 고정 이름 — --suffix/--npz 불가), "
+                         "v9 = 모든 글자(첨자 포함) ≥ 6.5 pt 재배치판. 기본: --suffix 있으면 v9")
+    return ap.parse_args(argv)
+
+
+if __name__ == "__main__":
+    args = _parse_args()
+    layout = args.layout or ("v9" if args.suffix else "v8")
+    if layout == "v8" and (args.suffix or args.npz):
+        # v8 판은 출력 이름이 고정(conf_fig1_pipeline 등)이라 --suffix 를 쓸 수 없고, --npz 를 주면 커밋된 v8 그림의
+        # 썸네일이 바뀐 채로 덮어써진다 → 둘 다 거부.
+        sys.exit("error: v8 layout writes the fixed v8 file names and ignores --suffix; refusing --suffix/--npz with "
+                 "--layout v8 so the committed v8 figures are not overwritten (use --suffix _v9 for the v9 layout)")
+    if layout == "v9" and not args.suffix:
+        sys.exit("error: v9 layout needs --suffix (so the v8 figure files are not overwritten)")
+    npz = args.npz if args.npz else NPZ
+    if not os.path.isabs(npz):
+        npz = os.path.join(ROOT, npz) if not os.path.exists(npz) else os.path.abspath(npz)
+    th = load_thumbs(npz)
+    print(f"layout {layout}, thumbnails zf/recon(rec_ss2d)/gt from {os.path.relpath(npz, ROOT)}")
+    if layout == "v8":
+        fig1(th)
+        fig2(th)
+        fig2(th, variant="impl")
+        fig3(th)
+        if _OVERFLOW:
+            for s, w_in, mw in _OVERFLOW:
+                print(f"  ! overflow ({w_in:.2f} > {mw:.2f} in): {s!r}")
+        else:
+            print("no text overflow")
+    else:
+        bad = []
+        bad += fig1_v9(th, args.suffix)
+        bad += fig2_v9(th, "rows", args.suffix)
+        bad += fig2_v9(th, "impl", args.suffix)
+        for s, w_in, mw in _OVERFLOW:
+            bad.append(f"overflow ({w_in:.2f} > {mw:.2f} in): {s!r}")
+        if bad:
+            print(f"FAIL: {len(bad)} self-check violation(s)")
+            for m in bad:
+                print(f"  ! {m}")
+            sys.exit(1)
+        print(f"self-check OK: every Text and every rendered math glyph (incl. sub/superscripts) >= {MIN_PT} pt; "
+              f"no clipping; no text overlap; same-line text gaps >= {TEXT_GAP_IN} in; "
+              f"text-graphic clearance >= {CLEAR_IN} in; no box overflow")
