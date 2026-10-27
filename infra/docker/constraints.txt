@@ -1,0 +1,7 @@
+# torch 2.3.1 / mamba_ssm 2.2.2 바이너리와의 ABI 호환을 위한 하드 핀.
+# 베이스 이미지의 conda numpy 가 이미 1.26.4 라 재설치는 일어나지 않고,
+# 다른 패키지가 numpy 2.x 를 끌어오는 것만 차단한다.
+numpy==1.26.4
+torch==2.3.1
+torchvision==0.18.1
+torchaudio==2.3.1

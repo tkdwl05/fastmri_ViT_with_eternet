@@ -2,15 +2,15 @@
 v9 unleashed — per-slice 평가 + 기존 v8 per-slice CSV 조인 (v9 vs v8-SS2D / v9 vs GRU).
 
 `v8_eter_pure/eval_paired_v8_nodc.py` 의 v9 확장. v9 추론만 새로 수행하고(단일 모델),
-v8 두 arm 의 per-slice 수치는 이미 검증·저장된 `results/eval/v8_nodc/per_slice_paired.csv`
-(전체 val 7334 슬라이스, 동일 val set·동일 지표 공식) 를 (file, slice_idx) 키로 재사용한다
-— v8 재추론 불필요. paired win-rate + Wilcoxon 으로 v9 의 로그 우위(+0.0003 comp)가
+v8 두 모델의 per-slice 수치는 이미 검증·저장된 `results/eval/v8_nodc/per_slice_paired.csv`
+(전체 val 7334 슬라이스, 동일 검증 집합·동일 지표 공식) 를 (file, slice_idx) 키로 재사용한다
+— v8 재추론 불필요. paired 우위 슬라이스 비율 + Wilcoxon 으로 v9 의 로그 우위(체크포인트 선택용 내부 점수(composite, 보고 제외) +0.0003)가
 슬라이스 단위에서도 성립하는지 검증한다.
 
 sanity 앵커: v9 per-slice **ssim 평균**이 학습 로그 best ckpt(ep78) val_ssim_m(0.9145)과
 일치해야 정상 — SSIM 은 학습 val 도 슬라이스 단위 계산이라 정확히 재현된다(실측 일치 확인).
 composite/psnr 의 per-slice 평균은 학습 로그(0.9203/35.18)보다 낮게 나오는 것이 **정상**:
-학습 val 은 BS=4 배치풀링(배치 공유 ref-max, MSE 합산 후 log)이라 절대값이 다르다.
+학습 val 은 4개 슬라이스 배치 단위로 집계한 검증 지표(BS=4, 배치 공유 ref-max, MSE 합산 후 log)라 절댓값이 다르다.
 v8 도 동일 오프셋(CSV composite 0.9104 vs 로그 0.9200) — paired 비교는 3모델 동일
 프로토콜이므로 유효.
 """
@@ -113,9 +113,9 @@ def load_v8_csv(path):
 
 
 def pair_table(title, a_name, a_vals, b_name, b_vals, total):
-    """b(=v9) 관점 win-rate 표. a=상대(v8 arm)."""
+    """b(=v9) 관점 우위 슬라이스 비율 표. a=상대(v8 모델)."""
     lines = [f'## {title}', '',
-             f'| 지표 | {a_name} mean±std | {b_name} mean±std | {b_name} win-rate | {a_name} win | tie | Wilcoxon p |',
+             f'| 지표 | {a_name} 평균±표준편차(SD) | {b_name} 평균±표준편차(SD) | {b_name} 우위 슬라이스 비율 | {a_name} 우위 | tie | Wilcoxon p |',
              '|---|---|---|---|---|---|---|']
     for k in METRICS:
         a = np.array(a_vals[k])
@@ -143,9 +143,9 @@ def main():
     p.add_argument('--v8-csv', default='results/eval/v8_nodc/per_slice_paired.csv')
     p.add_argument('--data-path', default='./fastMRI_data/multicoil_val')
     p.add_argument('--out-dir', default='results/eval/v9_unleashed')
-    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 전체 val set')
+    p.add_argument('--max-samples', type=int, default=-1, help='-1 = 검증 집합 전체')
     p.add_argument('--num-workers', type=int, default=4,
-                   help='컨테이너 재생성(shm 128g) 후 multi-worker 안전 — v8 스크립트의 0 고정은 옛 shm 64MB 시절')
+                   help='컨테이너 재생성(shm 128g) 후 multi-worker 안전 — v8 스크립트의 0 고정은 이전 shm 64MB 시절')
     args = p.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -240,13 +240,13 @@ def main():
              f'- v9 ckpt: `{args.ckpt}` (best ep78)',
              f'- sanity: v9 per-slice ssim 평균 = **{v9_ssim_mean:.4f}** — 학습 로그 best ckpt(ep78) '
              f'val_ssim_m 0.9145 와 일치해야 정상(SSIM 은 양쪽 다 슬라이스 단위 계산). '
-             f'composite/psnr 절대값은 per-slice vs 배치풀링(학습 val BS=4, 배치 공유 ref-max) 정의 차이로 '
+             f'composite/psnr 절댓값은 per-slice vs 4개 슬라이스 배치 단위로 집계한 검증 지표(학습 val BS=4, 배치 공유 ref-max) 정의 차이로 '
              f'로그(0.9203/35.18)보다 낮게 보이는 것이 정상 — v8 도 동일 오프셋(CSV 0.9104 vs 로그 0.9200). '
              f'paired 비교는 3모델 동일 프로토콜로 유효. (v9 composite per-slice 평균 = {v9_comp_mean:.4f})', '']
     lines += pair_table('v9 vs v8-SS2D (no-DC)', 'v8-SS2D', ss2d_vals, 'v9', v9_vals, matched)
     lines += ['']
     lines += pair_table('v9 vs v8-GRU (no-DC)', 'GRU', gru_vals, 'v9', v9_vals, matched)
-    lines += ['', '(win-rate 은 composite 이 아닌 각 지표 자체 기준 — nmse/l1 은 낮을수록 v9 승리)']
+    lines += ['', '(우위 슬라이스 비율은 composite 이 아닌 각 지표 자체 기준 — nmse/l1 은 낮을수록 v9 우위)']
 
     msg = '\n'.join(lines)
     print('\n' + msg)

@@ -150,3 +150,92 @@ v6_1 가 import 하지 않는 옛 버전들. 버전 진화 방향은 [docs/scrip
 
 이전 §3 / §4 의 표기를 위 표 기준으로 정정했음. 향후 정리에서는 "현재 코드가 import 하느냐" 외에 "초기 commit `7d4e4e0` 에서 온 파일인가" 도 함께 확인할 것.
 
+
+---
+
+## 2026-09-03 — 프로젝트 구성 점검 (`/init`) 에 따른 정리
+
+**원칙 재확인**: 교수님 원본 파일(초기 commit `7d4e4e0` 유래 — `scripts_legacy/`·`dataloaders/myDataloader_*`·
+`configs/myConfig_choh_ViT_*`/`myConfig_temp.py`·`models/hybrid_eternet/u_choh_*`·루트
+`choh_train_ViT_ETER_R4regular_240916py`(확장자 누락) 포함)은 §6(05-20) 결정대로 **손대지 않음**.
+`dataloaders/myDataloader_*` 8종·옛 `myConfig_choh_ViT_*` 는 현행 코드가 import 하지 않고 `scripts_legacy/` 만
+참조하지만 같은 이유로 유지.
+
+### 1) 삭제 (tracked → `git rm`)
+
+| 파일 | 사유 |
+|---|---|
+| `models/vit_pytorch/vit-pytorch-main/tests/.DS_Store` | 벤더 저장소 zip 에 딸려온 macOS 잔재(교수님 저작물 아님) |
+| `.claude/settings.json` | 옛 머신 경로(`/home/snorlax-dw/…/mri_env`) 허용 규칙 2건뿐 — 이 머신에서 무의미. 로컬 설정은 `.claude/settings.local.json`(비추적) |
+
+### 2) 삭제 (비추적 잔재)
+
+- `v7/runs/eter/sanity.pid`, `v7/runs/extract.pid`, `v7/runs/ss2d/sanity.pid` — 2026-05 죽은 프로세스 PID
+- `__pycache__/` 16개 (재생성물)
+
+### 3) 이동·정정 (tracked)
+
+| 변경 | 사유 |
+|---|---|
+| `PROJECT_SUMMARY.md` → `docs/project_summary_2026-04-11.md` | 옛 머신·루트 320 트랙 기준 04-11 스냅샷이 루트에 있어 현행 구조로 오독 유발. 제목에 역사 표기 + INDEX 등재, 참조 3곳(`presentation_overview`·`summary_2026-06-02/11`) 경로 갱신 |
+| `README.md` 전면 재작성 | `main_train.py`·`download_repos.py`·`myConfig_choh_model3.py` 등 존재하지 않는 진입점 서술(04-03 작성) → 현행 트랙표 + 정본 문서 포인터 |
+| `v9_mamba_radapt/runs/pre_outage_report_2026-08-07.md` 원복 + `clean_stop_report_2026-09-02_ep57.md` 신설 | 09-02 ep57 clean-stop 때 `snapshot_pre_outage.sh` 가 08-07 보고를 덮어씀(파일명 고정). 08-07 원본은 git 에서 복원, 09-02 내용은 새 파일로 분리 |
+| `snapshot_pre_outage.sh` OUT 경로를 실행일 스탬프(`OUT` env 재지정 가능)로 변경 | 위 덮어쓰기 재발 방지 |
+| `docs/INDEX.md` 08-07 이후 5행 추가(draft v2·worklog·frontier·fairness·transformer arm) + 현재 운영 문구 | 09-01~02 신규 문서 미등재 |
+| `CLAUDE.md` 갱신(`/init`) | 표준 prefix 추가, 정체된 상태 서술 정정(radapt "08-18 재개 ETA 08-25" → 09-02 ep57 정지, "v9 화이트리스트 미추가" → 추가됨), §작업 규칙(교수님 파일 무수정·표준 지표·기준점=원본 GRU·"Transformer" 표기·GPU0 단독·활성 런 보호·git 관례) 신설, v8 네 모델 env var(`SEQ_MODEL`·`SEED`…)·E1 런처·검증/스모크 명령·Docker `mri:v1`/NVML cgroup 항목 추가, 신규 docs(fairness·transformer arm·frontier·worklog) 등재 |
+| `CLAUDE.md` 의 2026-06-01 루트 `results/` 역사 트리 → `docs/logs_archive.md` 부록으로 이관 | 현재 디스크에 없는 폴더 트리 28행이 운영 지침을 희석 — 기록은 옛 머신 아카이브 문서가 제자리 |
+
+### 4) 사용자 승인 후 실행 (비가역·대용량) — 09-03 (승인: 3개 질문 전 항목)
+
+`df` 기준 여유 **696 G → 811 G (+115 G)**. 활성 런(E1 seed0 `logs/PureETER_SS2D_noDC_R4_brain384_v8_s0/`·
+`wandb/run-20260902_045022-*`·`v8_eter_pure/runs/multiseed/`)과 radapt 정지 ckpt/로그는 전·후 생존 확인, 무접촉.
+자동모드 분류기가 여러 대상을 합친 단일 `rm`/`find -delete` 를 거부해 대상별 명시 `rm` 으로 분할 실행.
+
+| 실행 | 내용 | 회수 |
+|---|---|---|
+| DC 축 ckpt 삭제 | `logs/PureETER_GRU_DC_R4_brain384_v8/{best,last}.pt`, `..._NAN_bak/` `.pt` 12개(best·last·epoch_5~50), `logs/PureETER_SS2D_DC_R4_brain384_v8/*.pt`. 세 폴더 `log.txt` 는 보존(8~12 KB) | ~45 GB |
+| v7(320) ckpt 삭제 | `logs/{ETER,SS2D}_ViT_R4_brain320_v7/` 의 `*_best.pt`·`*.pt.hdd_baseline`·`log.txt.hdd_baseline` (`log.txt` 보존) | ~3.9 GB |
+| 완주 런 중간 epoch ckpt 삭제 | `logs/PureETER_GRU_noDC_R4_brain384_v8/pure_gru_epoch_*.pt`, `logs/ETER_ViT_R4_brain384_v7_titan/eter_vit_epoch_*.pt`, `logs/SS2D_ViT_R4_brain384_v7_titan/ss2d_vit_epoch_*.pt` 30개. best/last 보존(ETER v7_titan 은 원래 last 없음). v8 SS2D noDC·v9 unleashed 의 epoch ckpt(각 125 MB급)는 **유지** | ~54 GB |
+| 완주 런 tqdm 로그 gzip | `v9_mamba_unleashed/runs/ss2d/run_…unleashed….log`, `v7_titan/runs/{ss2d/run_ss2d_v7_titan_scratch,eter/run_eter_v7_titan}.log`, `v8_eter_pure/runs/{ss2d/run_…SS2D_noDC…,gru/run_…GRU_noDC…,gru/run_…GRU_DC…}.log` → `.log.gz` 6개(합 ~70 MB; SS2D DC 로그는 87 KB 라 그대로). 분석 스크립트는 `logs/<RUN>/log.txt` 만 읽음(grep 확인). **`.gitignore` 에 `*.log.gz` 추가**(gzip 이 untracked 로 노출되던 것 차단) | ~1 GB |
+| 크래시 로그 백업 삭제 | `v7/runs/`·`v7_titan/runs/{ss2d,eter,chain}/` 의 `*.bak` 13개, `v7/runs/ss2d/run_ss2d_v7_nvme.log.partial_20260520`, `v9_mamba_radapt/runs/ss2d/*.log.failed-20260730`(사건은 `docs/v9_mamba_unleashed_and_radapt.md`·`host_nvml_issue` memory 에 기록, 문서 포인터 갱신) | 29 MB |
+| wandb 옛 run 삭제 | `wandb/` 40개 dir — `offline-run-*` 4개(05-18 2개, **06-25 2개는 v8 noDC GRU ep31-32/SS2D ep41-42 미동기화 세그먼트 — 내용 확인 후 `logs/*/log.txt` 와 중복으로 판단**) + online `run-*` 전부(클라우드 보존). 잔존: 활성 E1 `run-20260902_045022-…_v8_s0` + `latest-run`·debug 로그 (173 MB) | ~8 GB |
+| `paper/draft_ko_v1.{md,docx}` → `paper/archive/` | `git mv`. 참조 갱신: `docs/INDEX.md`·`paper/project_story_v1_to_v9.md`(3곳)·`paper/draft_ko_v2.md` 기반 표기·`docs/worklog_2026-06_07.md`·`CLAUDE.md` | — |
+| 루트 320 스크립트 11개 → `legacy_320/` | `git mv`: `main_train_{ss2d,eter}_v6_{1,2,3}.py`·`eval_full_compare.py`·`eval_tta_ensemble.py`·`visualize_compare.py`·`visualize_compare_versions.py`·`visualize_diagnostic_v6.py`(전부 사용자 작성, `7d4e4e0` 아님). 각 파일 `current_dir` 1행을 상위 폴더(저장소 루트)로 수정 → `python legacy_320/<script>.py` 로 import 경로 성립(ast 파싱 + 6개 `myConfig_*` import 스모크 PASS; ckpt 부재로 실행은 불가). `legacy_320/README.md` 신설, `CLAUDE.md` 실행/레이아웃·`docs/script_version_history.md` 추기. Python 측 참조는 주석/docstring 뿐(`v7/eval_v7_compare.py:4`, `configs/myConfig_choh_*_v6_1.py:4`). 루트 잔류: 현행 `visualize_v7_titan_compare.py`·`visualize_v8_pure_compare.py`·`visualize_v9_compare.py`·`visualize_eval_modes_compare.py`·`visualize_slices_canonical.json`, 교수님 `choh_train_ViT_ETER_R4regular_240916py` | — |
+
+### 5) 잔여 후보 (미승인 — 다음 정리 때 판단)
+
+| 후보 | 크기 | 비고 |
+|---|---|---|
+| `logs/SS2D_ViT_R4_brain384_v7_titan/_ddp_archive/` | 1.3 GB | 05-31 폐기된 DDP 시도(`log.txt`·`log_ddp.txt`·best·epoch_5/10). 이번 승인 목록에 없어 보존 |
+
+## 2026-10-01 — 그림 파일 이름 정리
+
+| 대상 | 내용 |
+|---|---|
+| `paper/figs/conf_fig2_arms.{png,pdf}` → `paper/figs/conf_fig2_modules.{png,pdf}` | 금지어 'arm'이 남은 그림 파일 이름 변경(사용자 요청). 그림 내용에는 해당 단어 없음. 생성 스크립트 `paper/make_figs_conf_arch.py`의 저장 이름과 docstring, `paper/ieie/draft_ieie_v7.src.md`의 `@figure` 경로, `docs/paper_table_conventions.md`를 갱신하고 v7 두 판을 다시 빌드. 옛 PNG·PDF는 디스크에서 지움(git 이력에 보존). 구판 원고(IEIE v2·v3·archive)의 옛 경로 참조는 원문 보존 원칙에 따라 그대로 둠 |
+
+## 2026-10-16 — 교수님 원본 파일의 기존 수정 기록 (유지 결정)
+
+`docs/ssim_impl_compare_2026-10-15.md` §6·`docs/professor_settings_compare_2026-10-12.md` §6-2 에서 찾은, 초기 커밋 `7d4e4e0` 원본의 수정 3 건(+ 잔재 1 건). 모두 사용자 계정 커밋 = 우리 쪽 작업이고 교수님 수정이 아니다. **사용자 결정(10-16): 되돌리지 않고 기록만 한다**(복원하면 v7_titan 이후 모든 학습·스모크 하네스 md5 고정값과 재현성이 흔들림). 삭제·이동은 없음.
+
+| 원본 파일 | 수정 커밋 | 내용 | 영향 |
+|---|---|---|---|
+| `models/hybrid_eternet/u_choh_SSIM.py` | `afa89a0` (06-16 커밋, 작업은 05-22 `docs/eval_metric_redesign.md`) | `ssim()`·`SSIM.forward()` 에 `mask=None` 인자 추가 — 마스크를 같은 Gaussian 창으로 평활해 0.5 초과 화소에서만 SSIM 지도 평균. 05-20 무수정 규칙 뒤의 수정 | `mask=None` 이면 원본(`mySSIM.py` 와 같은 내용)과 같은 계산. v7_titan·v8·v8fix·v9·pod 런·스모크의 마스크 SSIM 손실이 이 분기를 씀 |
+| `models/hybrid_eternet/u_choh_model_ETER_ViT.py` | `0cdc914` (04-11)·`e0dc4c9` (04-15) | gradient checkpointing·h0, RefinementBlock head (규칙 이전 SS2D-ViT 작업) | 현행 v8·v9 코드는 import 하지 않음 |
+| `configs/myConfig_choh_model3.py` | `0cdc914` (04-11) | ViT-S·H=2 로 축소 (규칙 이전) | 현행 코드 미사용 |
+| `models/vit_pytorch/vit-pytorch-main/tests/.DS_Store` | `71478ad` (09-03) | macOS 잔재 삭제 (09-03 정리) | 없음 |
+
+검사 보강: `v8_eter_pure/sanity_pure_v8.py` 의 원본 무수정 검사가 `git status` 만 봐서 커밋된 수정을 "OK" 로 보고하던 것을, `git diff 7d4e4e0` 기준 `check_professor_originals()` 로 바꿨다(위 4 건은 지금 내용의 blob 해시로 고정 — 더 바뀌면 실패). CLAUDE.md §작업 규칙에도 같은 내용을 적었다.
+
+
+## 2026-10-20 — RunPod 네트워크 볼륨의 시험 학습 결과 삭제
+
+사용자 결정(10-20 "시험 학습 결과 폴더 삭제하자"). 볼륨 여유 공간 확보용 — 시드 2·3 학습(큐 R3)이 끝날 때 볼륨 사용량이 약 2.62 TB 로 예상되어
+2,700 GB 볼륨의 여유가 약 80 GB 뿐이었다.
+
+| 삭제 대상 | 크기 | 내용 | 남긴 것 |
+|---|---|---|---|
+| 볼륨 `/workspace/_smoke/` (EU-CZ-1 `ppgahi0so3`) | 29.8 GB | 본 학습 전 시험 학습 7 개(150~400 step, wandb 끔, `DEBUG_MAX_STEPS` — 측정·인용 불가 런): SS2D 시드 2·3 ×2, ETER-net 시드 2·3, U-Net 시드 2. 체크포인트 21 개(.pt)와 로그 | 텍스트 기록 35 개(log.txt·recipe.json·probe_ep1.json·DONE·각 tqdm 로그, 700 KB) → 로컬 `logs/runpod_mirror_b1/smoke_records/`(git 무시) |
+
+삭제 전 확인: 다섯 Pod 모두 이 폴더를 cwd·열린 파일·`V8FIX_LOG_ROOT` 로 쓰는 프로세스 0, 시험 스크립트 실행 0, 폴더 안에 시험 결과 외 항목 없음.
+삭제 후 볼륨 사용량 2.542 → 2.512 TB(`du -sb /workspace`).

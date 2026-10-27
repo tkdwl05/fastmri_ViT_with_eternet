@@ -2,13 +2,14 @@
 # 2026-08-08 학교 정전 대비 — radapt 진행상황 사전 보고 스냅샷.
 # 8/7 저녁(20:54 KST) 분리 타이머가 자동 실행하며, 수동 실행도 안전(멱등, 재실행 시 보고 갱신):
 #   bash v9_mamba_radapt/runs/snapshot_pre_outage.sh
-# 출력: v9_mamba_radapt/runs/pre_outage_report_2026-08-07.md
+# 출력: v9_mamba_radapt/runs/pre_outage_report_<UTC 실행일>.md (OUT env 로 재지정 가능)
 set -u
 ROOT=/home/snorlax/shared/fastmri_ViT_with_eternet
 RUN=PureETER_SS2D_V9_radapt_multiAR_brain384
 LOGDIR="$ROOT/logs/$RUN"
 RUNLOG="$ROOT/v9_mamba_radapt/runs/ss2d/run_${RUN}.log"
-OUT="$ROOT/v9_mamba_radapt/runs/pre_outage_report_2026-08-07.md"
+# 출력 파일은 실행일로 스탬프 (2026-09-03 수정: 08-07 원본 보고를 덮어쓰던 문제 방지). OUT env 로 재지정 가능.
+OUT="${OUT:-$ROOT/v9_mamba_radapt/runs/pre_outage_report_$(date -u +%Y-%m-%d).md}"
 
 LAST_EP=$(grep -c '^Epoch' "$LOGDIR/log.txt" 2>/dev/null || echo 0)
 BEST=$(grep -o 'val_composite=[0-9.]*' "$LOGDIR/log.txt" 2>/dev/null | cut -d= -f2 | sort -g | tail -1)

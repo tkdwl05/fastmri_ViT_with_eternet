@@ -3,6 +3,12 @@
 2026-05-20 정리에서 삭제된 `.py` 파일들의 출처 / 역할 / 버전 진화 방향 기록.
 세부 알고리즘 변경은 각 버전 `docs/*_changes.md` 참조.
 
+> **2026-09-03 추기**: 아래 "보존 (현재 활성)" 으로 표시된 루트 320 트랙 스크립트 11개
+> (`main_train_{ss2d,eter}_v6_{1,2,3}.py`, `eval_full_compare.py`, `eval_tta_ensemble.py`,
+> `visualize_compare.py`, `visualize_compare_versions.py`, `visualize_diagnostic_v6.py`)는 저장소 루트에서
+> **`legacy_320/`** 로 이동했다(`legacy_320/README.md`). 이 머신에는 320 ckpt 가 없어 실행 불가한 역사 기록이며,
+> `current_dir` 를 저장소 루트로 잡도록 한 줄만 수정해 import 경로는 보존했다. 본문의 파일명은 당시 표기 그대로 둔다.
+
 ---
 
 ## 1) 루트 학습 entry script — `main_train_*.py`

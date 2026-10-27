@@ -1,4 +1,4 @@
-# v8 no-DC — GRU vs SS2D (masked composite, 384/R4)
+# v8 no-DC — GRU vs SS2D (체크포인트 선택용 내부 점수(masked composite, 보고 제외), 384/R4)
 
 - GRU  val epochs: 2..50  (25 pts)
 - SS2D val epochs: 2..50  (25 pts)

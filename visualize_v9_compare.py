@@ -161,7 +161,7 @@ def load_unet(ckpt, device):
 # ──────────────────────────────────────────────
 
 def run_ss2d(model, sample, device):
-    """GRU/SS2D pure arm 공용 — forward(x_img, x_ksp, mask, sens) 시그니처 동일."""
+    """GRU/SS2D 모델 공용 — forward(x_img, x_ksp, mask, sens) 시그니처 동일."""
     d  = sample['data'].unsqueeze(0).float().to(device)
     di = sample['data_img'].unsqueeze(0).float().to(device)
     mk = sample['mask'].unsqueeze(0).float().to(device)
@@ -376,9 +376,9 @@ def main():
     lines += [
         '',
         '[해석 / 주의]',
-        '- U-Net = fastmri brain leaderboard 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
-        '  → fastmri 원 학습분포(전 coil·native)와 domain shift → 참고 베이스라인.',
-        '- v8-SS2D / v9-SS2D = 순수 ETER-Net(ViT 없음) no-DC. aggregate 는 v9 근소 우위',
+        '- U-Net = fastMRI brain 리더보드(leaderboard) 사전학습. 본 파이프라인은 16-coil·image-domain crop→384',
+        '  → fastMRI 원 학습분포(전 coil·native)와 도메인 차이(domain shift) → 참고 결과(순위 비교 제외).',
+        '- v8-SS2D / v9-SS2D = 순수 ETER-Net(ViT 없음) no-DC. 전체 평균은 v9 근소 우위',
         '  (전체 val masked SSIM 0.9145 vs 0.9140, docs/v9_mamba_unleashed_and_radapt.md). 각 PNG 패널 제목에',
         '  슬라이스별 실제 지표 표기 — sulci/혈관 detail 은 육안으로 직접 비교할 것.',
     ]

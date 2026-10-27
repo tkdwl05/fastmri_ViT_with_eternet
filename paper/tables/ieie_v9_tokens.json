@@ -1,0 +1,1313 @@
+{
+ "generator": "paper/make_tables_v8fix.py",
+ "inputs": {
+  "results/eval/v8fix_official_test_full/per_volume_unet.csv": "a8032ae9fde92128b7a8616db437ce1e",
+  "results/eval/v8fix_official_test_full/per_volume_gru.csv": "6f69eb9fc084b342c0c01c2baef9b0c9",
+  "results/eval/v8fix_official_test_full/per_volume_ss2d.csv": "d5a996c025873ce8e3bb48595a34e0df",
+  "results/eval/v8fix_official_test_full/per_slice_unet.csv": "c12a0f03494a1e20bf40c61baa9dd7ba",
+  "results/eval/v8fix_official_test_full/per_slice_gru.csv": "4de2783ac5c076f866ff896b172f0cee",
+  "results/eval/v8fix_official_test_full/per_slice_ss2d.csv": "d0c9cad166fbf25dcc4aac6b9a569523",
+  "logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/DONE": "ece6ffda0c83f91d852d65a64809b0f9",
+  "logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/DONE": "50153d09374b60adcde8cf4864482a43",
+  "logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/DONE": "f351322ca5cfe83b81b9e9a5cf8e4610"
+ },
+ "inputs_extra": {
+  "logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/functional_ss2d.json": "727aeec7048027984fe550dd7ae3d71a",
+  "logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/summary_ss2d.md": "9801109ec8fa18945b921e3f36102552",
+  "logs/runpod_mirror/pod3_setup_logs/verify.log": "d5351f16b8df66f7b0a5cf2ce63825fb",
+  "logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/per_slice_ss2d.csv": "182203e93d15ed8628597942e599b364",
+  "logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/log.txt": "1a2f2d9ed6baf4044009511e71d4ac2b",
+  "logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/log.txt": "db0366ce8952dd9ab44f83f1e58d1d1a",
+  "logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/log.txt": "0f9b6efe38aa7576f50d50a650819aff",
+  "logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/recipe.json": "3290e159e32ff0d7a12d64d99746a6f1",
+  "logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/recipe.json": "3b0a16fb92f1783b45b51403036d2da4",
+  "logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/recipe.json": "8f12bd3bd1a6724a886339d1b6dc169f",
+  "logs/runpod_mirror/pod3_final_extra_20261017/fastmri_ViT_with_eternet/v8_eter_pure/runs/runpod/run_PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval.log": "a9fe7ebc28f3c3ae27b8a3809ec1c021",
+  "logs/runpod_mirror/pod3_final_extra_20261017/fastmri_ViT_with_eternet/v8_eter_pure/runs/runpod/run_PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval.log": "c3511574f40aa1e08f1f51e1e6b00179",
+  "logs/runpod_mirror/pod3_final_extra_20261017/fastmri_ViT_with_eternet/wandb/run-20261015_083843-PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval_pod3f/files/wandb-summary.json": "9d741eade1f1ecda715650d8253eb0e9",
+  "logs/runpod_mirror/pod3_final_extra/fastmri_ViT_with_eternet/wandb/run-20261010_095353-PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval_pod3/files/wandb-summary.json": "ebb0717c061d8991feaf89fc948618fe",
+  "logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/pure_unet_best.pt": "size 124258944 B (md5 not computed)",
+  "logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/pure_gru_best.pt": "size 2672669530 B (md5 not computed)",
+  "logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/pure_ss2d_best.pt": "size 124735570 B (md5 not computed)"
+ },
+ "tokens": {
+  "N_TEST_VOL": {
+   "value": "558",
+   "raw": 558,
+   "desc": "test_full volumes"
+  },
+  "N_TEST_SLICE": {
+   "value": "8,852",
+   "raw": 8852,
+   "desc": "test_full slices"
+  },
+  "N_VAL_VOL": {
+   "value": "1,378",
+   "raw": 1378,
+   "desc": "selection set: validation batches 0–2, volumes"
+  },
+  "N_VAL_SLICE": {
+   "value": "21,842",
+   "raw": 21842,
+   "desc": "selection set slices"
+  },
+  "PARAMS_UNET": {
+   "value": "31.1",
+   "raw": 31.1,
+   "desc": "U-Net only parameters (M), from src-dir unet.log"
+  },
+  "BESTEP_UNET": {
+   "value": "48",
+   "raw": 48,
+   "desc": "U-Net only best epoch (DONE)"
+  },
+  "VALSSIM_UNET": {
+   "value": "0.9236",
+   "raw": 0.9236005175864875,
+   "desc": "U-Net only best validation SSIM — SELECTION SET (val batches 0–2, slice mean as logged by the trainer), not a test value"
+  },
+  "PARAMS_ETER": {
+   "value": "668.2",
+   "raw": 668.2,
+   "desc": "ETER-net parameters (M), from src-dir gru.log"
+  },
+  "BESTEP_ETER": {
+   "value": "46",
+   "raw": 46,
+   "desc": "ETER-net best epoch (DONE)"
+  },
+  "VALSSIM_ETER": {
+   "value": "0.9214",
+   "raw": 0.9213774803336222,
+   "desc": "ETER-net best validation SSIM — SELECTION SET (val batches 0–2, slice mean as logged by the trainer), not a test value"
+  },
+  "PARAMS_SS2D": {
+   "value": "31.2",
+   "raw": 31.2,
+   "desc": "SS2D(controlled) parameters (M), from src-dir ss2d.log"
+  },
+  "BESTEP_SS2D": {
+   "value": "50",
+   "raw": 50,
+   "desc": "SS2D(controlled) best epoch (DONE)"
+  },
+  "VALSSIM_SS2D": {
+   "value": "0.9222",
+   "raw": 0.9222089673909725,
+   "desc": "SS2D(controlled) best validation SSIM — SELECTION SET (val batches 0–2, slice mean as logged by the trainer), not a test value"
+  },
+  "SSIM_UNET": {
+   "value": "0.9213",
+   "raw": 0.9212977819697574,
+   "desc": "U-Net only: SSIM inside the brain mask, volume-level mean"
+  },
+  "SSIM_UNET_SD": {
+   "value": "0.0466",
+   "raw": 0.04656127129499428,
+   "desc": "U-Net only: SSIM inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "PSNR_UNET": {
+   "value": "34.91",
+   "raw": 34.91309798317245,
+   "desc": "U-Net only: PSNR (dB) inside the brain mask, volume-level mean"
+  },
+  "PSNR_UNET_SD": {
+   "value": "1.85",
+   "raw": 1.8538696950238487,
+   "desc": "U-Net only: PSNR (dB) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "NMSE_UNET": {
+   "value": "0.371",
+   "raw": 0.3705777307250756,
+   "desc": "U-Net only: nMSE (%) inside the brain mask, volume-level mean"
+  },
+  "NMSE_UNET_SD": {
+   "value": "0.409",
+   "raw": 0.4092720750179345,
+   "desc": "U-Net only: nMSE (%) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIM_UNET": {
+   "value": "0.8965",
+   "raw": 0.8964533405985678,
+   "desc": "U-Net only: SSIM, fastMRI official definition, volume-level mean"
+  },
+  "OFFSSIM_UNET_SD": {
+   "value": "0.0400",
+   "raw": 0.039979519944583125,
+   "desc": "U-Net only: SSIM, fastMRI official definition, volume-level SD (ddof=1)"
+  },
+  "OFFPSNR_UNET": {
+   "value": "34.81",
+   "raw": 34.81139026539235,
+   "desc": "U-Net only: PSNR (dB), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFPSNR_UNET_SD": {
+   "value": "2.38",
+   "raw": 2.382392209002069,
+   "desc": "U-Net only: PSNR (dB), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFNMSE_UNET": {
+   "value": "1.504",
+   "raw": 1.5035058280069313,
+   "desc": "U-Net only: nMSE (%), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFNMSE_UNET_SD": {
+   "value": "0.641",
+   "raw": 0.641346678548316,
+   "desc": "U-Net only: nMSE (%), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFSSIMIN_UNET": {
+   "value": "0.9532",
+   "raw": 0.9532470143056035,
+   "desc": "U-Net only: official SSIM map averaged inside the brain mask, volume-level mean"
+  },
+  "OFFSSIMIN_UNET_SD": {
+   "value": "0.0294",
+   "raw": 0.029399142120605803,
+   "desc": "U-Net only: official SSIM map averaged inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIMOUT_UNET": {
+   "value": "0.8592",
+   "raw": 0.8591975690589155,
+   "desc": "U-Net only: official SSIM map averaged outside the brain mask, volume-level mean"
+  },
+  "OFFSSIMOUT_UNET_SD": {
+   "value": "0.0566",
+   "raw": 0.05664121639546654,
+   "desc": "U-Net only: official SSIM map averaged outside the brain mask, volume-level SD (ddof=1)"
+  },
+  "SSIM_ETER": {
+   "value": "0.9191",
+   "raw": 0.919068608132661,
+   "desc": "ETER-net: SSIM inside the brain mask, volume-level mean"
+  },
+  "SSIM_ETER_SD": {
+   "value": "0.0474",
+   "raw": 0.04735684611080688,
+   "desc": "ETER-net: SSIM inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "PSNR_ETER": {
+   "value": "34.69",
+   "raw": 34.685947559447115,
+   "desc": "ETER-net: PSNR (dB) inside the brain mask, volume-level mean"
+  },
+  "PSNR_ETER_SD": {
+   "value": "1.84",
+   "raw": 1.8386235957063848,
+   "desc": "ETER-net: PSNR (dB) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "NMSE_ETER": {
+   "value": "0.388",
+   "raw": 0.3877541804404247,
+   "desc": "ETER-net: nMSE (%) inside the brain mask, volume-level mean"
+  },
+  "NMSE_ETER_SD": {
+   "value": "0.434",
+   "raw": 0.4335081828749007,
+   "desc": "ETER-net: nMSE (%) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIM_ETER": {
+   "value": "0.8652",
+   "raw": 0.8651613866997013,
+   "desc": "ETER-net: SSIM, fastMRI official definition, volume-level mean"
+  },
+  "OFFSSIM_ETER_SD": {
+   "value": "0.0399",
+   "raw": 0.03990129861241444,
+   "desc": "ETER-net: SSIM, fastMRI official definition, volume-level SD (ddof=1)"
+  },
+  "OFFPSNR_ETER": {
+   "value": "32.88",
+   "raw": 32.87714048743059,
+   "desc": "ETER-net: PSNR (dB), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFPSNR_ETER_SD": {
+   "value": "2.13",
+   "raw": 2.1270830474025857,
+   "desc": "ETER-net: PSNR (dB), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFNMSE_ETER": {
+   "value": "2.303",
+   "raw": 2.303189487871792,
+   "desc": "ETER-net: nMSE (%), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFNMSE_ETER_SD": {
+   "value": "0.811",
+   "raw": 0.81125337369101,
+   "desc": "ETER-net: nMSE (%), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFSSIMIN_ETER": {
+   "value": "0.9517",
+   "raw": 0.9516555820100184,
+   "desc": "ETER-net: official SSIM map averaged inside the brain mask, volume-level mean"
+  },
+  "OFFSSIMIN_ETER_SD": {
+   "value": "0.0299",
+   "raw": 0.029902025317239993,
+   "desc": "ETER-net: official SSIM map averaged inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIMOUT_ETER": {
+   "value": "0.8123",
+   "raw": 0.8123439004097163,
+   "desc": "ETER-net: official SSIM map averaged outside the brain mask, volume-level mean"
+  },
+  "OFFSSIMOUT_ETER_SD": {
+   "value": "0.0572",
+   "raw": 0.057181218006513136,
+   "desc": "ETER-net: official SSIM map averaged outside the brain mask, volume-level SD (ddof=1)"
+  },
+  "SSIM_SS2D": {
+   "value": "0.9199",
+   "raw": 0.9198973951176163,
+   "desc": "SS2D(controlled): SSIM inside the brain mask, volume-level mean"
+  },
+  "SSIM_SS2D_SD": {
+   "value": "0.0469",
+   "raw": 0.04685078290248277,
+   "desc": "SS2D(controlled): SSIM inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "PSNR_SS2D": {
+   "value": "34.78",
+   "raw": 34.783313944429686,
+   "desc": "SS2D(controlled): PSNR (dB) inside the brain mask, volume-level mean"
+  },
+  "PSNR_SS2D_SD": {
+   "value": "1.86",
+   "raw": 1.8620343751965278,
+   "desc": "SS2D(controlled): PSNR (dB) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "NMSE_SS2D": {
+   "value": "0.381",
+   "raw": 0.38051895887743364,
+   "desc": "SS2D(controlled): nMSE (%) inside the brain mask, volume-level mean"
+  },
+  "NMSE_SS2D_SD": {
+   "value": "0.414",
+   "raw": 0.4135010479262041,
+   "desc": "SS2D(controlled): nMSE (%) inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIM_SS2D": {
+   "value": "0.8389",
+   "raw": 0.8389329459862988,
+   "desc": "SS2D(controlled): SSIM, fastMRI official definition, volume-level mean"
+  },
+  "OFFSSIM_SS2D_SD": {
+   "value": "0.0575",
+   "raw": 0.05753411420023711,
+   "desc": "SS2D(controlled): SSIM, fastMRI official definition, volume-level SD (ddof=1)"
+  },
+  "OFFPSNR_SS2D": {
+   "value": "32.04",
+   "raw": 32.03929348536417,
+   "desc": "SS2D(controlled): PSNR (dB), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFPSNR_SS2D_SD": {
+   "value": "2.33",
+   "raw": 2.3334426369985763,
+   "desc": "SS2D(controlled): PSNR (dB), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFNMSE_SS2D": {
+   "value": "2.815",
+   "raw": 2.8151918032644425,
+   "desc": "SS2D(controlled): nMSE (%), fastMRI official definition (volume-pooled), volume-level mean"
+  },
+  "OFFNMSE_SS2D_SD": {
+   "value": "0.926",
+   "raw": 0.9262130548725042,
+   "desc": "SS2D(controlled): nMSE (%), fastMRI official definition (volume-pooled), volume-level SD (ddof=1)"
+  },
+  "OFFSSIMIN_SS2D": {
+   "value": "0.9522",
+   "raw": 0.952177395829659,
+   "desc": "SS2D(controlled): official SSIM map averaged inside the brain mask, volume-level mean"
+  },
+  "OFFSSIMIN_SS2D_SD": {
+   "value": "0.0297",
+   "raw": 0.02974650880668987,
+   "desc": "SS2D(controlled): official SSIM map averaged inside the brain mask, volume-level SD (ddof=1)"
+  },
+  "OFFSSIMOUT_SS2D": {
+   "value": "0.7725",
+   "raw": 0.7725329572575216,
+   "desc": "SS2D(controlled): official SSIM map averaged outside the brain mask, volume-level mean"
+  },
+  "OFFSSIMOUT_SS2D_SD": {
+   "value": "0.0861",
+   "raw": 0.0861446995210822,
+   "desc": "SS2D(controlled): official SSIM map averaged outside the brain mask, volume-level SD (ddof=1)"
+  },
+  "FRAC_IN": {
+   "value": "0.369",
+   "raw": 0.3685549923126601,
+   "desc": "mean fraction of brain-mask pixels in the official crop (3-px border excluded)"
+  },
+  "D_SS2D_ETER_SSIM": {
+   "value": "+0.0008",
+   "raw": 0.0008287869849552117,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, SSIM inside the brain mask"
+  },
+  "D_SS2D_ETER_SSIM_ABS": {
+   "value": "0.0008",
+   "raw": 0.0008287869849552117,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), SSIM inside the brain mask"
+  },
+  "WIN_SS2D_ETER_SSIM_VOL": {
+   "value": "453/558 (81.2%)",
+   "raw": 453,
+   "desc": "volumes where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_ETER_SSIM_VOLPCT": {
+   "value": "81.2%",
+   "raw": 81.18279569892474,
+   "desc": "% of volumes where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_ETER_SSIM_SLICE": {
+   "value": "5,988/8,852 (67.6%)",
+   "raw": 5988,
+   "desc": "slices where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_ETER_SSIM_SLICEPCT": {
+   "value": "67.6%",
+   "raw": 67.64572977858111,
+   "desc": "% of slices where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "P_SS2D_ETER_SSIM": {
+   "value": "p<0.001",
+   "raw": 6.371822313282899e-58,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, SSIM inside the brain mask"
+  },
+  "D_SS2D_ETER_PSNR": {
+   "value": "+0.10",
+   "raw": 0.09736638498257445,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, PSNR (dB) inside the brain mask"
+  },
+  "D_SS2D_ETER_PSNR_ABS": {
+   "value": "0.10",
+   "raw": 0.09736638498257445,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_PSNR_VOL": {
+   "value": "482/558 (86.4%)",
+   "raw": 482,
+   "desc": "volumes where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_PSNR_VOLPCT": {
+   "value": "86.4%",
+   "raw": 86.37992831541219,
+   "desc": "% of volumes where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_PSNR_SLICE": {
+   "value": "6,326/8,852 (71.5%)",
+   "raw": 6326,
+   "desc": "slices where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_PSNR_SLICEPCT": {
+   "value": "71.5%",
+   "raw": 71.46407591504745,
+   "desc": "% of slices where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "P_SS2D_ETER_PSNR": {
+   "value": "p<0.001",
+   "raw": 3.9373773511142975e-61,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, PSNR (dB) inside the brain mask"
+  },
+  "D_SS2D_ETER_NMSE": {
+   "value": "−0.007",
+   "raw": -0.007235221562991006,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, nMSE (%) inside the brain mask"
+  },
+  "D_SS2D_ETER_NMSE_ABS": {
+   "value": "0.007",
+   "raw": 0.007235221562991006,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_NMSE_VOL": {
+   "value": "486/558 (87.1%)",
+   "raw": 486,
+   "desc": "volumes where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_NMSE_VOLPCT": {
+   "value": "87.1%",
+   "raw": 87.09677419354838,
+   "desc": "% of volumes where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_NMSE_SLICE": {
+   "value": "6,326/8,852 (71.5%)",
+   "raw": 6326,
+   "desc": "slices where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_ETER_NMSE_SLICEPCT": {
+   "value": "71.5%",
+   "raw": 71.46407591504745,
+   "desc": "% of slices where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "P_SS2D_ETER_NMSE": {
+   "value": "p<0.001",
+   "raw": 2.0920851150331026e-59,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, nMSE (%) inside the brain mask"
+  },
+  "D_SS2D_ETER_OFFSSIM": {
+   "value": "−0.0262",
+   "raw": -0.026228440713402527,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, SSIM, fastMRI official definition"
+  },
+  "D_SS2D_ETER_OFFSSIM_ABS": {
+   "value": "0.0262",
+   "raw": 0.026228440713402527,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_ETER_OFFSSIM_VOL": {
+   "value": "80/558 (14.3%)",
+   "raw": 80,
+   "desc": "volumes where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_ETER_OFFSSIM_VOLPCT": {
+   "value": "14.3%",
+   "raw": 14.336917562724015,
+   "desc": "% of volumes where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_ETER_OFFSSIM_SLICE": {
+   "value": "2,167/8,852 (24.5%)",
+   "raw": 2167,
+   "desc": "slices where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_ETER_OFFSSIM_SLICEPCT": {
+   "value": "24.5%",
+   "raw": 24.48034342521464,
+   "desc": "% of slices where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "P_SS2D_ETER_OFFSSIM": {
+   "value": "p<0.001",
+   "raw": 4.924182958603724e-79,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, SSIM, fastMRI official definition"
+  },
+  "D_SS2D_ETER_OFFPSNR": {
+   "value": "−0.84",
+   "raw": -0.8378470020664165,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_ETER_OFFPSNR_ABS": {
+   "value": "0.84",
+   "raw": 0.8378470020664165,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_ETER_OFFPSNR_VOL": {
+   "value": "114/558 (20.4%)",
+   "raw": 114,
+   "desc": "volumes where SS2D(controlled) is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_ETER_OFFPSNR_VOLPCT": {
+   "value": "20.4%",
+   "raw": 20.43010752688172,
+   "desc": "% of volumes where SS2D(controlled) is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "P_SS2D_ETER_OFFPSNR": {
+   "value": "p<0.001",
+   "raw": 3.933679548222935e-58,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_ETER_OFFNMSE": {
+   "value": "+0.512",
+   "raw": 0.5120023153926503,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_ETER_OFFNMSE_ABS": {
+   "value": "0.512",
+   "raw": 0.5120023153926503,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_ETER_OFFNMSE_VOL": {
+   "value": "114/558 (20.4%)",
+   "raw": 114,
+   "desc": "volumes where SS2D(controlled) is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_ETER_OFFNMSE_VOLPCT": {
+   "value": "20.4%",
+   "raw": 20.43010752688172,
+   "desc": "% of volumes where SS2D(controlled) is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "P_SS2D_ETER_OFFNMSE": {
+   "value": "p<0.001",
+   "raw": 2.63866833370655e-62,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_ETER_OFFSSIMIN": {
+   "value": "+0.0005",
+   "raw": 0.0005218138196404728,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, official SSIM map averaged inside the brain mask"
+  },
+  "D_SS2D_ETER_OFFSSIMIN_ABS": {
+   "value": "0.0005",
+   "raw": 0.0005218138196404728,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), official SSIM map averaged inside the brain mask"
+  },
+  "WIN_SS2D_ETER_OFFSSIMIN_VOL": {
+   "value": "456/558 (81.7%)",
+   "raw": 456,
+   "desc": "volumes where SS2D(controlled) is better, official SSIM map averaged inside the brain mask"
+  },
+  "WIN_SS2D_ETER_OFFSSIMIN_VOLPCT": {
+   "value": "81.7%",
+   "raw": 81.72043010752688,
+   "desc": "% of volumes where SS2D(controlled) is better, official SSIM map averaged inside the brain mask"
+  },
+  "P_SS2D_ETER_OFFSSIMIN": {
+   "value": "p<0.001",
+   "raw": 1.5901563792535556e-55,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, official SSIM map averaged inside the brain mask"
+  },
+  "D_SS2D_ETER_OFFSSIMOUT": {
+   "value": "−0.0398",
+   "raw": -0.03981094315219476,
+   "desc": "SS2D(controlled) − ETER-net: mean paired difference, official SSIM map averaged outside the brain mask"
+  },
+  "D_SS2D_ETER_OFFSSIMOUT_ABS": {
+   "value": "0.0398",
+   "raw": 0.03981094315219476,
+   "desc": "absolute value of (SS2D(controlled) − ETER-net), official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_ETER_OFFSSIMOUT_VOL": {
+   "value": "73/558 (13.1%)",
+   "raw": 73,
+   "desc": "volumes where SS2D(controlled) is better, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_ETER_OFFSSIMOUT_VOLPCT": {
+   "value": "13.1%",
+   "raw": 13.082437275985663,
+   "desc": "% of volumes where SS2D(controlled) is better, official SSIM map averaged outside the brain mask"
+  },
+  "P_SS2D_ETER_OFFSSIMOUT": {
+   "value": "p<0.001",
+   "raw": 2.2413421354080198e-80,
+   "desc": "SS2D(controlled) − ETER-net: volume-level two-sided Wilcoxon p, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_ETER_VOL": {
+   "value": "453/558 (81.2%)",
+   "raw": 453,
+   "desc": "alias of WIN_SS2D_ETER_SSIM_VOL (mask SSIM)"
+  },
+  "WIN_SS2D_ETER_SLICE": {
+   "value": "5,988/8,852 (67.6%)",
+   "raw": 5988,
+   "desc": "alias of WIN_SS2D_ETER_SSIM_SLICE (mask SSIM)"
+  },
+  "DECOMP_SS2D_ETER_IN": {
+   "value": "+0.0002",
+   "raw": 0.00019231708828623423,
+   "desc": "SS2D(controlled) − ETER-net: approximate decomposition — FRAC_IN × Δ official SSIM map inside the brain"
+  },
+  "DECOMP_SS2D_ETER_OUT": {
+   "value": "−0.0251",
+   "raw": -0.02513842130477787,
+   "desc": "SS2D(controlled) − ETER-net: approximate decomposition — (1 − FRAC_IN) × Δ official SSIM map outside the brain"
+  },
+  "DECOMP_SS2D_ETER_OUTSHARE": {
+   "value": "96%",
+   "raw": 0.9584413186992217,
+   "desc": "SS2D(controlled) − ETER-net: approximate share — outside term / Δ official SSIM"
+  },
+  "D_UNET_ETER_SSIM": {
+   "value": "+0.0022",
+   "raw": 0.0022291738370964096,
+   "desc": "U-Net only − ETER-net: mean paired difference, SSIM inside the brain mask"
+  },
+  "D_UNET_ETER_SSIM_ABS": {
+   "value": "0.0022",
+   "raw": 0.0022291738370964096,
+   "desc": "absolute value of (U-Net only − ETER-net), SSIM inside the brain mask"
+  },
+  "WIN_UNET_ETER_SSIM_VOL": {
+   "value": "556/558 (99.6%)",
+   "raw": 556,
+   "desc": "volumes where U-Net only is better, SSIM inside the brain mask"
+  },
+  "WIN_UNET_ETER_SSIM_VOLPCT": {
+   "value": "99.6%",
+   "raw": 99.6415770609319,
+   "desc": "% of volumes where U-Net only is better, SSIM inside the brain mask"
+  },
+  "WIN_UNET_ETER_SSIM_SLICE": {
+   "value": "8,058/8,852 (91.0%)",
+   "raw": 8058,
+   "desc": "slices where U-Net only is better, SSIM inside the brain mask"
+  },
+  "WIN_UNET_ETER_SSIM_SLICEPCT": {
+   "value": "91.0%",
+   "raw": 91.03027564392228,
+   "desc": "% of slices where U-Net only is better, SSIM inside the brain mask"
+  },
+  "P_UNET_ETER_SSIM": {
+   "value": "p<0.001",
+   "raw": 7.253804756049479e-92,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, SSIM inside the brain mask"
+  },
+  "D_UNET_ETER_PSNR": {
+   "value": "+0.23",
+   "raw": 0.22715042372534447,
+   "desc": "U-Net only − ETER-net: mean paired difference, PSNR (dB) inside the brain mask"
+  },
+  "D_UNET_ETER_PSNR_ABS": {
+   "value": "0.23",
+   "raw": 0.22715042372534447,
+   "desc": "absolute value of (U-Net only − ETER-net), PSNR (dB) inside the brain mask"
+  },
+  "WIN_UNET_ETER_PSNR_VOL": {
+   "value": "542/558 (97.1%)",
+   "raw": 542,
+   "desc": "volumes where U-Net only is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_UNET_ETER_PSNR_VOLPCT": {
+   "value": "97.1%",
+   "raw": 97.1326164874552,
+   "desc": "% of volumes where U-Net only is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_UNET_ETER_PSNR_SLICE": {
+   "value": "7,809/8,852 (88.2%)",
+   "raw": 7809,
+   "desc": "slices where U-Net only is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_UNET_ETER_PSNR_SLICEPCT": {
+   "value": "88.2%",
+   "raw": 88.217352010845,
+   "desc": "% of slices where U-Net only is better, PSNR (dB) inside the brain mask"
+  },
+  "P_UNET_ETER_PSNR": {
+   "value": "p<0.001",
+   "raw": 1.2307495290558067e-85,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, PSNR (dB) inside the brain mask"
+  },
+  "D_UNET_ETER_NMSE": {
+   "value": "−0.017",
+   "raw": -0.017176449715349103,
+   "desc": "U-Net only − ETER-net: mean paired difference, nMSE (%) inside the brain mask"
+  },
+  "D_UNET_ETER_NMSE_ABS": {
+   "value": "0.017",
+   "raw": 0.017176449715349103,
+   "desc": "absolute value of (U-Net only − ETER-net), nMSE (%) inside the brain mask"
+  },
+  "WIN_UNET_ETER_NMSE_VOL": {
+   "value": "544/558 (97.5%)",
+   "raw": 544,
+   "desc": "volumes where U-Net only is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_UNET_ETER_NMSE_VOLPCT": {
+   "value": "97.5%",
+   "raw": 97.4910394265233,
+   "desc": "% of volumes where U-Net only is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_UNET_ETER_NMSE_SLICE": {
+   "value": "7,809/8,852 (88.2%)",
+   "raw": 7809,
+   "desc": "slices where U-Net only is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_UNET_ETER_NMSE_SLICEPCT": {
+   "value": "88.2%",
+   "raw": 88.217352010845,
+   "desc": "% of slices where U-Net only is better, nMSE (%) inside the brain mask"
+  },
+  "P_UNET_ETER_NMSE": {
+   "value": "p<0.001",
+   "raw": 7.975350689572454e-85,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, nMSE (%) inside the brain mask"
+  },
+  "D_UNET_ETER_OFFSSIM": {
+   "value": "+0.0313",
+   "raw": 0.03129195389886658,
+   "desc": "U-Net only − ETER-net: mean paired difference, SSIM, fastMRI official definition"
+  },
+  "D_UNET_ETER_OFFSSIM_ABS": {
+   "value": "0.0313",
+   "raw": 0.03129195389886658,
+   "desc": "absolute value of (U-Net only − ETER-net), SSIM, fastMRI official definition"
+  },
+  "WIN_UNET_ETER_OFFSSIM_VOL": {
+   "value": "557/558 (99.8%)",
+   "raw": 557,
+   "desc": "volumes where U-Net only is better, SSIM, fastMRI official definition"
+  },
+  "WIN_UNET_ETER_OFFSSIM_VOLPCT": {
+   "value": "99.8%",
+   "raw": 99.82078853046595,
+   "desc": "% of volumes where U-Net only is better, SSIM, fastMRI official definition"
+  },
+  "WIN_UNET_ETER_OFFSSIM_SLICE": {
+   "value": "8,673/8,852 (98.0%)",
+   "raw": 8673,
+   "desc": "slices where U-Net only is better, SSIM, fastMRI official definition"
+  },
+  "WIN_UNET_ETER_OFFSSIM_SLICEPCT": {
+   "value": "98.0%",
+   "raw": 97.97785811116132,
+   "desc": "% of slices where U-Net only is better, SSIM, fastMRI official definition"
+  },
+  "P_UNET_ETER_OFFSSIM": {
+   "value": "p<0.001",
+   "raw": 4.4063718007411735e-93,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, SSIM, fastMRI official definition"
+  },
+  "D_UNET_ETER_OFFPSNR": {
+   "value": "+1.93",
+   "raw": 1.9342497779617656,
+   "desc": "U-Net only − ETER-net: mean paired difference, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_UNET_ETER_OFFPSNR_ABS": {
+   "value": "1.93",
+   "raw": 1.9342497779617656,
+   "desc": "absolute value of (U-Net only − ETER-net), PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_UNET_ETER_OFFPSNR_VOL": {
+   "value": "557/558 (99.8%)",
+   "raw": 557,
+   "desc": "volumes where U-Net only is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_UNET_ETER_OFFPSNR_VOLPCT": {
+   "value": "99.8%",
+   "raw": 99.82078853046595,
+   "desc": "% of volumes where U-Net only is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "P_UNET_ETER_OFFPSNR": {
+   "value": "p<0.001",
+   "raw": 4.335771087215769e-93,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_UNET_ETER_OFFNMSE": {
+   "value": "−0.800",
+   "raw": -0.799683659864861,
+   "desc": "U-Net only − ETER-net: mean paired difference, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_UNET_ETER_OFFNMSE_ABS": {
+   "value": "0.800",
+   "raw": 0.799683659864861,
+   "desc": "absolute value of (U-Net only − ETER-net), nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_UNET_ETER_OFFNMSE_VOL": {
+   "value": "557/558 (99.8%)",
+   "raw": 557,
+   "desc": "volumes where U-Net only is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_UNET_ETER_OFFNMSE_VOLPCT": {
+   "value": "99.8%",
+   "raw": 99.82078853046595,
+   "desc": "% of volumes where U-Net only is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "P_UNET_ETER_OFFNMSE": {
+   "value": "p<0.001",
+   "raw": 4.625129641337592e-93,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_UNET_ETER_OFFSSIMIN": {
+   "value": "+0.0016",
+   "raw": 0.0015914322955850589,
+   "desc": "U-Net only − ETER-net: mean paired difference, official SSIM map averaged inside the brain mask"
+  },
+  "D_UNET_ETER_OFFSSIMIN_ABS": {
+   "value": "0.0016",
+   "raw": 0.0015914322955850589,
+   "desc": "absolute value of (U-Net only − ETER-net), official SSIM map averaged inside the brain mask"
+  },
+  "WIN_UNET_ETER_OFFSSIMIN_VOL": {
+   "value": "554/558 (99.3%)",
+   "raw": 554,
+   "desc": "volumes where U-Net only is better, official SSIM map averaged inside the brain mask"
+  },
+  "WIN_UNET_ETER_OFFSSIMIN_VOLPCT": {
+   "value": "99.3%",
+   "raw": 99.2831541218638,
+   "desc": "% of volumes where U-Net only is better, official SSIM map averaged inside the brain mask"
+  },
+  "P_UNET_ETER_OFFSSIMIN": {
+   "value": "p<0.001",
+   "raw": 1.0433654636976104e-91,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, official SSIM map averaged inside the brain mask"
+  },
+  "D_UNET_ETER_OFFSSIMOUT": {
+   "value": "+0.0469",
+   "raw": 0.04685366864919925,
+   "desc": "U-Net only − ETER-net: mean paired difference, official SSIM map averaged outside the brain mask"
+  },
+  "D_UNET_ETER_OFFSSIMOUT_ABS": {
+   "value": "0.0469",
+   "raw": 0.04685366864919925,
+   "desc": "absolute value of (U-Net only − ETER-net), official SSIM map averaged outside the brain mask"
+  },
+  "WIN_UNET_ETER_OFFSSIMOUT_VOL": {
+   "value": "557/558 (99.8%)",
+   "raw": 557,
+   "desc": "volumes where U-Net only is better, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_UNET_ETER_OFFSSIMOUT_VOLPCT": {
+   "value": "99.8%",
+   "raw": 99.82078853046595,
+   "desc": "% of volumes where U-Net only is better, official SSIM map averaged outside the brain mask"
+  },
+  "P_UNET_ETER_OFFSSIMOUT": {
+   "value": "p<0.001",
+   "raw": 4.430159314479983e-93,
+   "desc": "U-Net only − ETER-net: volume-level two-sided Wilcoxon p, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_UNET_ETER_VOL": {
+   "value": "556/558 (99.6%)",
+   "raw": 556,
+   "desc": "alias of WIN_UNET_ETER_SSIM_VOL (mask SSIM)"
+  },
+  "WIN_UNET_ETER_SLICE": {
+   "value": "8,058/8,852 (91.0%)",
+   "raw": 8058,
+   "desc": "alias of WIN_UNET_ETER_SSIM_SLICE (mask SSIM)"
+  },
+  "DECOMP_UNET_ETER_IN": {
+   "value": "+0.0006",
+   "raw": 0.0005865303174654704,
+   "desc": "U-Net only − ETER-net: approximate decomposition — FRAC_IN × Δ official SSIM map inside the brain"
+  },
+  "DECOMP_UNET_ETER_OUT": {
+   "value": "+0.0296",
+   "raw": 0.029585515160373697,
+   "desc": "U-Net only − ETER-net: approximate decomposition — (1 − FRAC_IN) × Δ official SSIM map outside the brain"
+  },
+  "DECOMP_UNET_ETER_OUTSHARE": {
+   "value": "95%",
+   "raw": 0.9454671720401999,
+   "desc": "U-Net only − ETER-net: approximate share — outside term / Δ official SSIM"
+  },
+  "D_SS2D_UNET_SSIM": {
+   "value": "−0.0014",
+   "raw": -0.001400386852141198,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, SSIM inside the brain mask"
+  },
+  "D_SS2D_UNET_SSIM_ABS": {
+   "value": "0.0014",
+   "raw": 0.001400386852141198,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), SSIM inside the brain mask"
+  },
+  "WIN_SS2D_UNET_SSIM_VOL": {
+   "value": "12/558 (2.2%)",
+   "raw": 12,
+   "desc": "volumes where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_UNET_SSIM_VOLPCT": {
+   "value": "2.2%",
+   "raw": 2.150537634408602,
+   "desc": "% of volumes where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_UNET_SSIM_SLICE": {
+   "value": "1,298/8,852 (14.7%)",
+   "raw": 1298,
+   "desc": "slices where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "WIN_SS2D_UNET_SSIM_SLICEPCT": {
+   "value": "14.7%",
+   "raw": 14.663352914595572,
+   "desc": "% of slices where SS2D(controlled) is better, SSIM inside the brain mask"
+  },
+  "P_SS2D_UNET_SSIM": {
+   "value": "p<0.001",
+   "raw": 2.891538135489767e-91,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, SSIM inside the brain mask"
+  },
+  "D_SS2D_UNET_PSNR": {
+   "value": "−0.13",
+   "raw": -0.12978403874277,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, PSNR (dB) inside the brain mask"
+  },
+  "D_SS2D_UNET_PSNR_ABS": {
+   "value": "0.13",
+   "raw": 0.12978403874277,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_PSNR_VOL": {
+   "value": "44/558 (7.9%)",
+   "raw": 44,
+   "desc": "volumes where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_PSNR_VOLPCT": {
+   "value": "7.9%",
+   "raw": 7.885304659498208,
+   "desc": "% of volumes where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_PSNR_SLICE": {
+   "value": "2,019/8,852 (22.8%)",
+   "raw": 2019,
+   "desc": "slices where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_PSNR_SLICEPCT": {
+   "value": "22.8%",
+   "raw": 22.80840488025305,
+   "desc": "% of slices where SS2D(controlled) is better, PSNR (dB) inside the brain mask"
+  },
+  "P_SS2D_UNET_PSNR": {
+   "value": "p<0.001",
+   "raw": 4.929403380286179e-75,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, PSNR (dB) inside the brain mask"
+  },
+  "D_SS2D_UNET_NMSE": {
+   "value": "+0.010",
+   "raw": 0.0099412281523581,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, nMSE (%) inside the brain mask"
+  },
+  "D_SS2D_UNET_NMSE_ABS": {
+   "value": "0.010",
+   "raw": 0.0099412281523581,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_NMSE_VOL": {
+   "value": "47/558 (8.4%)",
+   "raw": 47,
+   "desc": "volumes where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_NMSE_VOLPCT": {
+   "value": "8.4%",
+   "raw": 8.422939068100359,
+   "desc": "% of volumes where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_NMSE_SLICE": {
+   "value": "2,019/8,852 (22.8%)",
+   "raw": 2019,
+   "desc": "slices where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "WIN_SS2D_UNET_NMSE_SLICEPCT": {
+   "value": "22.8%",
+   "raw": 22.80840488025305,
+   "desc": "% of slices where SS2D(controlled) is better, nMSE (%) inside the brain mask"
+  },
+  "P_SS2D_UNET_NMSE": {
+   "value": "p<0.001",
+   "raw": 2.552099970121062e-68,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, nMSE (%) inside the brain mask"
+  },
+  "D_SS2D_UNET_OFFSSIM": {
+   "value": "−0.0575",
+   "raw": -0.057520394612269106,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, SSIM, fastMRI official definition"
+  },
+  "D_SS2D_UNET_OFFSSIM_ABS": {
+   "value": "0.0575",
+   "raw": 0.057520394612269106,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_UNET_OFFSSIM_VOL": {
+   "value": "0/558 (0.0%)",
+   "raw": 0,
+   "desc": "volumes where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_UNET_OFFSSIM_VOLPCT": {
+   "value": "0.0%",
+   "raw": 0.0,
+   "desc": "% of volumes where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_UNET_OFFSSIM_SLICE": {
+   "value": "346/8,852 (3.9%)",
+   "raw": 346,
+   "desc": "slices where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "WIN_SS2D_UNET_OFFSSIM_SLICEPCT": {
+   "value": "3.9%",
+   "raw": 3.9087211929507455,
+   "desc": "% of slices where SS2D(controlled) is better, SSIM, fastMRI official definition"
+  },
+  "P_SS2D_UNET_OFFSSIM": {
+   "value": "p<0.001",
+   "raw": 4.289332036883348e-93,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, SSIM, fastMRI official definition"
+  },
+  "D_SS2D_UNET_OFFPSNR": {
+   "value": "−2.77",
+   "raw": -2.7720967800281815,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_UNET_OFFPSNR_ABS": {
+   "value": "2.77",
+   "raw": 2.7720967800281815,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_UNET_OFFPSNR_VOL": {
+   "value": "0/558 (0.0%)",
+   "raw": 0,
+   "desc": "volumes where SS2D(controlled) is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_UNET_OFFPSNR_VOLPCT": {
+   "value": "0.0%",
+   "raw": 0.0,
+   "desc": "% of volumes where SS2D(controlled) is better, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "P_SS2D_UNET_OFFPSNR": {
+   "value": "p<0.001",
+   "raw": 4.289332036883348e-93,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, PSNR (dB), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_UNET_OFFNMSE": {
+   "value": "+1.312",
+   "raw": 1.3116859752575112,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_UNET_OFFNMSE_ABS": {
+   "value": "1.312",
+   "raw": 1.3116859752575112,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_UNET_OFFNMSE_VOL": {
+   "value": "0/558 (0.0%)",
+   "raw": 0,
+   "desc": "volumes where SS2D(controlled) is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "WIN_SS2D_UNET_OFFNMSE_VOLPCT": {
+   "value": "0.0%",
+   "raw": 0.0,
+   "desc": "% of volumes where SS2D(controlled) is better, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "P_SS2D_UNET_OFFNMSE": {
+   "value": "p<0.001",
+   "raw": 4.289332036883348e-93,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, nMSE (%), fastMRI official definition (volume-pooled)"
+  },
+  "D_SS2D_UNET_OFFSSIMIN": {
+   "value": "−0.0011",
+   "raw": -0.0010696184759445859,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, official SSIM map averaged inside the brain mask"
+  },
+  "D_SS2D_UNET_OFFSSIMIN_ABS": {
+   "value": "0.0011",
+   "raw": 0.0010696184759445859,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), official SSIM map averaged inside the brain mask"
+  },
+  "WIN_SS2D_UNET_OFFSSIMIN_VOL": {
+   "value": "11/558 (2.0%)",
+   "raw": 11,
+   "desc": "volumes where SS2D(controlled) is better, official SSIM map averaged inside the brain mask"
+  },
+  "WIN_SS2D_UNET_OFFSSIMIN_VOLPCT": {
+   "value": "2.0%",
+   "raw": 1.971326164874552,
+   "desc": "% of volumes where SS2D(controlled) is better, official SSIM map averaged inside the brain mask"
+  },
+  "P_SS2D_UNET_OFFSSIMIN": {
+   "value": "p<0.001",
+   "raw": 1.173498914730466e-91,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, official SSIM map averaged inside the brain mask"
+  },
+  "D_SS2D_UNET_OFFSSIMOUT": {
+   "value": "−0.0867",
+   "raw": -0.086664611801394,
+   "desc": "SS2D(controlled) − U-Net only: mean paired difference, official SSIM map averaged outside the brain mask"
+  },
+  "D_SS2D_UNET_OFFSSIMOUT_ABS": {
+   "value": "0.0867",
+   "raw": 0.086664611801394,
+   "desc": "absolute value of (SS2D(controlled) − U-Net only), official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_UNET_OFFSSIMOUT_VOL": {
+   "value": "0/558 (0.0%)",
+   "raw": 0,
+   "desc": "volumes where SS2D(controlled) is better, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_UNET_OFFSSIMOUT_VOLPCT": {
+   "value": "0.0%",
+   "raw": 0.0,
+   "desc": "% of volumes where SS2D(controlled) is better, official SSIM map averaged outside the brain mask"
+  },
+  "P_SS2D_UNET_OFFSSIMOUT": {
+   "value": "p<0.001",
+   "raw": 4.289332036883348e-93,
+   "desc": "SS2D(controlled) − U-Net only: volume-level two-sided Wilcoxon p, official SSIM map averaged outside the brain mask"
+  },
+  "WIN_SS2D_UNET_VOL": {
+   "value": "12/558 (2.2%)",
+   "raw": 12,
+   "desc": "alias of WIN_SS2D_UNET_SSIM_VOL (mask SSIM)"
+  },
+  "WIN_SS2D_UNET_SLICE": {
+   "value": "1,298/8,852 (14.7%)",
+   "raw": 1298,
+   "desc": "alias of WIN_SS2D_UNET_SSIM_SLICE (mask SSIM)"
+  },
+  "DECOMP_SS2D_UNET_IN": {
+   "value": "−0.0004",
+   "raw": -0.00039421322917923606,
+   "desc": "SS2D(controlled) − U-Net only: approximate decomposition — FRAC_IN × Δ official SSIM map inside the brain"
+  },
+  "DECOMP_SS2D_UNET_OUT": {
+   "value": "−0.0547",
+   "raw": -0.054723936465151564,
+   "desc": "SS2D(controlled) − U-Net only: approximate decomposition — (1 − FRAC_IN) × Δ official SSIM map outside the brain"
+  },
+  "DECOMP_SS2D_UNET_OUTSHARE": {
+   "value": "95%",
+   "raw": 0.9513831891111356,
+   "desc": "SS2D(controlled) − U-Net only: approximate share — outside term / Δ official SSIM"
+  },
+  "PARAMS_GRUMOD": {
+   "value": "637.1",
+   "raw": 637102080,
+   "desc": "bi-GRU module of ETER-net (gru_h + gru_v), parameters (M) — state_dict element count of logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/pure_gru_best.pt"
+  },
+  "PARAMS_GRUMOD_EXACT": {
+   "value": "637,102,080",
+   "raw": 637102080,
+   "desc": "bi-GRU module, exact parameter count (gru_h 371,635,200 + gru_v 265,466,880)"
+  },
+  "PARAMS_SS2DMOD": {
+   "value": "0.12",
+   "raw": 116564,
+   "desc": "SS2D module (ss2d.*), parameters (M) — state_dict element count of logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/pure_ss2d_best.pt"
+  },
+  "PARAMS_SS2DMOD_EXACT": {
+   "value": "116,564",
+   "raw": 116564,
+   "desc": "SS2D module, exact parameter count"
+  },
+  "PARAMS_UNETBODY": {
+   "value": "31.1",
+   "raw": 31060021,
+   "desc": "U-Net (unet.*), parameters (M); identical in the three models (31,060,021)"
+  },
+  "PARAMS_RATIO_UNET": {
+   "value": "1/21",
+   "raw": 21.485530546623796,
+   "desc": "U-Net only parameters relative to ETER-net, 1/(PARAMS_ETER/PARAMS_UNET) rounded to an integer (668.2/31.1 = 21.49)"
+  },
+  "PARAMS_RATIO_SS2D": {
+   "value": "1/21",
+   "raw": 21.416666666666668,
+   "desc": "SS2D(controlled) parameters relative to ETER-net, 1/(PARAMS_ETER/PARAMS_SS2D) rounded to an integer (668.2/31.2 = 21.42)"
+  },
+  "FUNC_N": {
+   "value": "512",
+   "raw": 512,
+   "desc": "SS2D functional test: number of test_full slices (evenly spaced; logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/functional_ss2d.json n)"
+  },
+  "FUNC_RMS": {
+   "value": "0.0057",
+   "raw": 0.00570065443389467,
+   "desc": "SS2D functional test: RMS of the SS2D module output as fed to the U-Net (20 channels; learned feature after LayerNorm/Linear/1x1 conv, no intensity unit), mean over slices (logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/functional_ss2d.json seq_out_rms_mean)"
+  },
+  "FUNC_SHUFFLE_DROP": {
+   "value": "0.00047",
+   "raw": 0.0004724795580841601,
+   "desc": "SS2D functional test: mean SSIM drop (normal − test) when the SS2D module output is replaced with that of a slice from another volume (logs/runpod_mirror_pod3/results/v8fix_s1_fullval_test_full/functional_ss2d.json tests.shuffle_cross.mean)"
+  },
+  "FUNC_SHUFFLE_DROP_SE": {
+   "value": "0.00007",
+   "raw": 7.346679851120603e-05,
+   "desc": "standard error of FUNC_SHUFFLE_DROP (tests.shuffle_cross.se)"
+  },
+  "FUNC_SHUFFLE_NDROP": {
+   "value": "374/512 (73.0%)",
+   "raw": 374,
+   "desc": "slices whose SSIM dropped in the shuffle_cross test (tests.shuffle_cross.n_pos / n)"
+  },
+  "FUNC_SHUFFLE_P": {
+   "value": "p<0.001",
+   "raw": 3.6252645374534616e-26,
+   "desc": "shuffle_cross sign-test p (tests.shuffle_cross.p_sign)"
+  },
+  "FUNC_SHUFFLE_VERDICT": {
+   "value": "used",
+   "raw": "used",
+   "desc": "shuffle_cross verdict under the pre-fixed criterion 'mean>0 & mean>2SE & sign-test p<0.01'"
+  },
+  "TRAINLOSS_UNET": {
+   "value": "0.02706",
+   "raw": 0.02706,
+   "desc": "U-Net only: training loss, mean over epoch 50 (as logged, 5 decimals; logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line train_loss)"
+  },
+  "TRAINLOSS_ETER": {
+   "value": "0.02760",
+   "raw": 0.0276,
+   "desc": "ETER-net: training loss, mean over epoch 50 (as logged, 5 decimals; logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line train_loss)"
+  },
+  "TRAINLOSS_SS2D": {
+   "value": "0.02748",
+   "raw": 0.02748,
+   "desc": "SS2D(controlled): training loss, mean over epoch 50 (as logged, 5 decimals; logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line train_loss)"
+  },
+  "TRAINLOSS_GAP_ETER": {
+   "value": "+2.0%",
+   "raw": 1.9955654101995521,
+   "desc": "ETER-net − U-Net only: epoch-50 training loss gap relative to U-Net only (from the logged 5-decimal values; log rounding allows 1.96–2.03%)"
+  },
+  "TRAINLOSS_GAP_SS2D": {
+   "value": "+1.6%",
+   "raw": 1.5521064301552114,
+   "desc": "SS2D(controlled) − U-Net only: epoch-50 training loss gap relative to U-Net only (from the logged 5-decimal values; log rounding allows 1.51–1.59%)"
+  },
+  "L1_OVER_SSIM_UNET": {
+   "value": "66.7",
+   "raw": 66.7,
+   "desc": "U-Net only: first loss term / (λ·SSIM term), epoch-50 means (logs/runpod_mirror/logs/PureETER_UNET_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line l1_over_ssim_term)"
+  },
+  "L1_OVER_SSIM_ETER": {
+   "value": "65.7",
+   "raw": 65.7,
+   "desc": "ETER-net: first loss term / (λ·SSIM term), epoch-50 means (logs/runpod_mirror/logs/PureETER_GRU_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line l1_over_ssim_term)"
+  },
+  "L1_OVER_SSIM_SS2D": {
+   "value": "66.4",
+   "raw": 66.4,
+   "desc": "SS2D(controlled): first loss term / (λ·SSIM term), epoch-50 means (logs/runpod_mirror/logs/PureETER_SS2D_noDC_R4_brain384_v8fix_s1_fullval/log.txt 'Epoch 50/50' line l1_over_ssim_term)"
+  },
+  "L1_OVER_SSIM": {
+   "value": "65.7–66.7",
+   "raw": [
+    65.7,
+    66.7
+   ],
+   "desc": "range of L1_OVER_SSIM_* over the three models (epoch 50)"
+  },
+  "L1_OVER_SSIM_APPROX": {
+   "value": "66",
+   "raw": 66.26666666666667,
+   "desc": "L1_OVER_SSIM rounded for '약 N배' (mean of the three, epoch 50)"
+  },
+  "N_TRAIN_VOL": {
+   "value": "4,110",
+   "raw": 4110,
+   "desc": "training volumes (official train split as loaded on the pod; first 'Loaded … slices total' line of the GRU and SS2D training logs)"
+  },
+  "N_TRAIN_SLICE": {
+   "value": "65,060",
+   "raw": 65060,
+   "desc": "training slices (same line)"
+  },
+  "TEST_AXT2": {
+   "value": "322/558 (57.7%)",
+   "raw": 322,
+   "desc": "test_full volumes that are AXT2 (contrast in the file name file_brain_<contrast>_…; src-dir per_volume_unet.csv)"
+  },
+  "TEST_AXT2_PCT": {
+   "value": "57.7%",
+   "raw": 57.70609318996416,
+   "desc": "% of test_full volumes that are AXT2"
+  },
+  "TEST_AXT2_PCT0": {
+   "value": "58%",
+   "raw": 57.70609318996416,
+   "desc": "TEST_AXT2_PCT rounded to an integer ('약 N%')"
+  },
+  "LAMBDA_SSIM": {
+   "value": "0.0030746",
+   "raw": 0.0030745725033895113,
+   "desc": "λ_SSIM = lambda_base / s̄ (recipe.json lambda_ssim; identical in the three runs)"
+  },
+  "LAMBDA_SSIM_SCI": {
+   "value": "3.1\\times10^{-3}",
+   "raw": 0.0030745725033895113,
+   "desc": "LAMBDA_SSIM in inline-math form ($…$)"
+  },
+  "SBAR": {
+   "value": "325.25",
+   "raw": 325.2484691441059,
+   "desc": "s̄ in the loader's ×1e6 intensity units (recipe.json s_bar.mean)"
+  },
+  "SBAR_ORIG_SCI": {
+   "value": "3.25\\times10^{-4}",
+   "raw": 0.0003252484691441059,
+   "desc": "s̄ in original intensity units (= SBAR × 1e-6), inline-math form; λ = 10^-6 / s̄ in these units"
+  },
+  "SBAR_N": {
+   "value": "64",
+   "raw": 64,
+   "desc": "number of training slices used to compute s̄ (recipe.json s_bar.n)"
+  }
+ }
+}

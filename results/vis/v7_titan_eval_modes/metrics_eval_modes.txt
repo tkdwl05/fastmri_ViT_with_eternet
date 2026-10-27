@@ -1,6 +1,6 @@
 ========== 평가 영역(full / narrow / wide) 비교 요약 ==========
 슬라이스 12개: [0, 660, 1321, 1982, 2643, 3304, 3964, 4625, 5286, 5947, 6608, 7269]
-narrow = Otsu×0.4+CC (dataloader brain_mask, 현행) · wide = Otsu×0.3+dilation5 (∪narrow) · recon = narrow-LS 정합
+narrow = Otsu×0.4+CC (dataloader brain_mask, 현행) · wide = Otsu×0.3+dilation5 (∪narrow) · recon = narrow 마스크 기준 최소제곱 강도 배율 보정
 
             모델 |  region |    SSIM (mean±std) |   PSNR dB (mean±std)
 -------------- | ------- | ------------------ | --------------------
@@ -18,6 +18,6 @@ narrow = Otsu×0.4+CC (dataloader brain_mask, 현행) · wide = Otsu×0.3+dilati
 -------------- | ------- | ------------------ | --------------------
 
 [읽는 법]
-- raw(full) SSIM 이 narrow/wide 보다 크게 높으면 = 배경(≈0)이 점수를 부풀린다는 직접 증거.
-- narrow = 뇌만 채점(현행 v7_titan), wide = 경계까지 포함. 세 값 비교로 "배경 제외" 영향 정량 확인.
-- 에러맵: row1(full) 은 배경 아티팩트까지 보임 / row2(narrow) 는 현행 / row3(wide) 는 경계 포함.
+- 마스크 미적용(full, 표의 raw 행) SSIM 이 narrow/wide 보다 크게 높으면 = 배경(≈0) 때문에 점수가 과대평가된다는 직접 증거.
+- narrow = 뇌만 대상으로 지표 계산(현행 v7_titan), wide = 경계까지 포함. 세 값 비교로 "배경 제외" 영향 정량 확인.
+- 오차 지도: row1(full) 은 배경 아티팩트까지 보임 / row2(narrow) 는 현행 / row3(wide) 는 경계 포함.

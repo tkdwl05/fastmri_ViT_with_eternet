@@ -183,7 +183,7 @@ def main():
     lines = ['========== 평가 영역(full / narrow / wide) 비교 요약 ==========',
              f'슬라이스 {len(indices)}개: {indices}',
              f'narrow = Otsu×0.4+CC (dataloader brain_mask, 현행) · '
-             f'wide = Otsu×{args.wide_otsu}+dilation{args.wide_dilate} (∪narrow) · recon = narrow-LS 정합',
+             f'wide = Otsu×{args.wide_otsu}+dilation{args.wide_dilate} (∪narrow) · recon = narrow 마스크 기준 최소제곱 강도 배율 보정',
              '',
              f'{"모델":>14s} | {"region":>7s} | {"SSIM (mean±std)":>18s} | {"PSNR dB (mean±std)":>20s}',
              f'{"-"*14} | {"-"*7} | {"-"*18} | {"-"*20}']
@@ -196,9 +196,9 @@ def main():
             lines.append(f'{name:>14s} | {region:>7s} | {np.mean(ss):>7.4f} ± {np.std(ss):<6.4f} | {np.mean(ps):>7.2f} ± {np.std(ps):<6.2f}')
         lines.append(f'{"-"*14} | {"-"*7} | {"-"*18} | {"-"*20}')
     lines += ['', '[읽는 법]',
-              '- raw(full) SSIM 이 narrow/wide 보다 크게 높으면 = 배경(≈0)이 점수를 부풀린다는 직접 증거.',
-              '- narrow = 뇌만 채점(현행 v7_titan), wide = 경계까지 포함. 세 값 비교로 "배경 제외" 영향 정량 확인.',
-              '- 에러맵: row1(full) 은 배경 아티팩트까지 보임 / row2(narrow) 는 현행 / row3(wide) 는 경계 포함.']
+              '- 마스크 미적용(full, 표의 raw 행) SSIM 이 narrow/wide 보다 크게 높으면 = 배경(≈0) 때문에 점수가 과대평가된다는 직접 증거.',
+              '- narrow = 뇌만 대상으로 지표 계산(현행 v7_titan), wide = 경계까지 포함. 세 값 비교로 "배경 제외" 영향 정량 확인.',
+              '- 오차 지도: row1(full) 은 배경 아티팩트까지 보임 / row2(narrow) 는 현행 / row3(wide) 는 경계 포함.']
     msg = '\n'.join(lines)
     print('\n' + msg)
     with open(os.path.join(args.out_dir, 'metrics_eval_modes.txt'), 'w') as f:

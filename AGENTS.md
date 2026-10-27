@@ -1,337 +1,211 @@
-<!-- 정본: AGENTS.md. CLAUDE.md 는 이 파일의 심링크 (2026-08-27, 멀티에이전트 러너 구성 — scripts/run.sh 참고). 지시 수정은 반드시 이 파일에서. -->
-# ViT-based MRI Reconstruction
+<!-- 정본: AGENTS.md. CLAUDE.md 는 이 파일의 심링크 (2026-08-27, 멀티에이전트 러너 구성 — scripts/run.sh 참고). 지시 수정은 반드시 이 파일에서. 2026-10-27: 작업 브랜치 docs/summary-2026-06-02 를 main 에 합치며 본문을 그 브랜치의 CLAUDE.md(일반 파일, 그 브랜치의 정본)로 바꾸고, 08-27 main 보충분 가운데 지금도 맞는 것을 끝의 "main 보충" 절에 옮겼다. -->
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## ⚠ 2026-10-07 학습 붕괴 발견 — 먼저 읽을 것
+
+v8(주 실험·E1·1b·U-Net 단독·pixel-GRU)과 v9 의 학습에서 **시퀀스 모듈 가중치와 U-Net 파라미터의 약 97% 가 epoch 5 이전에 0(|w|≈2e-40)으로 붕괴**했다 (원인: `main_train_pure_v8.py` 의 Adam 결합형 L2 weight_decay 3e-5 + 전역 clip 1.0 + ×1e6 강도 단위 L1; v9 트레이너도 동일). 따라서 아래에 적힌 GRU·SS2D·v9 비교 수치(0.9126/0.9140/0.9145 등)와 'SS2D ≥ GRU', 'U-Net 단독 ≈ ETER-net' 해석은 **시퀀스 모듈 효과가 아니다**. 상세·근거: `docs/v8_training_collapse_audit_2026-10-07.md`, 원자료 `results/audit_2026-10-07/`. 레시피 수정 스모크(10-08 완료, `results/smoke_recipe_fix/summary.md`): 원인 = 결합형 L2, 원 손실 균형을 유지한 DL 레시피(AdamW 분리형 감쇠·no-decay 그룹·clip 해제·슬라이스별 세기 정규화·λ_SSIM=λ/s̄)에서만 GRU 출력 사용 확인, SS2D 모듈은 전 조건 미학습. 10-08 부터 수정 레시피 트레이너 `main_train_pure_v8fix.py` 로 재실험(5 epoch 점검 → 50 epoch) — Transformer·E2·E3·radapt 재개는 보류.
 
 ## 프로젝트 개요
 
 fastMRI brain multicoil 데이터에 대한 MRI 재구성 모델 연구
-(컨트라스트는 "AXFLAIR" 단일이 아니라 AXT1/AXT1POST/AXT1PRE/AXT2/AXFLAIR 등 **혼합** — "AXFLAIR" 로만 표기하면 부정확).
+(대조도(contrast)는 "AXFLAIR" 단일이 아니라 AXT1/AXT1POST/AXT1PRE/AXT2/AXFLAIR 등 **혼합** — "AXFLAIR" 로만 표기하면 부정확).
 
-ViT 인코더 + 시퀀스 모델 디코더(GRU=ETER 또는 SS2D=Mamba) 구조가 기본 축이다. `v8_eter_pure` 갈래는
-ViT 를 아예 빼고 교수님 원본 순수 ETER-Net 위에서 시퀀스 모델(GRU vs SS2D)만 비교하는 통제실험이다.
-`v9_mamba` 갈래(unleashed/radapt)는 그 통제실험의 승자(SS2D)를 강화(게이팅·다중 잔차블록·병목 해제)해
-R4 품질을 더 밀어붙이고(unleashed), 가속률 R 일반화까지 확장(radapt)하는 **현재 운영** 트랙이다.
+교수님 원본 ETER-Net(k-space bi-GRU → U-Net) 의 **시퀀스 모듈만 치환**해 비교하는 연구다. 초기(v1~v7_titan)는
+ViT 인코더 + 시퀀스 모듈(GRU=ETER 또는 SS2D=Mamba) 하이브리드였고(역사), `v8_eter_pure` 갈래부터 ViT 를 빼고
+순수 ETER-Net 위에서 시퀀스 모듈만 바꾸는 통제 실험이 본류다 — GRU vs SS2D(완료) → 2026-09 부터 Transformer·pixel-GRU
+모델을 더한 **네 모델 통제 비교 보강 실험(현재 운영)**. `v9_mamba` 갈래(unleashed/radapt)는 v8 최고 성능 모델(SS2D)을 강화해 R4 품질
+(unleashed, 학습 완료)과 다른 가속화 계수에 대한 일반화(radapt, ep57 에서 epoch 경계 계획 정지 — 통제 비교 보강 실험 후 재개)를 미는 트랙이다.
 
-### 네 갈래 (평행 진행)
+### 트랙
 
-| 트랙 | 해상도 | GPU / conda 환경 | 상태 |
-|---|---|---|---|
-| v1~v6_x (루트) | 320×320, ViT-Small | RTX 5060Ti 8GB, `mri_env` — **옛 머신 전용, 이 저장소엔 ckpt 없음** | "복원" 단계, v6_3 채택후보(ETER v6_3 완료 여부 미문서화) |
-| v7 → v7_titan | 384×384, ViT-Base | TITAN RTX 24GB×2(단일 GPU 사용), `base` | "향상" 단계 — ETER/SS2D ep50 완주, dead-heat (완료·역사) |
-| v8_eter_pure | 384×384, ViT 없음 | TITAN RTX 24GB(단일), `base` | GRU vs SS2D 통제비교 — no-DC 쌍 완주(SS2D 완승 0.9200) = **GRU↔SS2D 비교의 최종 결론**; DC 축 폐기(비표준 확장) |
-| v9_mamba (unleashed/radapt) | 384×384, ViT 없음 | TITAN RTX 24GB(GPU0 단독), `base` | **현재 운영** — v8 승자(SS2D) 강화(게이팅·3블록·병목해제). **unleashed 80ep 완주(07-30): best 0.9203 > v8 SS2D 0.9200 목표 달성**(근소·유의, per-slice 5지표 win-rate 54~56%). radapt 는 07-30 NVML 좌초 → 08-05 재기동 → 08-07 정전대비 clean-stop(ep20, 손실 0) → **08-18 true-resume 재개**(ETA ~08-25) |
+| 트랙 | 해상도 / 구성 | 상태 |
+|---|---|---|
+| v1~v6_x (`legacy_320/`, 루트 `configs/`) | 320, ViT-Small, 이전 RTX 5060Ti 8GB·`mri_env` | 역사 — 이 저장소엔 ckpt 없음, 재현 불가 |
+| v7 → v7_titan | 384, ViT-Base + GRU/SS2D 하이브리드 | 완료 — ETER/SS2D ep50 사실상 동등 |
+| **v8_eter_pure** | 384, ViT 없음, 시퀀스 모듈 4종 | **현재 운영** — GRU vs SS2D no-DC 주 실험 완료(SSIM_m 0.9126 vs 0.9140, 시드 미고정 단일 학습; DC 요인 폐기). **1b(seed 1 50ep) 재현 안 됨: 볼륨 SSIM GRU 0.9136 vs SS2D 0.9133 → 두 모델 차이가 학습 회차 간 변동과 구분되지 않음**(10-02). **U-Net 단독(시퀀스 모듈 제거, seed 1) 0.9127 — 시퀀스 모듈 기여 ≤0.0015 로 런 간 변동 수준**(10-04). 통제 비교 보강 실험 큐 진행 중 |
+| v9_mamba unleashed / radapt | 384, ViT 없음, 강화 SS2D | unleashed 80ep 완료(SSIM_m 0.9145) · radapt ep57/80 정지(재개 = 큐 6단계) |
 
-트랙별 상세 비교표는 `docs/summary_2026-06-11.md` §2, 버전별 하이퍼파라미터는 `docs/version_evolution.md` §2 참고.
+**진행 상태·큐·ETA·E1 결과표의 단일 출처 = `docs/v8_fairness_followup_plan.md`** (여기엔 복사하지 않는다 — 금방 낡음).
+큐 요지: E1 다중 시드(25ep×3시드, 09-18 완료 — 시드 간 차이의 부호가 일관되지 않음, 두 모델 동등) → 1b 50ep seed 1 쌍 GRU→SS2D(10-02 완료 — Δ 재현 안 됨, 학습 회차 간 변동과 구분되지 않음,
+런 폴더 `_s1_50ep`) → U-Net 단독 모델(시퀀스 모듈 제거, SEED=1, 10-04 완료 — 볼륨 SSIM 0.9127, IEIE 표 1 행) → pixel-GRU(SEED=1, 10-07 완료 — 붕괴 결함 아래) → 레시피 수정 스모크(10-08 완료) → **▶ v8fix 5 epoch 점검(10-08~, U-Net 단독·GRU·SS2D)** → (사용자 결정) v8fix 50 epoch → Transformer → E3 최소-GRU → E2 LR 스윕 → radapt 재개 → 추론-only 일괄.
+각 단계 완료 후 다음 단계는 **수동 실행 시작**(자동 체인 없음 — E1 후 2.5일 유휴 재발 방지).
 
-## 핵심 문서 (docs/)
+## 작업 규칙 (사용자 결정 — 이후 모든 작업에 적용)
 
-작업 히스토리와 설계 판단의 근거를 기록한 문서들:
+- **교수님 원본 파일 무수정**: 초기 커밋 `7d4e4e0` 에서 들어온 파일(루트 `choh_train_ViT_ETER_R4regular_240916py` — 확장자 없음이 의도적 복원 상태, `scripts_legacy/*`, `dataloaders/myDataloader_*`, `configs/myConfig_choh_ViT_*`·`myConfig_temp.py`, `models/hybrid_eternet/myUNet_DF.py`·`u_choh_*`, vendored `models/mae`·`models/vit_pytorch`)은 삭제·이동·수정하지 않는다(`docs/cleanup_log.md` §6, 2026-05-20). 확장은 **새 파일 추가**로만(v8/v9 가 그렇게 했음). 출처 확인: `git log --follow --diff-filter=A --format=%h -- <path> | tail -1` 이 `7d4e4e0` 이면 원본. 프로젝트 공유 원본(`ss2d.py`·`u_choh_model_SS2D_ViT_v4.py`·`dataloader_h5_v5.py`)도 v9 이후 무수정 관례. **이미 있는 수정 3 건(모두 우리 쪽 작업, 2026-10-16 사용자 결정으로 유지·기록 — `docs/cleanup_log.md` 2026-10-16)**: `u_choh_SSIM.py`(05-22 v7_titan 평가 재설계 때 `mask=` 인자 추가, 커밋 afa89a0 — `mask=None` 은 원본과 같은 계산, v7_titan 이후 모든 학습의 마스크 SSIM 손실이 이 분기를 씀), `u_choh_model_ETER_ViT.py`·`configs/myConfig_choh_model3.py`(04-11·04-15, 규칙 이전 SS2D-ViT 작업 — 현행 v8·v9 코드는 쓰지 않음). 무수정 검사는 `git status` 가 아니라 `git diff 7d4e4e0` 기준(`v8_eter_pure/sanity_pure_v8.py` 의 `check_professor_originals`, 알려진 수정은 내용 해시로 고정).
+- **지표는 표준 지표만**(SSIM 주 평가 지표 + PSNR/nMSE/L1). 자체 설계 composite 은 보고·비교·문서에서 인용 금지(2026-08-07) — 인용 수치는 v8 SS2D 0.9140 / GRU 0.9126, v9 unleashed 0.9145(슬라이스 단위; **IEIE 초안은 2026-09-04 부터 볼륨 단위 평균(fastMRI 관례) 0.9141 / 0.9127 / 0.9146 을 대표 수치로 사용** — fastMRI 와 같은 것은 볼륨 평균뿐이고, SSIM 은 뇌 마스크 안 평균·data_range = 마스크 안 GT max−min 이라 fastMRI 공식 평가(마스크 없음·볼륨 최댓값)와 다르다(`docs/ssim_impl_compare_2026-10-15.md`) — 순위·유의성은 두 단위에서 동일, `paper/tables/ieie_table1_block.md` 첫 블록). 단, 실행 중·정지 중 트레이너의 best-ckpt 선택 기준(composite)은 학습 무결성을 위해 소급 변경하지 않는다(`log.txt` 의 `val_composite` 열은 그래서 남아 있음 — 읽되 인용하지 말 것).
+- **비교 기준 모델 = 교수님 원본 ETER-Net(GRU)**. SS2D 는 "현재 최고 성능 비교 모델"이지 기준 모델이 아니다 — 1차(주) 비교는 "각 모델 vs 원본 GRU", 모델 간 pairwise 는 2차(2026-09-02).
+- **비교 모델 이름**: 3번째 비교 모델은 문서·표·env 에서 **"Transformer"** 로 표기(구현 세부 "axial attention" 은 설계문서 안에서만). 4번째 비교 모델은 "pixel-GRU". **'팔(arm)'이라는 용어는 쓰지 않는다**(2026-09-28 사용자 결정) — 네트워크 전체는 '(비교) 모델', 교수님 원본은 '기준 모델', 바꿔 끼우는 부분은 '시퀀스 모듈'(구성·후보), 실험 한 칸은 '실험 조건'. 코드 식별자(`ARMS` env, `--arm`, 파일명 `axial_transformer_arm_design.md`)는 인터페이스라 유지.
+- **용어**: 원고·문서·메모리는 `docs/terminology_glossary.md`(2026-10-01 확정) 규칙을 따른다. 교수님 문구와 겹치는 보류 9건은 현행 유지.
+- **v1~v6(이전 8GB 머신, 320)** 결과는 384 서버 트랙의 근거·비교 대상으로 쓰지 않는다(역사 기록 전용). v5 는 비정상 조기종료라 baseline 에서도 제외.
+- **GPU 사용 범위** — 2026-10-10 교수님 허락으로 **GPU0·GPU1 모두 사용 가능**(그전에는 GPU0 단독, GPU1 = 교수님 작업용). 단, 현재 컨테이너는 GPU0 만 노출되어 있어(08-31 재구성 때 UUID·디바이스 노드로 GPU0 만 지정) GPU1 을 쓰려면 호스트에서 컨테이너를 다시 만들어야 한다(`infra/docker/RUNBOOK.md`). 큐 순서를 바꾸면 `docs/v8_fairness_followup_plan.md` 의 큐 표부터 갱신.
+- **실행 중 런의 코드 편집 금지**: GPU0 런이 도는 동안 그 런의 트레이너·공유 config·런처 `*.sh` 를 고치지 않는다 — 트레이너/config 는 supervisor 재시작 시 새 코드로 반영되고, bash 는 실행 중 스크립트를 이어서 읽는다.
+- **활성 런 보호**: 정리·이동·삭제 시 진행 중 런 폴더(`logs/PureETER_*_v8_s*/`, `v8_eter_pure/runs/multiseed/`, 활성 `wandb/run-*`)와 radapt 정지 ckpt(`logs/PureETER_SS2D_V9_radapt_multiAR_brain384/`)는 건드리지 않는다. 파일 삭제는 `docs/cleanup_log.md` 에 날짜별로 기록.
+- **git**: `*.sh` 는 기본 무시(예외 = `.gitignore` 화이트리스트: `infra/docker/*.sh`·`v9_mamba_radapt/runs/{post_reboot_rearm,clean_stop_pre_outage,snapshot_pre_outage}.sh`) — 런처 스크립트는 로컬 전용이므로 재현 절차는 문서/CLAUDE.md 에 적는다. 커밋 prefix 관례 `paper:`/`docs:`/`v8:`/`infra:`/`viz:`/`feat:`. 작업 브랜치 `docs/summary-2026-06-02`(main 보다 앞섬, 주기적으로 main 에 merge). 인증은 SSH(§환경).
 
-- **[docs/presentation_overview.md](docs/presentation_overview.md)** — **발표용 통합본**. v1 → v6 → v6_3 까지의 전체 흐름, 두 차례 핵심 발견 (① custom SSIM metric 버그, ② visual-metric gap), Tier 1 (TTA/앙상블) 와 Tier 2 (v6_1/v6_2/v6_3 fine-tune) 결과 정리. **본문(§1~§8)은 2026-05-28 시점 v6_3 까지로 고정**(v6_3 SS2D best val SSIM 0.8924 / PSNR 36.05 dB, ETER v6_3 진행 중 — 완료 여부 미문서화). 발표 5분 요약은 §6.3. **갱신 2026-07-08**: §9 에 v7_titan/v8_eter_pure 확장 트랙 요약 + 문서 포인터 추가.
-- **[docs/version_evolution.md](docs/version_evolution.md)** — **버전 변천 통합본 (V4→V6→V7)**. SS2D/ETER 하이퍼파라미터 비교표(config ground-truth) + 전환별 무엇/왜/결과 + 두 핵심발견(① custom SSIM 버그, ② visual-metric gap) + raw(v6)↔masked(v7_titan) 비교 주의 + v7 vs v7_titan 구분. 흩어진 `*_changes.md` 의 단일 비교 진입점. **2026-06-16 작성** (SS2D v7_titan ep50 완주 0.9127/0.9083 = ETER 와 dead-heat 반영).
-- **[docs/architecture_ETER_vs_SS2D.md](docs/architecture_ETER_vs_SS2D.md)** — ETER-ViT(GRU)와 SS2D-ViT(Mamba) 아키텍처 상세 비교. 공통 파이프라인, 인코더/디코더 구조, 설정값, 학습 조건을 정리.
-- **[docs/ss2d_v4_changes.md](docs/ss2d_v4_changes.md)** — SS2D v4에서 A(SS2D capacity 증설) + B(weight_decay/dropout) + C(1-iter soft Data Consistency block) 세 축을 동시 적용한 내역. `_v4` 접미사 신규 파일 5개(config/dataloader/model/train/chain), DC block 파이프라인, FFT AMP 처리, 체인 예약. §8: 첫 batch OOM 사후 수정(SS2D forward gradient checkpointing).
-- **[docs/eter_v4_analysis.md](docs/eter_v4_analysis.md)** — ETER v4 200ep 결과 분석. v3(0.7475) 대비 v4 best val SSIM 0.7320 회귀, ep 30~40에 피크 후 단조 감소. 회귀 원인 가설(WarmRestarts 부재 / capacity ceiling / EarlyStopping 부재) 및 v5 계획(EarlyStop, weight_decay↑, dropout↑).
-- **[docs/ss2d_v5_changes.md](docs/ss2d_v5_changes.md)** — SS2D v5: dataloader 사이즈 필터 완화(crop/pad → train +67%, val 7270 = U-Net 평가셋과 동일), Transformer dropout 0.1→0.2, weight_decay 1e-5→3e-5, H/V flip aug, EarlyStopping(patience=5 val check). 모델 코드는 v4 그대로 import.
-- **[docs/eter_v5_changes.md](docs/eter_v5_changes.md)** — ETER v5: SS2D v5 와 동일 레시피(공유 dataloader_h5_v5, dropout 0→0.2, weight_decay 1e-7→3e-5, flip aug, EarlyStop). 모델은 v4 클래스 상속한 thin wrapper로 decoder Transformer 에 dropout 주입. SS2D v5 chain 후 자동 시작.
-- **[docs/ss2d_v6_changes.md](docs/ss2d_v6_changes.md)** — SS2D v6: v5 의 두 결함 수정 — (1) val SSIM 을 custom `u_choh_SSIM`(val_range 버그) → skimage `structural_similarity`(data_range=target.max−min) 로 교체, (2) EarlyStop/best 기준을 composite(SSIM+NMSE+PSNR+L1 평균) → val_ssim 단일로 단순화. patience 5→10, val 빈도 매 5 epoch, v5 epoch_10.pt 부터 resume. 데이터/모델/regularization 은 v5 그대로. 결과: 200ep 풀 학습 완료, best val SSIM 0.8903 (U-Net 0.8865 동등).
-- **[docs/eter_v6_changes.md](docs/eter_v6_changes.md)** — ETER v6: SS2D v6 와 동일 처방(skimage SSIM, SSIM 단일 EarlyStop, patience 10, val 매 5 epoch, v5 epoch_5.pt 부터 resume). 추가로 BATCH_SIZE 8→4 강하(2026-05-11) — v5 는 BS=8 통과했으나 v6 의 baseline 측정 추가로 cudnn workspace 가 커져 첫 forward OOM 발생, 재부팅 후에도 재발하여 4 로 내림. SS2D v6 vs ETER v6 비교의 유일한 변수는 sequence model 종류(Mamba vs GRU) + DC block 유무.
-- **[docs/visual_metric_gap_v6.md](docs/visual_metric_gap_v6.md)** — v6 모델의 정량 metric (SSIM 0.89) 과 시각 인상의 괴리 원인 4가지 분석 + 진단 도구 (`visualize_diagnostic_v6.py`) 설계. 원인: (1) raw amplitude SSIM 부풀림 (배경 50%+), (2) 비교 슬라이스 3230 below-average 편향, (3) L1+SSIM mean-prediction 흐림, (4) 에러맵 colormap 조기 saturation. 진단 결과 (`results/vis/vis_diagnostic_v6/`): raw vs masked SSIM gap 모든 모델 음수, U-Net 의 가장 큰 격차 (-0.04 ~ -0.44), SS2D 가 ETER 보다 masked SSIM +0.01, PSNR +1.3dB 일관 우위. → v6_1 개선 방향: edge-aware loss / gradient loss / perceptual loss 도입.
-- **[docs/ss2d_eter_v6_1_changes.md](docs/ss2d_eter_v6_1_changes.md)** — SS2D / ETER v6_1: 원인 3 (mean-prediction blurring) 직접 처벌을 위해 finite-difference gradient L1 loss 를 v6 loss 에 추가 (`loss = L1 + 1.0·(1-SSIM) + 10.0·grad_L1`). v6 best ckpt 로부터 50ep fine-tune, LR 5e-5→5e-7 cosine, EARLYSTOP_PATIENCE=5. 신규 파일 5개 (config/train 각 2개 + chain). 기대: PSNR +0.3~0.8dB, zoom-in 에서 sulci/혈관 detail sharp. **실제 결과: SS2D PSNR −0.63dB, ETER PSNR −0.23dB, L1/NMSE 모두 후퇴 (over-sharpening 회귀) — v6_2 로 λ_grad 완화.**
-- **[docs/ss2d_eter_v6_2_changes.md](docs/ss2d_eter_v6_2_changes.md)** — SS2D / ETER v6_2: v6_1 의 over-sharpening 회귀 대응. v6_1 doc fallback 적용으로 `λ_grad` 10.0 → **3.0** (−70%) 단일변수 변경. **v6 best 에서 재시작** (v6_1 over-edged state 누적 회피, 단일변수 비교 명확화). 그 외 epochs/LR/dropout/dataloader/DC 모두 v6_1 동일. 기대: PSNR 회복 + SSIM 미세 상승 유지. v6_2 도 후퇴 시 λ_grad=1.0 또는 gradient loss 폐기로 추가 시도.
-- **[docs/tier1_tta_ensemble_negative.md](docs/tier1_tta_ensemble_negative.md)** — Tier 1: TTA(4-way flip 평균) / 앙상블(v4+v6, SS2D+ETER cross-arch) 모두 500-sample 부분 평가에서 임계 (+0.003 SSIM, +0.15 dB PSNR) 미달. v6 가 이미 flip aug 로 학습되어 TTA 가 SS2D 에서는 회귀, ETER 에서는 미약 상승. v4 출력 평균은 약한 모델이 노이즈 추가. 풀평가 생략하고 Tier 2 재학습으로 이동.
-- **[docs/tier2_sharpness_plan.md](docs/tier2_sharpness_plan.md)** — Tier 2: v6_2 (λ_grad=3), v6_3 (sharp ablation: dropout 0.1, WD 1e-5), v6_4 (VGG perceptual, 수동 launch) 가설 매트릭스. 세 직교 처방으로 v6 의 mean-prediction blurring 동시 공격. **결과 (2026-05-28)**: v6_1/v6_2 양쪽 모델 모두 PSNR 회귀 (over-sharpening 부작용) → 폐기. **v6_3 SS2D 는 모든 지표 v6 보다 개선** (SSIM 0.8913→0.8924, PSNR 35.96→36.05dB, L1 7.37→7.30) — Tier 2 의 첫 non-degradation. ETER v6_3 진행 중. v6_4 train script 는 ETER v6_3 결과 후 결정.
-- **[docs/error_map_v2_masked.md](docs/error_map_v2_masked.md)** — 2026-06-01 시각화 정책 개정. `visualize_compare_versions.py` 의 에러맵을 raw amplitude → per-slice [0,1] 정규화 + brain mask (gt_n > 0.05) 로 교체, optional `--match-scale` LS 보정 flag 추가. 출력 dir `vis_compare_versions_masked/` 로 분리해 v1 결과 보존. 정량 metric 은 raw 유지, suptitle 에 명시.
-- **[docs/script_version_history.md](docs/script_version_history.md)** — 2026-05-20 정리에서 삭제한 `.py` 파일 (main_train_v3~v6, eval/visualize 옛 버전, 2024년 config, 옛 dataloader 등) 의 출처/역할/버전 진화 방향 기록. v3→v4 DC block, v4→v5 regularization, v5→v6 평가 정합성, v6→v6_1 gradient loss 4단계 정리.
-- **[docs/cleanup_log.md](docs/cleanup_log.md)** — 프로젝트에서 삭제된 파일들의 대장. 무엇이 있었고 왜 지웠는지 날짜별 기록.
-- **[docs/logs_archive.md](docs/logs_archive.md)** — 루트에 흩어져 있던 `run_*.sh`/`run_*.log` 를 `runs/` 폴더로 통합한 기록 (2026-05-15). 해당 `runs/` 자체는 이 머신에 없음(옛 8GB 머신) — 역사적 참고용.
+## 문서 지도 (docs/)
 
-### v7 갈래 (TITAN RTX×2 24GB 마이그레이션, 320×320 유지) — v6→v7_titan 중간 단계
-- **[v7/README_v7.md](v7/README_v7.md)** (2026-05-16) — 8GB→TITAN RTX×2 24GB 마이그레이션. BATCH_SIZE 4→16, GRU hidden 6→10, DDP 옵션 추가. v6 코드/ckpt 는 그대로 두고 새 `v7/` 폴더에서 진행(capacity 복원이 목적, 해상도는 아직 320 유지) — 384 승격 + ViT-Base 전환 + ETER U-Net 후처리 복원은 v7_titan 에서.
+전체 날짜순 목록·한 줄 요약은 **[docs/INDEX.md](docs/INDEX.md)** — 새 문서를 추가하면 INDEX 에 행을 추가한다. 현행 작업에 필요한 진입점만:
 
-### v7_titan 갈래 (384×384 · ViT-Base · TITAN RTX 24GB x2) — v6 (320) 와 별개 평행 트랙
-- **[docs/eval_metric_redesign.md](docs/eval_metric_redesign.md)** (2026-05-22) — **brain mask + weighted composite metric 재설계**. 배경 부풀림 진단, brain mask = Otsu×0.4 + largest CC (`dataloader_h5_v5.py:243`), composite = 0.5·SSIM + 0.3·(PSNR/40) + 0.2·(1−NMSE), masked L1+SSIM loss. v7_titan 본 학습 직전 적용. **⚠ 2026-08-07 사용자 결정: composite(자체 설계·문헌 비표준)는 이후 모든 보고·평가·비교에서 사용하지 않음 — 표준 지표만(SSIM 주지표 + PSNR/NMSE/L1; v8 best = SSIM 0.9140/0.9126, v9 = 0.9145 로 인용). 이 문서와 기존 로그·트랙표의 composite 수치는 역사 기록이며, 실행 중인 트레이너의 best-ckpt 선택 기준은 학습 무결성을 위해 소급 변경하지 않는다.**
-- **[docs/ss2d_v7_titan_changes.md](docs/ss2d_v7_titan_changes.md)** (2026-05-31) — **SS2D v7_titan 재학습 정상화**. DDP 폐기→scratch, true checkpoint resume(full-state `ss2d_vit_last.pt`, LR연속, unit-test PASS), auto-restart supervisor, BS6 풀-step smoke. VAL_EVERY 5→2, patience 10→50, NUM_EPOCHS=50(ETER 비교). 비교 baseline: ETER v7_titan masked composite 0.9127 / SSIM 0.9084.
-- **[docs/summary_2026-06-11.md](docs/summary_2026-06-11.md)** (2026-06-11, 갱신 2026-07-08: §4.6 v8 트랙 추가) — **최신 마스터 요약**. v6(320)+v7_titan(384) 통합. SS2D v7_titan **ep50 완주**(composite 0.9127 / SSIM_m 0.9083), ETER 완주(0.9127/0.9084)와 **dead-heat(near-tie 확정)**. 동일-epoch ep10~30 SS2D 우위 → **ep40 ETER 재추월(교차점, §4.5)** — 2026-06-02 "조기 우위" 서사 정정. L1 SS2D 우위(9.298<9.518), NMSE ETER 우위. (이전 스냅샷: [summary_2026-06-02.md](docs/summary_2026-06-02.md))
-### v8_eter_pure 갈래 (순수 ETER-Net · GRU vs SS2D 통제비교) — no-DC 쌍 완주 = GRU↔SS2D 비교의 최종 (DC 축 폐기)
-- **[docs/eternet_paper_data_consistency.md](docs/eternet_paper_data_consistency.md)** (2026-05-31) — 교수님 원본 ETER-net(논문+코드) 확인 결과 명시적 Data-Consistency 블록 없음. 프로젝트의 DC block(v4~)은 SS2D-arm 전용 증강이라 v7_titan ETER-vs-SS2D 비교의 confound였음 — v8_eter_pure 의 no-DC 우선 설계 근거.
-- **[docs/v8_eter_pure_rnn_vs_ss2d.md](docs/v8_eter_pure_rnn_vs_ss2d.md)** (2026-07-05, 갱신 2026-07-15) — **교수님 순수 ETER-Net(no ViT, no DC)에서 sequence model 만 GRU↔SS2D 교체하는 통제비교**. v7_titan dead-heat 의 confound(Mamba+DC vs GRU) 제거. 결과: **SS2D 완승** — best composite **0.9200**(ep48) vs GRU 0.9182(ep50), 5지표 전부·params 21×↓(31M vs 668M), matched-epoch 전구간 wire-to-wire 우위 → "DC 목발" 가설 반박. 로그기반 분석 `v8_eter_pure/analyze_v8_nodc.py` → `results/eval/v8_nodc/`. **per-slice paired 검증**(전체 7334 슬라이스, `eval_paired_v8_nodc.py`): SS2D 가 5지표 전부 74~78% 슬라이스 승률(Wilcoxon p≈0). **4-way viz**(`visualize_v8_pure_compare.py`): GRU 는 두개골 바깥 배경에 ringing 아티팩트, SS2D 는 깨끗함(§6). **갱신 2026-07-15**: DC 축 폐기 확정(§7) — 문헌상 비표준(교수님 ETER-net·문헌 RNN+DC 모두 다른 구조)·GRU+DC ep4 NaN·SS2D+DC 도 GRU+DC 와 수치 등가로 판명 → no-DC 가 최종 비교. 문헌 §10.
-- **[docs/v8_ss2d_kspace_domain_review.md](docs/v8_ss2d_kspace_domain_review.md)** (2026-07-08) — 외부 리뷰(ETER-net+SS2D) 판정 + SS2D 가 domain-transform 자리(k-space 입력, GRU 와 동일)임을 코드로 확정. 리뷰어의 "지역성↔전역성 미스매치" 우려는 no-DC 완승으로 실증 기각. 후속 로드맵: 가속률(R) 일반화 성립 조건(DC·mask-aware·multi-AR·전역 RF) — **v9_mamba radapt 의 설계 근거**.
+- **현행 계획·큐**: `docs/v8_fairness_followup_plan.md` (E1/E2/E3·기준 모델 명문화·GPU 큐 표). 3·4번째 비교 모델 설계 `docs/axial_transformer_arm_design.md`. 공개 모델 기준선 `docs/frontier_baselines_plan.md`(리더보드(leaderboard) U-Net/VarNet 은 학습·검증 통합 데이터(train+val)로 학습했으므로 순위 비교 없이 참고 결과로만).
+- **v8 결과·근거**: `docs/v8_eter_pure_rnn_vs_ss2d.md`(GRU↔SS2D 통제 비교, per-slice paired 검증, DC 요인 폐기 §7, 문헌 §10), `docs/eternet_paper_data_consistency.md`(원본 ETER-net 에 DC 없음 → no-DC 설계 근거), `docs/v8_ss2d_kspace_domain_review.md`(외부 리뷰 판정, radapt 설계 근거).
+- **v9**: `docs/v9_mamba_unleashed_and_radapt.md`. radapt 정지 상태 보고 `v9_mamba_radapt/runs/clean_stop_report_2026-09-02_ep57.md`, 재개 절차 `v9_mamba_radapt/runs/RESUME_AFTER_OUTAGE.md`.
+- **지표**: `docs/eval_metric_redesign.md`(brain mask = Otsu×0.4 + largest CC, `dataloader_h5_v5.py:243`; composite 부분은 ⚠ 역사).
+- **용어 규칙**: `docs/terminology_glossary.md`(2026-10-01 확정 — 표기 규범·원고 표현·은어 교체·사실 오류 정정, 교수님 문구와 겹치는 보류 9건·공통 예외·바꾸지 않는 표현).
+- **역사 요약**: `docs/summary_2026-06-11.md`(v6+v7_titan 마스터), `docs/version_evolution.md`(V4→V7 하이퍼파라미터·두 핵심발견: custom SSIM 버그·정량 지표와 시각 품질의 괴리), `docs/presentation_overview.md`(v1~v6_3 발표용), `docs/worklog_2026-06_07.md`(6~8월 일지).
+- **정리 대장**: `docs/cleanup_log.md`(삭제 기록), `docs/script_version_history.md`(삭제된 .py 출처).
 
-### v9_mamba 갈래 (강화 SS2D · R4 품질 극대화 + R 일반화) — 현재 운영
-- **[docs/v9_mamba_unleashed_and_radapt.md](docs/v9_mamba_unleashed_and_radapt.md)** (2026-07-23) — **v9 신규 트랙 두 변형**. v8 no-DC 파이프라인은 그대로 두고 **시퀀스 모델만 강화 SS2D**(`models/mamba_eternet/ss2d_v9.py`: 게이팅 복원 `y=y·SiLU(z)` + 3-블록 잔차 스택 + 병목 해제 out_ch 20→64, d_inner 128→256/d_state 16→32)로 교체. **fp16 selective-scan + ds=3 다운샘플**(128² coarse scan)로 풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. **unleashed** = 고정 R4 품질 극대화(mask/DC 없음), **radapt** = 같은 백본 + R 일반화 3요소(mask-channel conditioning·v8 DC block 재사용·multi-AR 학습 R∈{2,3,4,5,6,8}). 원본(`ss2d.py`·`myUNet_DF.py`·`dataloader_h5_v5.py`) **무수정**, 신규 파일만 추가. **결과(08-05 갱신)**: unleashed 80ep 완주(07-30, early_stop 없음) — best ep78 **composite 0.9203 / ssim_m 0.9145 / psnr 35.18** 로 목표(v8 SS2D 0.9200/0.9140) **근소 돌파**. 0.9200 도달 최초 ep70 — matched-ep50 시점엔 0.9171 로 미달, 우위는 80ep 연장 구간에서(§11 정직 주석: best 도달 wall-clock 은 v9 가 더 소요). **per-slice paired 검증**(`v9_mamba_unleashed/eval_paired_v9.py`, 전체 7334슬라이스, v8 CSV 조인): vs v8-SS2D **5지표 전부 승, win-rate 54~56%**(Wilcoxon p≤4e-13 — 유의하나 근소) / vs GRU 78~82% 완승. 로그기반 3-way 곡선·표 `analyze_v9_unleashed.py` → `results/eval/v9_unleashed/`. radapt 는 07-30 자동 launch 가 NVML 다운으로 좌초(supervisor 50회 소진, ckpt 0개) → **08-05 재기동**(scratch, MAX_RETRY=200) → 08-07 정전대비 clean-stop(ep20 경계, 손실 0) → **08-18 true-resume 재개**(ETA ~08-25).
+## paper/ (논문 트랙) — 커밋 prefix "paper:"
 
-### paper/ (논문 트랙, 2026-08~) — 커밋 prefix "paper:"
-- **★ `paper/paper.md` — 논문 초안 수정용 작업 기준서(진입점). `draft_ko_v2.md` 를 고치거나 영문 전환하기 전에 반드시 먼저 읽는다.** 수치 정본(권위 순서: draft 본문 표 > make_tables.py > results/eval > docs)·**폐기 수치 목록**(h/ep 2.78/2.51, best 도달 181h/133h, "학습 1회 9~12일")·금지 서술(composite, "같은 학습량에서 더 좋다", 기준선 우열 판정)·필수 caveat(단일 시드, matched-ep50 미달, NMSE 통제판 우세, contrast 불균일)·한국어 문체 표준(격식체, 주관적 어휘 `확인했다/확정했다/발견했다` 금지, 용어 `가속화정도`·`aliasing artifact` 통일)·미해결 ✎ 10건.
-- `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1 (MDPI 공학형, 스코프 v8+v9 unleashed, 외부검토 08-18 반영 P0 8건·P1 8건). `references.bib` 73항목 서지 전건 확정(⚠ 0건). 프로젝트 여정 서사는 `project_story_v1_to_v9.md`.
-- **`paper/make_tables.py` — Table 1·2·2b·3·S1 을 md+tex 양쪽으로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 이 스크립트를 재실행.** 그림은 `make_fig1_architecture.py`/`make_fig4_per_slice.py` → `paper/figs/`.
-- 논문·보고 지표는 표준 지표만(SSIM 주지표 + PSNR/NMSE/L1) — composite 사용 금지 (08-07 전면 결정, `docs/eval_metric_redesign.md` ⚠ 참조).
-
-- (전체 날짜순 인덱스: **[docs/INDEX.md](docs/INDEX.md)**)
-
-> **⚠ 루트의 `README.md`·`PROJECT_SUMMARY.md` 는 2026-04 시점(옛 저장소명 `ViT_based_MRIrecon`, 루트
-> `main_train.py` 시절) 문서로 심하게 낡음** — 현행 구조·수치의 근거로 쓰지 말 것. 정본은 이 파일과 docs/.
+- `paper/draft_ko_v2.md`/`.docx` — 한국어 투고 초안 v2.1(MDPI 공학형, 스코프 v8+v9 unleashed). `references.bib` 서지 전건 확정. 주장 범위(09-02 잠금): "SSM>RNN" 일반화가 아니라 **"SS2D 치환 > 원 bi-GRU 설계"로 한정** + 메커니즘/파라미터화 교란 요인 한계 항목. IEIE v7 초록의 "세 지표 모두 우위" 는 1b 결과 후 유지/완화 결정(09-21). 역사: `paper/archive/draft_ko_v1.*`, 개발 이력 문서 `paper/project_story_v1_to_v9.md`.
+- **`paper/make_tables.py` — 표를 md+tex 로 자동 생성(`paper/tables/`). 수치가 바뀌면 표를 손편집하지 말고 재실행.** 그림 `make_fig{1_architecture,2_curves,3_qualitative,4_per_slice}.py`·`make_figs_conf_arch.py` → `paper/figs/`.
+- **그림 조판 규칙**: 빌더가 그림을 page 폭 6.69 in(학술대회판 단 폭 3.15 in)에 맞춰 삽입하므로 figsize 폭을 그 값으로 **직접 조판**(더 넓게 그리면 글자가 비례 축소), 최소 글자 6.5 pt, Liberation Sans(`paper/fonts/`), 600 dpi. 고전적 논문 블록 다이어그램 문법(한 줄 라벨 균일 블록·화살표 위 크기 표기·실데이터 썸네일)이고 양식 도우미의 단일 출처는 `make_figs_conf_arch.py`. `check_docx_structure.py` 는 dpi 만 보고 글자 크기는 못 보므로 렌더 PNG 를 눈으로 확인. 10-07 그림 갱신: 그림 1 은 화살표 숫자 '20' 을 점선에서 띄운 것만 변경(U-Net 단독 표시는 넣지 않기로 함 — 사용자 10-07), 그림 3 색 막대 라벨 간격 수정(R_IN 0.42·labelpad 4), 그림 2 대안 B `conf_fig2_modules_impl`(원 구현대로 한 스텝 = 한 채널의 연속 32행 — 교수님 확인 후 A/B 선택), 그림 3 시드 1판 `fig3_qualitative_col_seed1`(U-Net 단독·2회차 ETER-net·SS2D; 입력 `paper/make_fig3_seed1_inputs.py` → `results/vis/multimodel_compare_seed1/`, 조판 `make_fig3_qualitative.py --src …`). 수정 방향 정리 = `paper/ieie/reviews/2026-10-01/IEIE_수정방향_20261007.md`(git 무시).
+- **`paper/ieie/` — IEIE 투고 원고. ★v9(10-17~19, v8fix 결과) = 2026 추계 학부생 논문경진대회 제출본(10-19 제출 완료)**. 두 판의 내용이 다르다: 프로시딩 게재용 `draft_ieie_v9.src.md` → `build_ieie_conf_docx.py` → `draft_ieie_v9_conf.docx`(학술대회 양식, 규정 1~5쪽, Word 5쪽, 저자 `***` 자리표시자는 Word 에서 기입) / 서면 심사용 `draft_ieie_v9_review.src.md` → `build_ieie_docx.py` → `draft_ieie_v9_review.docx`(논문지 양식 blind 4쪽 — `check_blind()`, 그림 2·3 등을 뺀 축약판, Word 4쪽). `draft_ieie_v9.docx`(학술대회판 소스를 논문지 양식으로 빌드, 약 7쪽)는 제출용이 아니다. 표 1 = `paper/tables/ieie_table1_block_v9.md`(`paper/make_tables_v8fix.py` 생성, 손편집 금지), 본문 수치 = `paper/tables/ieie_v9_tokens.md`. v2·v3·v7·v8 은 이전 판. 저장소 루트에서 `CUDA_VISIBLE_DEVICES="" python paper/ieie/build_ieie_*.py [--src …] [--out …]`. 실제 제출 파일(실명 포함)은 `paper/ieie/reviews/2026-10-19_submitted/`. MDPI SI 마감 11-30.
+  - **소스 규칙**: 인라인 수식 `$…$`(빌더가 OMML 변환 — 평문 `y_c`·`f_θ` 첨자 금지, `\mathbb` 미지원), 디스플레이 `$$…$$` 한 줄, 캡션 **`@cap_en` 필수(두 판 영문만, 09-14)**·`@cap_ko` 선택, 표는 생성기 블록 그대로(v9: `ieie_table1_block_v9.md`, 볼륨 단위).
+  - **문체 규칙(교수님 09-14 검토)**: 구어체 금지, 문장 성분(주어·목적어·서술어·조사) 완성, 주어–서술어 일치, 수식의 모든 변수를 말로 설명, 약어는 첫 등장에서 풀어 씀(RSS·ACS·SSIM·PSNR·nMSE·MSE·fp16/32), 구성요소=모듈·네트워크 전체=모델.
+  - **`paper/ieie/reviews/` 는 git-ignore — 교수님 실명·소속·e-mail 포함. push 금지, 추출 텍스트를 추적 파일·커밋 메시지에 붙이지 말 것.**
+  - **v9 작업 방식(10-17~)**: ARS `/ars-full` 런 `ars-ieie-v9-20261017` — 사용자 결정과 원문은 `paper/ieie/reviews/ars_pipeline_20261017/`(material passport·run ledger, 재개 절차 `RESUME_2026-10-17.md`)에 있고, src 가 원본이다(Word 에서 고친 내용은 src 로 옮긴 뒤 다시 빌드).
+  - 쪽수는 Word 실측으로만 판정한다. 빌더·점검기 추정은 짧게 나온다(학술대회 양식은 약 10%, 논문지 양식은 첫 쪽 제목·요약 상자 때문에 더). 빌드·그림·점검기 기댓값·쪽수·Word 체크리스트 상세 = `docs/paper_table_conventions.md` §4~§9.
 
 ## 모델 구조
 
-### 코드 레이아웃 (models/ · dataloaders/)
-- `models/` — `pure_eternet/`(v8·v9 순수 ETER: `u_pure_eternet_{gru,ss2d}.py`, `u_pure_eternet_ss2d_v9{,_radapt}.py`), `mamba_eternet/`(SS2D 클래스: `ss2d.py`·`ss2d_v9.py`·`u_choh_model_SS2D_ViT_v4.py`(DC block 정의)), `hybrid_eternet/`(ViT+seq: v7_titan ETER `u_choh_model_ETER_ViT_v7_titan.py`), `mae/`·`vit_pytorch/`(ViT 백본), `pretrained/`(U-Net/VarNet leaderboard ckpt — baseline).
-- `dataloaders/` — 공유 로더 `dataloader_h5_v5.py`(brain mask `:243`, v5~v9 전부 이 클래스 상속), v9 `dataloader_h5_v9_multiAR.py`(per-sample R∈{2,3,4,5,6,8} 랜덤), + 옛 `myDataloader_fastmri_brain_*.py`.
+### 코드 레이아웃
+- `models/pure_eternet/` — v8·v9 순수 ETER wrapper(`u_pure_eternet_{gru,ss2d,transformer,pixelgru}.py`, 시퀀스 모듈을 뺀 대조 모델 `u_pure_eternet_unet.py`(시퀀스 출력 자리 20채널을 0 으로 채워 U-Net 은 동일), v9 `u_pure_eternet_ss2d_v9{,_radapt}.py`). 시퀀스 모듈 본체는 `mamba_eternet/`(`ss2d.py`·`ss2d_v9.py`, DC block 정의는 `u_choh_model_SS2D_ViT_v4.py`), `attn_eternet/transformer_v10.py`(Transformer 모델), `rnn_eternet/pixelgru_v10.py`(pixel-GRU 모델), `hybrid_eternet/`(교수님 원본 `myUNet_DF.py` U-Net DFU + v7_titan ETER-ViT).
+- `dataloaders/dataloader_h5_v5.py` — 공유 로더(brain mask `:243`, v5~v9 전부 상속). v9 radapt 는 `dataloader_h5_v9_multiAR.py`(per-sample R∈{2,3,4,5,6,8}).
+- 루트 `visualize_*_compare.py` — 트랙별 4-way 시각화(`visualize_slices_canonical.json` 고정 대표 슬라이스). `visualize_multimodel_compare.py` 는 8-way 정성 비교(논문 그림 3) — **CPU 전용 설계**(SS2D 는 `selective_scan_ref` 런타임 몽키패치, PromptMR+ 는 `external/PromptMR-plus` 어댑터): `CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=8 nice -n 19 python visualize_multimodel_compare.py`.
+- `tools/`(환경 점검·스모크), `infra/docker/`(이미지 재구성 00~50 + `RUNBOOK.md`), `external/`(외부 레포 clone, git-ignore), `legacy_320/`(320 트랙 스크립트, 실행 불가·역사 보존).
 
-### 루트 트랙 (v1~v6_x, 320×320) — 역사적 기록, 이 머신에 ckpt 없음
-
-```
-입력 1: aliased image (B, 32, 320, 320)
-입력 2: k-space        (B, 32, 320, 320)
-       │                                    │
-   ViT Encoder → ViT Decoder           GRU(ETER) 또는 SS2D(Mamba)
-       │                                    │
-       └── cat(ViT출력, aliased image, seq출력) ──┘   ← 3-way concat (2-way 아님)
-                      │
-         최종 합성: RefinementBlock(3×ResBlock)
-                      │  (SS2D 만: 이 뒤에 1-iter soft DC block 추가. ETER 는 DC 없음)
-              출력: (B, 1, 320, 320)
-```
-
-### v7_titan (384×384, ViT-Base) — 완료·역사 트랙 (현재 운영은 v9)
-
-SS2D 는 루트와 동일 클래스(`u_choh_model_SS2D_ViT_v4.py`)를 그대로 쓰고 config 값만 키운다
-(ViT-Base, SS2D d_inner 64→128 / d_state 16→32). **ETER 는 최종 합성을 교체**한다:
-`RefinementBlock(3×ResBlock)` → `UNet_choh_skip(depth=3, wf=6)` — 교수님 원본 ETER-Net(GRU→U-Net
-후처리) 복원이 목적(`choh_Decoder3_ETER_v7_titan`, `models/hybrid_eternet/u_choh_model_ETER_ViT_v7_titan.py`).
-즉 v7_titan 에서는 **ETER 와 SS2D 의 최종 합성 구조 자체가 다르다**(ETER=U-Net, SS2D=RefinementBlock+DC) —
-이 비대칭이 `docs/eternet_paper_data_consistency.md` 가 지적하는 confound 중 하나.
-
-### v8_eter_pure (384×384, ViT 없음) — GRU vs SS2D 순수 통제비교
+### v8_eter_pure (384×384, ViT 없음) — 시퀀스 모듈 4종 순수 통제 비교
 
 ```
-입력 1: aliased image (B, 32, 384, 384)
+입력 1: zero-filled 영상(aliased) (B, 32, 384, 384)
 입력 2: k-space        (B, 32, 384, 384)
        │                                    │
-  (ViT 없음)                          GRU(양방향 h+v) 또는 SS2D
+  (ViT 없음)               GRU(양방향 h+v) | SS2D | Transformer | pixel-GRU
        │                                    │
-       └──────── cat(seq출력, aliased image) ────┘   ← 2-way concat
+       └──────── cat(seq출력, zero-filled 영상) ────┘   ← 2-way concat
                       │
          UNet_choh_skip (DFU, depth=5, wf=6)
-                      │  (use_dc=True 인 DC arm 만: 이 뒤에 DC block 추가 — DC 축 폐기, no-DC 만 최종)
+                      │  (use_dc=True 인 DC 조건만: 이 뒤에 DC block 추가 — DC 요인 폐기, no-DC 만 최종)
               출력: (B, 1, 384, 384)
 ```
-GRU/SS2D 를 제외한 모든 것이 100% 동일(`models/pure_eternet/u_pure_eternet_{gru,ss2d}.py`) — 단일 변수 통제.
+시퀀스 모듈을 제외한 모든 것이 100% 동일(출력 채널 out_ch=2×H2=20 원본 상수) — 통제 비교.
+치환 모델(SS2D·Transformer·pixel-GRU)의 시퀀스 모듈 파라미터 규모는 ~0.1M 로 서로 매칭(가중치 공유 파라미터화의 최소 공통 규모, total ≈31.2M);
+원본 GRU 모듈은 flatten-reshape 구조 때문에 H=1 에서도 31.9M(total 62.9M)이 하한이라 하향 매칭이 불가능하다(주 실험 H=10 은 668M).
 
-### v9_mamba (384×384, ViT 없음) — v8 SS2D 강화 + R 일반화
+### v9_mamba (384×384, ViT 없음) — v8 SS2D 강화 + 다른 가속화 계수에 대한 일반화
 
-v8 no-DC SS2D 파이프라인을 그대로 물려받되(`cat(ss2d출력, aliased image)` → `UNet_choh_skip` DFU depth=5/wf=6,
-384·R4·brain-mask·masked loss·composite 전부 동일) **시퀀스 모델만 강화 SS2D 로 교체**한다
-(`models/mamba_eternet/ss2d_v9.py` = `SelectiveScan1DV9`/`SS2DBlockV9`/`SS2DStackV9`):
-- **게이팅 복원**: `in_proj → 2·d_inner` chunk 후 `y = y·SiLU(z)` (v8 이 누락한 Mamba 게이트)
-- **잔차 스택**: 채널불변 블록 3개(residual skip) — v8 은 단일 블록
-- **병목 해제**: out_ch 20(GRU 매칭 고정)→64(자유). d_inner 128→256, d_state 16→32, dropout 0→0.05
-- **fp16 스캔 + ds=3 다운샘플**: stem(풀해상도) → ds=3(128² coarse scan) → 3블록 → 업샘플 → head.
-  풀용량 유지하며 v8(2.78 h/ep)보다 빠름(2.51 h/ep) → epochs 50→80. 총 ~33-34M params(SS2D stack 자체는 ~2M, U-Net DFU 가 지배).
+v8 no-DC SS2D 파이프라인(concat → U-Net DFU, 384·R4·brain-mask·masked loss)을 그대로 물려받되 **시퀀스 모듈만 강화 SS2D 로 교체**
+(`models/mamba_eternet/ss2d_v9.py`): 게이팅 추가 `y = y·SiLU(z)`(v8 이 누락한 Mamba 게이트), 채널 수를 유지하는 잔차 블록 3개,
+채널 폭 확대 out_ch 20→64·d_inner 128→256·d_state 16→32·dropout 0.05, fp16 selective-scan + ds=3 다운샘플(128² 격자에서의 스캔) → epochs 50→80.
+**총 34.2M params**(U-Net 31.1M + SS2D 모듈 3.1M; 논문 "~34M"). h/ep 확정 실측값(08-18 실측, 검증 포함) = **GRU 2.41 / v8 SS2D 3.07 / v9 2.84** —
+문서의 2.51/2.78 은 스모크 추정치라 논문에 쓰지 않는다.
 
-**unleashed** = 고정 R4 품질 극대화(mask/DC 없음). **radapt** = 같은 백본 + R 일반화 3요소:
-(1) mask-channel conditioning(`cat(x_ksp, mask)`, SS2D 입력 c_in 32→33), (2) v8 DC block 재사용(U-Net
-n_classes=2 복소 → 1-iter soft DC → magnitude), (3) multi-AR 학습(R∈{2,3,4,5,6,8} per-sample 랜덤, val 은
-R4 고정). R-embedding/FiLM/adaptive-norm 은 쓰지 않음 — 위 3요소로 간접 R-조건화. DC fp16 안정화(v8 DC ep4
-NaN 재발 방지): α clamp[0,1] + GradScaler init_scale 8192 + NaN-skip. 교수님/프로젝트 원본(`ss2d.py`·
-`myUNet_DF.py`·`u_choh_model_SS2D_ViT_v4.py`·`dataloader_h5_v5.py`) **무수정** — v9 는 신규 파일만 추가.
+- **unleashed** = 고정 R4 품질 극대화(mask/DC 없음).
+- **radapt** = 같은 백본 + 다른 가속화 계수에 대한 일반화 3요소: (1) mask-channel conditioning(`cat(x_ksp, mask)`, c_in 32→33), (2) v8 DC block 재사용(U-Net n_classes=2 복소 → 1-iter soft DC → magnitude), (3) 다중 가속화 계수 학습(R∈{2,3,4,5,6,8}, val 은 R4 고정). R-embedding/FiLM 없음. DC fp16 안정화: α clamp[0,1] + GradScaler init_scale 8192 + NaN-skip(v8 DC ep4 NaN 재발 방지).
 
-## 주요 설정 파일
+### v7_titan / 루트 320 (역사)
+v7_titan 은 ViT-Base 하이브리드로, **ETER 와 SS2D 의 최종 합성 구조 자체가 달랐다**(ETER = `UNet_choh_skip(depth=3, wf=6)` 원본 복원,
+SS2D = RefinementBlock + DC) — 이 비대칭이 `docs/eternet_paper_data_consistency.md` 의 교란 요인이고 v8 이 이를 제거했다.
+루트 320 트랙은 ViT 출력·zero-filled 영상·seq 출력의 3-way concat → RefinementBlock(SS2D 만 DC 추가). 상세는 `docs/architecture_ETER_vs_SS2D.md`·`docs/version_evolution.md`.
 
-### 루트 트랙 (320×320, 이 머신엔 ckpt 없음)
-현재 채택후보 v6_3 (SS2D 전지표 개선 확인, **ETER v6_3 완료 여부는 미문서화** —
-`docs/summary_2026-06-11.md` §6-⑤):
-- `configs/myConfig_choh_SS2D_model_v6_3.py`
-- `configs/myConfig_choh_ETER_model_v6_3.py`
+## 설정
 
-버전 reference 로 보존: SS2D 는 `..._v4.py`~, ETER 는 `..._v5.py`~ (**ETER v4 config 는 저장소에 없음** — 2026-08-27 확인). `..._v6_4.py` 는 config 만 있고
-`main_train_*_v6_4.py` 는 미작성(v6_3 성공으로 보류, `docs/tier2_sharpness_plan.md`).
+- **v8**: `v8_eter_pure/configs/myConfig_pure_eter_v8.py` — 모든 모델·런이 공유하는 단일 config. 분기는 `v8_eter_pure/main_train_pure_v8.py` 의 env var: `SEQ_MODEL=gru|ss2d|transformer|pixelgru|unet`(unet = 시퀀스 모듈 제거 대조 모델, 10-01), `USE_DC=0|1`(DC 폐기 → 0), `SEED=<int>`(설정 시 가중치 초기화·셔플·마스크 offset·flip·워커별 rng 고정 + 런 폴더 `_s{SEED}` 접미; 미설정 시 기존 런과 동일 코드 경로), `RUN_SUFFIX`, `SANITY_NUM_EPOCHS`·`SANITY_VAL_EVERY_N_EPOCHS`, `SMOKE_BS`, `ACCUM_STEPS`, 모델별 `TRANSFORMER_{D_MODEL,N_HEADS,N_PAIRS}`·`PIXELGRU_HIDDEN`, `WANDB_RUN_TAG`. 런 폴더 = `logs/PureETER_{ARM}_{noDC|DC}_R4_brain384_v8[_s{SEED}][RUN_SUFFIX]/`.
+- **v9**: env var 가 아니라 **변형별 config 파일** — `v9_mamba_unleashed/configs/myConfig_ss2d_v9.py`(BS 8·80ep·LR 2e-4·WD 3e-5·patience 40·val 매 2ep) / `v9_mamba_radapt/configs/myConfig_ss2d_v9_radapt.py`(+ `MASK_CONDITION`·`AR_CHOICES`·`VAL_ACCELERATION=4`·DC 안정화).
+- 역사: `v7_titan/configs/`, 루트 `configs/myConfig_choh_{SS2D,ETER}_model_v4~v6_4.py`(v6_3 = 320 트랙 채택후보).
 
-### v7_titan (384×384) — 완료·역사
-- `v7_titan/configs/myConfig_choh_SS2D_model_v7_titan.py`
-- `v7_titan/configs/myConfig_choh_ETER_model_v7_titan.py`
+## 로그 · ckpt · 결과 위치
 
-### v8_eter_pure (384×384, ViT 없음)
-- `v8_eter_pure/configs/myConfig_pure_eter_v8.py` — GRU/SS2D × no-DC/DC 4런이 공유하는 단일 config(env var 로 분기)
-
-### v9_mamba (384×384, ViT 없음) — 현재 운영
-v8 처럼 env var 로 분기하지 않고 **변형별 config 파일이 따로** 있다(공유 백본 하이퍼파라미터는 동일):
-- `v9_mamba_unleashed/configs/myConfig_ss2d_v9.py` — R4 품질(d_inner 256·d_state 32·n_blocks 3·out_ch 64·ds 3·dropout 0.05 / BS 8·80ep·LR 2e-4·WD 3e-5·patience 40·val 매 2ep)
-- `v9_mamba_radapt/configs/myConfig_ss2d_v9_radapt.py` — 동일 백본 + R 일반화(`MASK_CONDITION=True`·`AR_CHOICES=(2,3,4,5,6,8)`·`VAL_ACCELERATION=4`) + DC 안정화(`DC_ALPHA_MIN/MAX=0/1`·`GRADSCALER_INIT_SCALE=8192`)
-
-## 실행 로그 / 체인 스크립트 위치
-
-> **⚠ git 가시성 (2026-08-27 확인)**: `.gitignore` 가 `*.sh`·`*.log`·`logs/` 를 전역 무시하므로, 아래
-> 기술된 supervisor/체인 스크립트와 학습 로그는 **학습 머신에만 존재하고 git 에는 없다**
-> (예외적으로 추적 중인 .sh 는 `v9_mamba_radapt/runs/{clean_stop_pre_outage,snapshot_pre_outage}.sh` 2개뿐).
-> 새 clone 에는 `v7_titan/runs/` 폴더 자체가 없고, v8/v9 `runs/` 엔 `smoke_bs.txt` 등 일부만 있다.
-> 진입점 스크립트를 저장소에 보존하려면 학습 머신에서 `git add -f` 필요(미결정).
-
-### 루트 트랙 — `runs/` 폴더는 이 머신에 없음
-루트 트랙의 학습 ckpt/로그는 옛 8GB 머신에만 있어(§프로젝트 개요) 이 저장소에는 `runs/` 폴더
-자체가 존재하지 않는다. 2026-05-12 정리 당시의 `runs/{ss2d,eter,chain,eval,visualize}/` 구조는
-`docs/logs_archive.md` 에 역사적 기록으로만 남아있다.
-
-### v7_titan/runs/
-```
-v7_titan/runs/
-├── ss2d/ eter/ chain/ sanity_eval/     # 학습/체인 로그
-├── run_ss2d_v7_titan_autoresume.sh     # true-resume auto-restart supervisor
-└── watcher_eter_to_ss2d.sh             # ETER 종료 감지 → SS2D 자동 launch(BS=6)
-```
-평가/시각화는 독립 `eval/`/`visualize/` 서브폴더 없이 저장소 공통 `results/eval/`,
-`results/vis/v7_titan_compare/` 를 그대로 사용한다.
-
-### v8_eter_pure/runs/
-```
-v8_eter_pure/runs/
-├── chain/ gru/ ss2d/            # 모델축(GRU/SS2D) 기준 로그 — root 의 ss2d/eter 명명과 다름
-├── run_pure_v8_autoresume.sh    # SEQ_MODEL(gru|ss2d) × USE_DC(0|1) env var 로 4런 분기
-└── smoke_bs.txt
-```
-평가 결과는 `results/eval/v8_nodc/`, 시각화는 `results/vis/v8_pure_eternet_compare/` (v7_titan 과
-동일하게 저장소 공통 `results/` 사용).
-
-### v9_mamba_unleashed/runs/ + v9_mamba_radapt/runs/
-```
-v9_mamba_unleashed/runs/
-├── run_v9_chain_gpu0.sh           # ★ 진입점: unleashed→(DONE 확인)→radapt 순차 체인 드라이버
-├── run_ss2d_v9_autoresume.sh      # unleashed true-resume supervisor (MAX_RETRY=50, 60s 간격)
-├── chain_v9.log chain_v9_outer.log ss2d/*.log   # 체인·학습 로그
-└── smoke_bs.txt (=8)
-v9_mamba_radapt/runs/
-├── run_ss2d_v9_radapt_autoresume.sh   # radapt supervisor
-├── post_reboot_rearm.sh               # ★ 재부팅/컨테이너 재시작 후 원-커맨드 재개 (절차: RESUME_AFTER_OUTAGE.md)
-├── clean_stop_pre_outage.sh · snapshot_pre_outage.sh   # 정전대비 clean-stop/스냅샷 (08-07 사용, pre_outage_report 참고)
-├── ss2d/                              # 학습 로그
-└── smoke_bs.txt
-```
-- ckpt/state 는 v7/v8 의 `runs/` 서브폴더와 달리 **`./logs/<RUN_NAME>/`** 아래에 쌓인다: `ss2d_v9_last.pt`(매 ep, full-state resume), `ss2d_v9_epoch_N.pt`(매 5ep), `ss2d_v9_best.pt`(best composite). RUN_NAME = `PureETER_SS2D_V9_unleashed_R4_brain384` / `..._radapt_multiAR_brain384`.
-- 완료 sentinel = **`logs/<RUN_NAME>/DONE` 파일**(v8 의 stale-log grep 버그 대체). 체인 드라이버가 unleashed 의 DONE 을 확인한 뒤에야 radapt 를 시작한다.
-- 평가 결과: `results/eval/v9_unleashed/`(per-slice paired CSV·win-rate·3-way 곡선, 2026-08-05 — 로컬 전용). 시각화·radapt R-sweep 은 radapt 완주 후 post-hoc(v8 `v8_eter_pure/eval_r_generalization_v8.py` 재사용/변형).
-
-## 결과 폴더 구조 (results/)
-
-**현재 디스크 실제 상태** (루트 트랙 결과는 이 저장소에서 빠져 없음 — 맨 아래 "역사적 스냅샷" 참고):
-```
-results/
-├── eval/
-│   ├── v8_nodc/                  # v8 per-slice CSV·win-rate·matched-epoch·composite/SSIM/PSNR 곡선
-│   ├── v8_r_sweep/               # v8 R 일반화 cross-eval (raw)
-│   ├── v8_r_sweep_norm/          #   〃 (normalized)
-│   ├── baselines_384_sample300/  # U-Net/VarNet 384 기준선 (train+val 누수·zero-coil NaN 캐비엇 — docs 참고)
-│   └── v9_unleashed/             # v9 per-slice paired CSV·win-rate·3-way 곡선 (2026-08-05, 학습머신 로컬 전용)
-└── vis/
-    ├── v7_titan_compare/         # v7_titan 4-way GT/U-Net/ETER/SS2D
-    ├── v7_titan_eval_modes/      # v7_titan eval-mode 비교
-    ├── v8_pure_eternet_compare/  # v8 4-way GT/U-Net/GRU/SS2D
-    ├── v9_unleashed_compare/     # v9 4-way GT/U-Net/v8-SS2D/v9 (visualize_v9_compare.py)
-    ├── root_track/               # 옛 result/ 병합분(2026-08-27): 루트 트랙 v4~v6 시각화
-    │   ├── compare_versions_aligned/  #   (구 vis/aligned/vis_compare_versions_aligned)
-    │   ├── compare_v4/ compare_versions/
-    ├── _slides_assets_v6/        # v6 발표덱 자산 (구 result/vis/_slides_assets — build_v6_deck.py 가 참조)
-    └── _slides_assets_v8/        # v8 발표덱 자산
-```
-(radapt R-sweep 은 radapt 완주 후. **2026-08-27**: 루트의 옛 `result/`(단수) 폴더를 `results/` 로 병합·삭제 —
-`result/vis/{compare_versions_aligned,compare_v4,compare_versions}` → `results/vis/root_track/`,
-`result/vis/_slides_assets` → `results/vis/_slides_assets_v6/`. 참조 갱신: `tools/build_v6_deck.py`·`docs/figma_deck_handoff.md`.
-전역 `*.png` ignore 로 git 미추적(로컬 전용) — 루트 트랙 결과 비공유 정책 유지.)
-
-**`.gitignore` 화이트리스트** — `results/` 는 기본 무시, 아래만 예외적으로 GitHub 공유:
-`results/vis/{v7_titan_compare,v7_titan_eval_modes,v8_pure_eternet_compare,v9_unleashed_compare}/` 의 PNG/txt +
-`results/eval/v8_nodc/`(matched_epoch_table.md·win_rate_summary.md·곡선 PNG) +
-`results/eval/v8_r_sweep{,_norm}/`(r_generalization_table.md·PNG) +
-`results/eval/baselines_384{,_sample300}/`(baseline_summary.md). 대용량 per-slice CSV/log 은 계속 무시.
-`root_track/`·`_slides_assets_v6/`·`_slides_assets_v8/` 는 화이트리스트 미추가 — 로컬 전용.
-
----
-
-**역사적 스냅샷 (2026-06-01, 루트 트랙 전용 — 아래 트리의 폴더들은 현재 디스크에 없음)**: 당시 루트 트랙
-`eval_*.csv`/`vis_*/` 를 카테고리별로 그룹화한 구조. 루트 트랙 결과가 저장소에서 빠지며 함께 제거됐다.
-```
-results/
-├── eval/                                  # 평가 CSV + summary
-│   ├── eval_full_v4/v5/v6/v6_1/...        # 현재 active (full 풀평가)
-│   ├── eval_tta_500 / eval_tta_smoke      # TTA 실험
-│   └── legacy/                            # 옛 sanity / 초기 baseline
-│       ├── eval_ss2d_v4_ss2d_vit_best.*   # 최초 SS2D v4 평가
-│       ├── eval_sanity_v5.*               # v5 sanity check
-│       └── eval_unet_pretrained.*         # U-Net baseline
-├── vis/                                   # 시각화 PNG
-│   ├── aligned/      ★ 최신 정합본 (use this)
-│   │   ├── vis_compare_v4_aligned/        # 단일 버전 모델 비교 (정합)
-│   │   └── vis_compare_versions_aligned/  # 버전 cross-comparison (정합)
-│   ├── per_version/                       # 단일 버전 비교 (옛 미정합)
-│   │   └── vis_compare_v4/v6/v6_1/
-│   ├── cross_versions/                    # 버전 cross (옛 미정합)
-│   │   └── vis_compare_versions/
-│   ├── vis_diagnostic_v6/                 # raw vs masked SSIM 진단
-│   └── legacy/                            # superseded / 옛 / partial run
-│       ├── vis_ss2d_v4_ss2d_vit_best/
-│       ├── vis_compare_v6_partial/
-│       └── vis_compare_versions_bak_middle50/
-└── smoke_test_320/                        # 그대로 유지 (smoke_test_320.py 가 직접 참조)
-```
-
-- (참고) `vis/aligned/` 정합 기준: slice `[1817, 2220, …, 5452]` 동일, err_vmax = `gt.max()*0.1` 절대 기준, H5 스케일 통일 (`visualize_compare*.py`·`visualize_diagnostic_v6.py` default 경로가 이 구조를 가리켰음).
+- **ckpt·per-epoch 요약** = `logs/<RUN_NAME>/`: `log.txt`(한 줄/epoch — 분석 스크립트는 이것을 읽지 거대한 tqdm `runs/*.log` 를 읽지 않는다), v8 `pure_<arm>_{last,best,epoch_N}.pt`, v9 `ss2d_v9_{last,best,epoch_N}.pt`(last = 전체 상태 재개(true-resume)). v9 RUN_NAME = `PureETER_SS2D_V9_unleashed_R4_brain384` / `..._radapt_multiAR_brain384`, 완료 표시 파일 = `logs/<RUN_NAME>/DONE`.
+- **tqdm·supervisor 로그** = `<track>/runs/`: v8 은 모델축 기준 `runs/{gru,ss2d,chain}/`·`runs/multiseed/`(E1·1b 런 로그), v9 는 각 `runs/ss2d/`. 완료된 런의 tqdm 로그는 gzip(`zcat` 으로 열람). 런처 `*.sh` 는 git-ignore(로컬 전용).
+- **결과** = 저장소 공통 `results/`: `eval/v8_nodc/`(per-slice paired·우위 슬라이스 비율·matched-epoch), `eval/v8_nodc_s1_50ep/`(1b seed 1 짝 평가), `eval/v8_unet_only/`(U-Net 단독, `eval_unet_only_v8.py` — `--seq pixelgru|transformer` 로 단일 비교 모델도 같은 프로토콜 평가 → `eval/v8_{pixelgru,transformer}/`), `eval/v8_r_sweep{,_norm}/`(stride-4 서브샘플 — 논문 표 불가, 큐 7단계에서 전체 val 재실행), `eval/v9_unleashed/`, `eval/baselines_384_full/`(공개 모델 전체 val 본 연구 프로토콜 행: U-Net† 0.8971 / E2E-VarNet† 0.9181 / PromptMR+ 0.9417, 볼륨 SSIM), `eval/zero_filled/`, `vis/{v7_titan_compare,v8_pure_eternet_compare,v9_unleashed_compare,multimodel_compare}/`.
+- **`.gitignore`**: `results/` 는 기본 무시, 요약 md·PNG 만 화이트리스트(per-slice CSV·log·ckpt·npz 는 계속 무시). 새 결과 폴더를 공유하려면 디렉터리 + 파일 패턴 두 줄(`!results/eval/<dir>/` 와 `!results/eval/<dir>/<file>`)을 함께 추가.
 
 ## 실행
 
-### 루트 트랙 (참고용 — ckpt 부재로 이 머신에서 재현 불가)
+모든 명령은 저장소 루트에서. 학습은 `python ...` 그대로(conda `base`, activate 불필요).
+
+### v8_eter_pure (현재 운영)
 ```bash
-python main_train_ss2d_v6_3.py    # SS2D-ViT v6_3 (채택후보, sharpness 완화)
-python main_train_eter_v6_3.py    # ETER-ViT v6_3
-python eval_full_compare.py
-python visualize_compare.py            # U-Net / SS2D / ETER / GT 비교 PNG
-python visualize_diagnostic_v6.py      # raw vs masked SSIM 진단
-```
+# 단일 런 (전체 상태 재개 supervisor): SEQ_MODEL=gru|ss2d|transformer|pixelgru|unet, USE_DC=0
+SEQ_MODEL=pixelgru USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pure_v8_autoresume.sh
 
-### v7_titan (384) — 완료·역사
-```bash
-# GPU0 단독, auto-restart supervisor (true-resume, "학습 완료" sentinel 감지 시 종료)
-bash v7_titan/runs/run_ss2d_v7_titan_autoresume.sh
-python v7_titan/main_train_eter_v7_titan.py
+# U-Net 단독 50ep SEED=1 (10-04 03:31 UTC 완료 — 평가 results/eval/v8_unet_only/; 1b 런처를 ARMS=unet 으로 재사용, 완료 런 skip·미완 런 전체 상태 재개)
+SEED=1 ARMS=unet SMOKE_BS=8 CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8_seed1_50ep.sh \
+  > v8_eter_pure/runs/multiseed_outer_unet_s1_50ep.log 2>&1 < /dev/null & disown
+# 진행 확인: tail -2 logs/PureETER_UNET_noDC_R4_brain384_v8_s1_50ep/log.txt ; nvidia-smi
+# ★ 현재 단계 (10-08 13:20 UTC~): v8fix 5 epoch 점검 — 수정 레시피 DL 트레이너 `v8_eter_pure/main_train_pure_v8fix.py`(기존 트레이너 무수정),
+#   unet → gru → ss2d (SEED=1, 50 epoch 일정, epoch 5 에서 정지·PAUSED_ep5) → 평가 `eval_v8fix.py` → results/eval/v8fix_ep5/. 약 1.3~1.5일.
+#   재기동도 같은 명령(PAUSED/DONE 런 skip, 미완 런 전체 상태 재개). exit 3 = ALERT_COLLAPSE(가중치 소멸 감지), exit 2 = 재개 설정 불일치 → 런처 중단.
+CUDA_VISIBLE_DEVICES=0 setsid nohup bash v8_eter_pure/runs/run_v8fix_gate.sh > v8_eter_pure/runs/v8fix_gate_outer.log 2>&1 < /dev/null & disown
+# 진행 확인: tail -3 logs/PureETER_{UNET,GRU,SS2D}_noDC_R4_brain384_v8fix_s1/log.txt (HEALTH·PROBE 줄) ; tail v8_eter_pure/runs/v8fix_gate_outer.log
+# 50 epoch 까지 이어 학습(점검 통과 후, 사용자 결정): STOP_AFTER_EPOCH=50 을 붙인 같은 명령 (STOP 을 빼면 기본 5 라 아무것도 안 함).
+#   정지 중에는 v8_eter_pure/smoke_recipe_fix.py(레시피 함수 단일 출처)를 고치지 말 것 — 재개 시 판이 다르면 거부.
+# 레시피 수정 스모크(10-07 12:26 → 10-08 05:53 UTC 완료, 18 job — 결과 감사 문서 §(7)): run_smoke_recipe_fix.sh, 결과 results/smoke_recipe_fix/summary.md
+#   ⚠ 런처는 끝나도 init 이 회수하지 않아 좀비로 남는다 — 종료 감시는 kill -0 이 아니라 `ps -o stat=` 의 Z 를 확인
+# 1b(완료, 10-02): 같은 런처 기본값 ARMS="gru ss2d" → logs/PureETER_{GRU,SS2D}_noDC_R4_brain384_v8_s1_50ep/, 짝 평가 results/eval/v8_nodc_s1_50ep/
+# E1 다중 시드 런처(완료): v8_eter_pure/runs/run_v8_multiseed.sh — SEEDS × ARMS × EPOCHS env, 완료 런 skip
 
-# 4-way 비교 시각화 (GT / U-Net / ETER / SS2D)
-python visualize_v7_titan_compare.py
-```
-
-### v8_eter_pure (384, ViT 없음, GRU vs SS2D)
-```bash
-# SEQ_MODEL=gru|ss2d, USE_DC=0|1 로 런 선택 (no-DC 2런이 최종; DC 축 폐기 — docs/v8_eter_pure_rnn_vs_ss2d.md §7)
-SEQ_MODEL=ss2d USE_DC=0 CUDA_VISIBLE_DEVICES=0 bash v8_eter_pure/runs/run_pure_v8_autoresume.sh
-
-# per-slice paired 평가 (전체 val, ~2h) + 4-way 시각화 (GT/U-Net/GRU/SS2D)
+# per-slice paired 평가 (전체 val, ~2h) + 4-way 시각화
 python v8_eter_pure/eval_paired_v8_nodc.py
 python visualize_v8_pure_compare.py
+
+# 공개 모델 기준선 전체 val (CPU·재개 가능 — 완료 슬라이스 skip; 처리 순서 interleaved = 완료 prefix 가 항상 전 볼륨에 고르게 분산된 부분 집합(계통 추출))
+CUDA_VISIBLE_DEVICES="" nice -n 19 python v8_eter_pure/eval_baselines_full.py --methods promptmr --threads 5 --num-workers 1
+CUDA_VISIBLE_DEVICES="" python v8_eter_pure/eval_baselines_full.py --summary   # → baseline_summary_full.md
 ```
 
-### v9_mamba (384, ViT 없음, 강화 SS2D — 현재 운영)
+### v9_mamba
 ```bash
-# ★ 진입점: unleashed→radapt 전체 체인 (GPU0, true-resume, 각 단계 DONE sentinel 확인 후 다음 단계)
-setsid nohup bash v9_mamba_unleashed/runs/run_v9_chain_gpu0.sh \
-  > v9_mamba_unleashed/runs/chain_v9_outer.log 2>&1 < /dev/null & disown
-# (체인 스크립트가 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True · CUDA_VISIBLE_DEVICES=0 · WANDB_MODE=online export)
-
-# 개별 단계만 돌릴 때 — 각 supervisor 직접 실행 (radapt 는 unleashed DONE 후)
-bash v9_mamba_unleashed/runs/run_ss2d_v9_autoresume.sh          # unleashed
-bash v9_mamba_radapt/runs/run_ss2d_v9_radapt_autoresume.sh      # radapt
+# ★ radapt 재개 (큐 6단계 — GPU0 에 다른 런이 없을 때만): NVML 확인 + supervisor 전체 상태 재개
+bash v9_mamba_radapt/runs/post_reboot_rearm.sh
+# epoch 경계 계획 정지 (last.pt 갱신 감시 → SIGTERM → 상태 보고 저장)
+DEADLINE_OVERRIDE=<epoch초> bash v9_mamba_radapt/runs/clean_stop_pre_outage.sh
+# 개별 supervisor: v9_mamba_unleashed/runs/run_ss2d_v9_autoresume.sh / v9_mamba_radapt/runs/run_ss2d_v9_radapt_autoresume.sh
+# (역사 진입점: v9_mamba_unleashed/runs/run_v9_chain_gpu0.sh — unleashed→DONE→radapt 체인)
 ```
+
+### 역사 트랙
+v7_titan: `bash v7_titan/runs/run_ss2d_v7_titan_autoresume.sh`, `python v7_titan/main_train_eter_v7_titan.py`, `python visualize_v7_titan_compare.py`.
+320 트랙: `legacy_320/README.md`(ckpt 부재로 이 머신에서 재현 불가).
+
+### 검증 · 스모크 (pytest 스위트 없음 — 스크립트 단위)
+```bash
+python tools/check_recon_env.py                          # torch/mamba_ssm/CUDA/데이터 의존성 점검 (Docker 재구성 후엔 infra/docker/50_verify_env.sh 도)
+python v8_eter_pure/sanity_pure_v8.py                    # v8: 모델 간 "시퀀스 모듈만 다름" 계약 + forward 형상 + 교수님 파일 무수정 검증
+python v8_eter_pure/sanity_smoke_test_pure_v8.py         # v8: full train-step VRAM 스모크 → runs/smoke_bs.txt (supervisor 가 SMOKE_BS 로 주입)
+CUDA_VISIBLE_DEVICES="" python v8_eter_pure/sanity_unet_only_v8.py   # U-Net 단독: U-Net 이 다른 모델과 동일 + 0 채널 기울기 0 (CPU; --gpu --bs 8 = VRAM·속도 스모크, smoke_bs.txt 미기록)
+CUDA_VISIBLE_DEVICES="" python v9_mamba_unleashed/sanity_ss2d_v9.py   # v9: 구조·게이팅·no-WD·원본 무수정 (CPU 가능; forward 는 CUDA 시만)
+python v9_mamba_radapt/sanity_ss2d_v9_radapt.py          # radapt: 마스크 조건화 + DC + 다중 가속화 계수 로더
+python v9_mamba_unleashed/smoke_v9.py                    # v9 두 변형 VRAM/속도 스모크 → 각 runs/smoke_bs.txt
+python paper/make_tables.py                              # 논문 표 재생성 (수치 변경 시 필수, 손편집 금지)
+python paper/ieie/check_docx_structure.py                # IEIE docx OOXML 구조 점검(기본 v7; 기대 FAIL 0 — 렌더 확인은 Word)
+```
+GPU 를 쓰는 스크립트는 GPU0 에서 학습이 도는 중이면 실행하지 않는다(CPU 가능한 것은 `CUDA_VISIBLE_DEVICES=""`).
+새 비교 모델을 추가할 때는 `sanity_pure_v8.py` 의 계약 검사(U-Net in_channels/depth/wf 동일, 시퀀스 모듈 param 수)를 통과시킨 뒤 스모크로 배치 크기(BS)를 확정한다.
 
 ## 환경
 
-저장소는 **두 머신에 clone** 되어 있다. platform 이 **darwin(macOS)이면 아래 "보조 Mac"** 쪽이다.
+- conda 환경 **`base`**(`/opt/conda`) — `mri_env` 는 이전 머신 이름이며 이 머신에 없다.
+- GPU: **TITAN RTX 24GB × 2** — 10-10 부터 GPU0·GPU1 모두 사용 허락(교수님). 현재 컨테이너에는 GPU0 만 보인다(`nvidia-smi -L` 1 개) — GPU1 추가는 컨테이너 재생성 필요.
+- 컨테이너: Docker 이미지 **`mri:v1`**(`infra/docker/Dockerfile`, 2026-08-31 재구성 — 절차 `infra/docker/RUNBOOK.md`, 스크립트 00_backup→10_preflight→20_build→30_run→40_restore→50_verify). torch 2.3.1 / numpy 1.26.4 는 mamba_ssm 2.2.2 wheel ABI 때문에 동결.
+- **컨테이너 재시작 후 재개 = 큐 표의 *현재 단계* 런처 재실행**(현재 v8fix 5 epoch 점검: `run_v8fix_gate.sh`, PAUSED/DONE 런 skip·미완 런 전체 상태 재개 — 위 §실행). `post_reboot_rearm.sh` 는 GPU0 점유를 확인하지 않고 radapt 를 띄우는 radapt 전용 스크립트라 큐 6단계 전에는 쓰지 않는다 — `infra/docker/RUNBOOK.md` [7] 은 아직 radapt 기준으로 적혀 있다.
+- **NVML/`/dev/nvidia0` EPERM 반복 재발**: 원인은 cgroup device allowlist 탈락(드라이버·이미지 문제 아님) → `30_host_run.sh` 가 `--device` 를 명시. 실행 중 CUDA 컨텍스트는 살아남지만 **새 프로세스 실행 시작이 실패**하므로 장기 런은 `MAX_RETRY=200` supervisor 로 띄운다.
+- wandb `WANDB_MODE=online`(미동기 `offline-run-*` 는 sync 안 된 것).
+- git 인증 **SSH**(`git@github.com` remote, `~/.ssh/id_ed25519`). push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
 
-**학습 머신 (Linux)** — v7 / v7_titan / v8_eter_pure / v9_mamba 가 실제로 도는 곳:
-- conda 환경: **`base`** (`/opt/conda`) — `mri_env` 라는 이름의 conda env 는 이 머신에 **존재하지 않는다**. 학습은 그냥 `python ...` (activate 불필요).
-- GPU: **TITAN RTX 24GB × 2** — v7_titan/v8_eter_pure/v9_mamba 는 정책상 **GPU0 단독** 사용, GPU1 은 교수님 작업 회피용으로 항상 비워둠.
-- 주요 의존성: PyTorch 2.3.1, mamba_ssm 2.2.2(SS2D용 CUDA 커널), einops, wandb
-- git 인증: **SSH** (`git@github.com` remote, `~/.ssh/id_ed25519`) — 2026-08-20 PAT 만료로 전환. push 실패 시 `ssh -T git@github.com` 부터 확인, remote URL 에 credential 임베드 금지.
+## main 보충 (2026-08-27 main 에서 쓴 내용 중 지금도 맞는 것 — 2026-10-27 합칠 때 옮김)
 
-**보조 Mac (darwin, `~/Desktop/fastmri_ViT_with_eternet`)** — 문서·논문·발표덱 작업용 clone:
-- GPU·fastMRI 데이터·ckpt·학습 로그 없음 → **학습/평가/시각화 스크립트 실행 불가**. 이 파일의 "실행" 명령들은 학습 머신 전용.
-- git 인증: HTTPS remote(정상 동작) — 학습 머신의 SSH 전환과 무관.
-- 로컬 전용 자산: `results/vis/{root_track,_slides_assets_v6,_slides_assets_v8}/`(전역 `*.png` ignore), `발표 자료/`·`중간보고서_2026-08.txt`·`RNN_LSTM_Mamba.ipynb`(gitignore 등록, 비공유 결정 2026-08-27).
-
-**역사적 환경** (v1~v6_x 가 실제로 학습된 옛 머신 — 이 저장소엔 해당 ckpt/로그 없음):
-- conda 환경: `mri_env`
-- GPU: RTX 5060Ti 8GB — BATCH_SIZE, GRU hidden 축소 등 v1~v6 의 모든 용량 관련 의사결정이 이 제약에서 나옴
+- **멀티에이전트 러너**: `scripts/run.sh`(설명 `scripts/README.md`, worktree 준비 `scripts/prepare-worktree.sh`). main 에서는 이 파일(AGENTS.md)이 정본이고 `CLAUDE.md` 는 심링크다.
+- 저장소는 **두 머신에 clone** 되어 있다. platform 이 **darwin(macOS)이면 "보조 Mac"** 쪽이다.
+  - **보조 Mac (darwin, `~/Desktop/fastmri_ViT_with_eternet`)** — 문서·논문·발표덱 작업용 clone:
+    - GPU·fastMRI 데이터·ckpt·학습 로그 없음 → **학습/평가/시각화 스크립트 실행 불가**. 이 파일의 "실행" 명령들은 학습 머신 전용.
+    - git 인증: HTTPS remote(정상 동작) — 학습 머신의 SSH 전환과 무관.
+    - 로컬 전용 자산: `results/vis/{root_track,_slides_assets_v6,_slides_assets_v8}/`(전역 `*.png` ignore), `발표 자료/`·`중간보고서_2026-08.txt`·`RNN_LSTM_Mamba.ipynb`(gitignore 등록, 비공유 결정 2026-08-27).
+- > **⚠ 루트의 `README.md`·`PROJECT_SUMMARY.md` 는 2026-04 시점(옛 저장소명 `ViT_based_MRIrecon`, 루트 `main_train.py` 시절) 문서로 심하게 낡음** — 현행 구조·수치의 근거로 쓰지 말 것. 정본은 이 파일과 docs/.
+- `paper/paper.md` — `draft_ko_v2.md`(MDPI 공학형 v2.1) 수정용 작업 기준서(2026-08-27 작성: 수치 정본 순서·폐기 수치 목록·금지 서술). 현행 IEIE v9 원고에는 그대로 맞지 않을 수 있다.
+- 2026-08-27: 루트의 옛 `result/`(단수) 폴더를 `results/` 로 병합·삭제 — `result/vis/{compare_versions_aligned,compare_v4,compare_versions}` → `results/vis/root_track/`, `result/vis/_slides_assets` → `results/vis/_slides_assets_v6/`(참조 갱신: `tools/build_v6_deck.py`·`docs/figma_deck_handoff.md`). 화이트리스트 미추가 — 로컬 전용.
+- 버전 reference: SS2D 는 `..._v4.py`~, ETER 는 `..._v5.py`~ (**ETER v4 config 는 저장소에 없음** — 2026-08-27 확인).

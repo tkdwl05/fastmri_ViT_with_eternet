@@ -49,4 +49,4 @@ sync
 LEFT=$(pgrep -cf 'main_train_ss2d_v9_radapt' 2>/dev/null || echo 0)
 log "sync 완료. 잔존 trainer 프로세스: ${LEFT}개 (0 이어야 정상)"
 bash "$ROOT/v9_mamba_radapt/runs/snapshot_pre_outage.sh" >> "$STOPLOG" 2>&1
-log "✅ 깨끗한 정지 완료 + 최종 보고 갱신(pre_outage_report_2026-08-07.md). 재개 = RESUME_AFTER_OUTAGE.md"
+log "✅ 깨끗한 정지 완료 + 최종 보고 저장(pre_outage_report_<실행일>.md). 재개 = RESUME_AFTER_OUTAGE.md"

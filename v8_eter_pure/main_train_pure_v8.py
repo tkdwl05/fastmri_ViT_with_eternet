@@ -2,7 +2,7 @@
 v8 Pure ETER-Net 2×2 ablation — 단일 파라미터화 trainer.
 
 환경변수로 4런 구동 (everything else identical):
-  SEQ_MODEL = gru | ss2d     (시퀀스 모델 축)
+  SEQ_MODEL = gru | ss2d | transformer | pixelgru | unet  (3·4번째 비교 모델 2026-09-02 추가 — 공정성 실험; unet = 시퀀스 모듈 제거 대조 모델 2026-10-01)
   USE_DC    = 0  | 1         (DC 축; DCBlock + complex head)
   SMOKE_BS, ACCUM_STEPS, SANITY_NUM_EPOCHS, SANITY_VAL_EVERY_N_EPOCHS 도 override 가능.
 
@@ -32,6 +32,8 @@ sys.path.append(os.path.join(_PROJECT_ROOT, 'dataloaders'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'pure_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'hybrid_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'mamba_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'rnn_eternet'))
+sys.path.append(os.path.join(_PROJECT_ROOT, 'models', 'attn_eternet'))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'tools'))
 
 from myConfig_pure_eter_v8 import *           # noqa: F401,F403  (공유 하이퍼파라미터)
@@ -42,7 +44,8 @@ from check_recon_env import check_env_for_model
 
 # ── 런 선택 (4런: SEQ_MODEL × USE_DC) ──
 SEQ_MODEL = os.environ.get('SEQ_MODEL', 'gru').lower()
-assert SEQ_MODEL in ('gru', 'ss2d'), f"SEQ_MODEL must be gru|ss2d, got {SEQ_MODEL}"
+assert SEQ_MODEL in ('gru', 'ss2d', 'transformer', 'pixelgru', 'unet'), \
+    f"SEQ_MODEL must be gru|ss2d|transformer|pixelgru|unet, got {SEQ_MODEL}"
 USE_DC    = os.environ.get('USE_DC', '0') == '1'
 
 # ── override ──
@@ -52,8 +55,19 @@ BATCH_SIZE         = int(os.environ.get('SMOKE_BS', BATCH_SIZE))
 ACCUM_STEPS        = int(os.environ.get('ACCUM_STEPS', ACCUM_STEPS))
 NUM_VAL_FILES      = None
 
+# ── 시드 (멀티시드 공정성 실험용, 2026-09-01. SEED 미설정 시 기존 런과 동작 동일) ──
+_SEED_ENV = os.environ.get('SEED')
+if _SEED_ENV is not None:
+    SEED = int(_SEED_ENV)
+    random.seed(SEED)
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)          # CPU+CUDA 가중치 초기화·dropout 고정
+    print(f"[seed] SEED={SEED} — weights/shuffle/aug/mask-offset 고정 "
+          f"(fp16 atomics 로 비트단위 재현은 아님)")
+
 _TAG        = 'DC' if USE_DC else 'noDC'
-_RUN_NAME   = f"PureETER_{SEQ_MODEL.upper()}_{_TAG}_R4_brain384_v8"
+_RUN_SUFFIX = os.environ.get('RUN_SUFFIX', f"_s{_SEED_ENV}" if _SEED_ENV is not None else '')
+_RUN_NAME   = f"PureETER_{SEQ_MODEL.upper()}_{_TAG}_R4_brain384_v8{_RUN_SUFFIX}"
 PATH_FOLDER = os.path.join(_PROJECT_ROOT, 'logs', _RUN_NAME)
 os.makedirs(PATH_FOLDER, exist_ok=True)
 PREFIX      = f"pure_{SEQ_MODEL}"
@@ -93,6 +107,34 @@ def build_model(device):
         model = PureETER_GRU(
             dim=IMAGE_SIZE[0], n_coil=N_COIL,
             n_hidden_1=N_HIDDEN_LRNN_1, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'transformer':
+        # 3번째 비교 모델: Transformer/axial attention (2026-09-02, docs/axial_transformer_arm_design.md)
+        from u_pure_eternet_transformer import PureETER_TRANSFORMER
+        model = PureETER_TRANSFORMER(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            axial_d_model=int(os.environ.get('TRANSFORMER_D_MODEL', TRANSFORMER_D_MODEL)),
+            axial_n_pairs=int(os.environ.get('TRANSFORMER_N_PAIRS', TRANSFORMER_N_PAIRS)),
+            axial_n_heads=int(os.environ.get('TRANSFORMER_N_HEADS', TRANSFORMER_N_HEADS)),
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'pixelgru':
+        # 4번째 비교 모델: 가중치 공유 재귀 (2026-09-02, 공정성 — 메커니즘 vs 파라미터화 분리)
+        from u_pure_eternet_pixelgru import PureETER_PIXELGRU
+        model = PureETER_PIXELGRU(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
+            unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
+            pixelgru_hidden=int(os.environ.get('PIXELGRU_HIDDEN', PIXELGRU_HIDDEN)),
+            use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
+        )
+    elif SEQ_MODEL == 'unet':
+        # 대조 모델: 시퀀스 모듈 제거 (f_θ ≡ 0 → U-Net 입력 52ch 중 20ch 를 0 으로, U-Net 은 동일) (2026-10-01)
+        from u_pure_eternet_unet import PureETER_UNET
+        model = PureETER_UNET(
+            n_coil=N_COIL, n_hidden_2=N_HIDDEN_LRNN_2,
             unet_depth=UNET_DEPTH, unet_wf=UNET_WF,
             use_dc=USE_DC, dc_k_scale_ratio=DC_K_SCALE_RATIO, dc_init_alpha=DC_INIT_ALPHA,
         )
@@ -192,6 +234,22 @@ def main():
                                  num_workers=NUM_WORKERS_TRAIN, pin_memory=True)
     if NUM_WORKERS_TRAIN > 0:
         _train_loader_kwargs.update(persistent_workers=True, prefetch_factor=PREFETCH_FACTOR)
+    if _SEED_ENV is not None:
+        # dataset rng(마스크 offset·flip) 시드 + 워커별 독립 스트림 + 셔플 순서 고정.
+        # (기존 무시드 경로와의 차이는 이 블록뿐 — persistent_workers fork 시 16워커가
+        #  동일 rng 상태를 복제하던 문제도 worker_init_fn 재시드로 함께 해소)
+        choh_data_train.rng = np.random.default_rng(SEED + 1)
+
+        def _worker_init_fn(worker_id):
+            ws = torch.initial_seed() % 2**32      # torch 가 워커마다 다른 base seed 부여
+            info = torch.utils.data.get_worker_info()
+            info.dataset.rng = np.random.default_rng(ws)
+            np.random.seed(ws)
+            random.seed(ws)
+
+        _g = torch.Generator()
+        _g.manual_seed(SEED)
+        _train_loader_kwargs.update(worker_init_fn=_worker_init_fn, generator=_g)
     trainloader = DataLoader(choh_data_train, **_train_loader_kwargs)
     print(f"Train Dataloader 준비 완료! ({len(choh_data_train)} 샘플)")
     choh_data_val = FastMRI_H5_Dataloader(

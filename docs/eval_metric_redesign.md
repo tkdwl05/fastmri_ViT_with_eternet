@@ -5,7 +5,7 @@
 
 ---
 
-## 1. 동기 — 배경 부풀림 진단
+## 1. 동기 — 배경에 의한 점수 과대평가 진단
 
 사용자 (대학원생) 가 발견한 핵심 문제:
 
@@ -23,16 +23,16 @@ compare_ssim(t[i], p[i], data_range=dr)
 ```
 
 `skimage.compare_ssim` 는 모든 픽셀의 SSIM map 을 산술평균. 배경 픽셀은:
-- target 분산 ≈ 0 → C1/C2 regularizer 가 분모/분자를 둘 다 지배 → **SSIM map ≈ 1**
-- 모델이 배경을 0 으로만 예측하면 자동 만점, 평균이 부풀려짐 (전체 픽셀 중 배경 비중 30~50%)
+- target 분산 ≈ 0 → 안정화 상수 C1/C2(분모가 0에 가까워지는 것을 막는 상수)가 분모/분자를 둘 다 지배 → **SSIM map ≈ 1**
+- 모델이 배경을 0 으로만 예측하면 자동 만점, 평균이 과대평가됨 (전체 픽셀 중 배경 비중 30~50%)
 
-PSNR 도 동일한 함정 (분자 `target.max()` + 배경 0² MSE 기여 0 → SNR 명목상 높음). NMSE 는 분자/분모가 동일 위치의 zero-target 픽셀에서 모두 0 → **NMSE 는 본질적으로 배경에 가장 덜 민감**.
+PSNR 도 동일한 함정 (분자 `target.max()` + 배경 0² MSE 기여 0 → SNR 명목상 높음). nMSE 는 분자/분모가 동일 위치의 zero-target 픽셀에서 모두 0 → **nMSE 는 본질적으로 배경에 가장 덜 민감**.
 
 ### 1-B. v5 → v6 단순화 의 부작용
 
 [ss2d_v5_changes.md](ss2d_v5_changes.md) 의 v5 는 처음에 **composite metric** (SSIM ratio + NMSE inv-ratio + PSNR ratio + L1 inv-ratio 평균) 을 EarlyStop/best 기준으로 사용. composite 는 ratio 기반이라 baseline 의존성이 강해 불안정 — ep4 에 피크 후 정체로 ep12 조기 종료. [ss2d_v6_changes.md](ss2d_v6_changes.md) 는 이 부작용을 보고 **val_ssim 단일** 기준으로 단순화.
 
-사용자의 원래 의도는 "다중 metric 으로 학습" 이었으나, 단일 SSIM 화 + 배경 부풀림이 결합되어 "metric 만 좋아 보이는 학습" 의 결과로 이어졌다.
+사용자의 원래 의도는 "다중 metric 으로 학습" 이었으나, 단일 SSIM 화 + 배경에 의한 과대평가가 결합되어 "metric 만 좋아 보이는 학습" 의 결과로 이어졌다.
 
 ---
 
@@ -59,9 +59,9 @@ PSNR 도 동일한 함정 (분자 `target.max()` + 배경 0² MSE 기여 0 → S
 - 동작: RSS magnitude (target) 의 픽셀 값 중 max 의 5% 이상을 brain 으로 간주, 가장자리 1-px 안쪽 erode
 - 장점: 단순, RSS magnitude 는 배경=0 이라 신뢰. 외부 의존성 0
 - 단점: threshold 0.05 가 hyperparameter — `BRAIN_MASK_THRESHOLD` config 로 노출, 실험으로 조정 가능
-- 거부: sens map (`rss_acs`) 기반 mask 는 coil profile 외부 phase noise 일부 포함 위험 / 교집합 방식은 mask 영역 작아져 분산 ↑
+- 거부: 코일 감도 지도(sens map, `rss_acs`) 기반 mask 는 coil profile 외부 phase noise 일부 포함 위험 / 교집합 방식은 mask 영역 작아져 분산 ↑
 
-### D2 — best ckpt / EarlyStop 기준
+### D2 — best 체크포인트(ckpt) / EarlyStop 기준
 
 **채택: Weighted composite (절대척도)**
 
@@ -74,7 +74,7 @@ composite = COMPOSITE_W_SSIM * SSIM_m
 기본 가중치: `SSIM=0.5`, `PSNR=0.3`, `NMSE=0.2`, `PSNR_NORM=40.0` (모두 config 에 노출).
 
 - 장점: 사용자 "다중 metric 학습" 의도 계승. 한 metric 의 극단 변동에 robust. v5 composite (ratio, baseline 의존) 와 다른 절대척도 → 안정.
-- 거부: val_ssim 단일은 사용자 의도 미반영. SSIM ∧ NMSE 양쪽 갱신 강제는 EarlyStop 자주 발동 위험.
+- 거부: val_ssim 단일은 사용자 의도 미반영. SSIM ∧ nMSE 양쪽 갱신 강제는 EarlyStop 자주 발동 위험.
 
 ### D3 — Loss 함수
 
@@ -87,7 +87,7 @@ loss_ssim = 1 - criterion_ssim(out, target, mask=brain_mask)
 loss = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
 ```
 
-- 장점: Loss / metric 일관성, 모델 학습 압력을 brain 영역에 집중 → 배경 부풀림 학습 차단 (사용자 지적의 진짜 해결책)
+- 장점: Loss / metric 일관성, 모델 학습 압력을 brain 영역에 집중 → 배경에 의한 과대평가 학습 차단 (사용자 지적의 진짜 해결책)
 - 거부: 평가만 mask 적용하면 학습 방향 안 바뀜 / NMSE_loss·PSNR_loss 는 학계 표준 아님 (gradient 불안정)
 
 ### D4 — docs/ 정렬 방식
@@ -130,7 +130,7 @@ loss = loss_l1 + LAMBDA_SSIM_PER_PIXEL * loss_ssim
 | 항목 | 값 | 의미 |
 |---|---|---|
 | `LEARNING_RATE_ADAM` | `2e-4` | Adam 의 초기 lr. fastMRI U-Net 표준 (1e-3 ~ 1e-4) 의 중간, ViT 계열에 안전 |
-| `LAMBDA_REGULAR_PER_PIXEL` | `3e-5` | Adam 의 L2 정규화 (weight decay). v3~v5 의 1e-7 → v5 부터 3e-5 로 강화 |
+| `LAMBDA_REGULAR_PER_PIXEL` | `3e-5` | Adam 의 L2 정규화(regularization, weight decay). v3~v5 의 1e-7 → v5 부터 3e-5 로 강화 |
 | `LAMBDA_SSIM_PER_PIXEL` | `1.0` | L1 + λ·SSIM_loss 의 SSIM 가중치. L1 과 동등 비중 |
 
 ### 5-C. CosineAnnealingLR
@@ -148,11 +148,11 @@ scheduler.step()    # 매 batch 마다 호출 (epoch 단위 아님)
 
 ### 5-D. WarmRestarts → CosineAnnealing 교체 (v3 → v4 부터)
 
-[scheduler_change.md](scheduler_change.md) 참고. v3 까지 사용한 `CosineAnnealingWarmRestarts` 는 ep 1, 3, 7, 15, 31, … 에서 lr 이 톱니처럼 튕겨오름. 극소값 탈출 의도지만 MRI 정밀 수렴에 방해. v4 부터 단조 코사인 감소로 안정 수렴.
+[scheduler_change.md](scheduler_change.md) 참고. v3 까지 사용한 `CosineAnnealingWarmRestarts` 는 ep 1, 3, 7, 15, 31, … 에서 lr 이 톱니처럼 튕겨오름. 극솟값 탈출 의도지만 MRI 정밀 수렴에 방해. v4 부터 단조 코사인 감소로 안정 수렴.
 
 ### 5-E. Adam 의 weight_decay vs AdamW
 
-현 코드는 `torch.optim.Adam(weight_decay=3e-5)` — Adam 의 weight_decay 는 grad 에 더해지는 식이라 L2 정규화와 약간 다름. AdamW 가 표준이지만 v6 결과 안정이라 변경 안 함.
+현 코드는 `torch.optim.Adam(weight_decay=3e-5)` — `torch.optim.Adam`의 weight_decay는 그래디언트에 λθ를 더하는 결합형 L2 정규화이고, 감쇠를 분리하는 AdamW와 다르다. AdamW 가 표준이지만 v6 결과 안정이라 변경 안 함.
 
 ---
 
@@ -178,7 +178,7 @@ scheduler.step()    # 매 batch 마다 호출 (epoch 단위 아님)
 
 1. dataloader 가 `brain_mask` 키를 반환
 2. mask overlay PNG (사용자 검토용) 저장 — `v7_titan/runs/sanity_eval/brain_mask_overlay.png`
-3. 동일 sample 에 대해 **masked vs unmasked metric 비교** — `SSIM_unmasked > SSIM_masked` 면 배경 부풀림이 정량화됨
+3. 동일 sample 에 대해 **masked vs unmasked metric 비교** — `SSIM_unmasked > SSIM_masked` 면 배경에 의한 과대평가가 정량화됨
 4. mask sum=0 edge case 에서 loss NaN/Inf 안 발생
 
 실행:
@@ -238,16 +238,16 @@ brain_mask = binary_erosion(mask_raw, iterations=1).astype(np.float32)
 | sample | ratio | n_components | holes | solidity | 진단 |
 |---|---|---|---|---|---|
 | 1 | 33.6% | 51  | 5511  | 0.892 | brain 모양은 OK, 작은 구멍/외부 조각 |
-| 2 | **54.6%** | **729** | **18525** | 0.796 | mask 가 거의 전체 이미지 덮음 — **표립 결함** |
+| 2 | **54.6%** | **729** | **18525** | 0.796 | mask 가 거의 전체 영상 덮음 — **마스크 과대 검출** |
 | 3 | 33.8% | 62  | 6414  | 0.872 | sample 1 과 유사 |
 | 4 | 30.6% | 35  | 901   | 0.829 | 그나마 적당 |
 | 5 | 34.3% | 304 | 2406  | **0.532** | mask 거칠고 분산됨 |
-| 6 | **68.3%** | 1 | 355 | 0.996 | mask 가 거의 전체 이미지 — **표립 결함** |
+| 6 | **68.3%** | 1 | 355 | 0.996 | mask 가 거의 전체 영상 — **마스크 과대 검출** |
 
 ### 10-B. 결함 원인 진단
 
 1. **외부 조각 다수 (n_components 50~729)** — zero-pad 가장자리 noise 가 작은 영역으로 threshold 통과
-2. **표립 (sample 2/6 의 ratio 54~68%)** — `gt_rss.max()` 가 작은 sample 에서 `0.05 × max` 가 noise floor 보다 낮게 떨어져 거의 모든 픽셀이 통과. fastMRI brain 의 contrast 별 dynamic range 차이가 원인.
+2. **마스크 과대 검출 (sample 2/6 의 ratio 54~68%)** — `gt_rss.max()` 가 작은 sample 에서 `0.05 × max` 가 noise floor 보다 낮게 떨어져 거의 모든 픽셀이 통과. fastMRI brain 의 contrast 별 dynamic range 차이가 원인.
 3. **내부 구멍 (holes 5000~18000)** — eye / ventricle / 작은 air-tissue 경계가 mask 안에 점점이 빈 구멍
 
 ### 10-C. 사용자 결정 + 알고리즘 자동 비교 (2026-05-22)
@@ -255,7 +255,7 @@ brain_mask = binary_erosion(mask_raw, iterations=1).astype(np.float32)
 기본 결정:
 | 요소 | 결정 | 이유 |
 |---|---|---|
-| **내부 구멍 (holes)** | **그대로 둠** (`fill_holes` 사용 안 함) | 뇌 안의 ventricle/eye 등은 진짜 brain detail. SSIM 부풀림에 영향 작음 |
+| **내부 구멍 (holes)** | **그대로 둠** (`fill_holes` 사용 안 함) | 뇌 안의 ventricle/eye 등은 진짜 brain detail. SSIM 과대평가에 영향 작음 |
 | **외부 조각 제거** | **largest CC 만 유지** | 뇌 밖 noise 조각 (zero-pad 가장자리) 제거 |
 | **erode** | **사용 안 함** | erode 1px 가 brain 좁은 부분 끊어 largest CC 가 brain 일부만 keep 하던 결함 (n_components 1 비율 3.4% → 100%) |
 
@@ -271,7 +271,7 @@ brain_mask = binary_erosion(mask_raw, iterations=1).astype(np.float32)
 | **F** | **Otsu × 0.4** | **28.2%** | **82.6%** ⭐ |
 | G | Otsu × 0.3 | 30.5% | 82.2% |
 
-**최종 채택: F (Otsu × 0.4)** — 통과 비율 best 이며 G 와 평탄화 구간. 더 lenient 면 표립 sample 증가.
+**최종 채택: F (Otsu × 0.4)** — 통과 비율 best 이며 G 와 평탄화 구간. 더 lenient 면 마스크 과대 검출 sample 증가.
 
 채택 알고리즘:
 
@@ -321,7 +321,7 @@ else:
 통과 기준 (모든 sample 에 대해):
 - mask ratio ∈ [15%, 50%]
 - n_components = 1 (largest CC keep 효과)
-- centroid 이미지 중심 ±50 px
+- centroid 영상 중심 ±50 px
 - bbox h×w ∈ [120, 350] (정상 brain crop)
 
 ### 10-E. 보조 도구

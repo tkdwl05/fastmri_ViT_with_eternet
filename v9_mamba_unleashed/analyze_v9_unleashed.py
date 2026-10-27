@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-v9 unleashed 정량 분석 (로그 파싱, 재계산 0): v9 vs v8-SS2D vs v8-GRU matched-epoch + 궤적 곡선.
+v9 unleashed 정량 분석 (로그 파싱, 재계산 0): v9 vs v8-SS2D vs v8-GRU matched-epoch + 학습 곡선.
 
 `v8_eter_pure/analyze_v8_nodc.py` 의 v9 확장 — per-epoch masked composite 는 이미 각 run 의
 log.txt 에 있으므로 GPU 재계산이 필요 없다. v9 는 80ep(v8 은 50ep)라 ep2~50 은 3-way
 matched-epoch, ep52~80 은 v9 단독 연장 구간으로 표를 나눈다. v8-SS2D best(0.9200) 수평
 참고선 + v9 의 돌파 epoch(수직선)를 곡선에 표시한다.
 
-정직 주석: v9 의 v8 초과는 80ep 연장 구간(ep70+)에서 나온다 — matched-ep50 시점 v9 는
+해석 시 유의점: v9 의 v8 초과는 80ep 연장 구간(ep70+)에서 나온다 — matched-ep50 시점 v9 는
 v8@50 미달. ep당 시간은 v9 가 빠르지만(2.51 vs 2.78 h/ep) best 도달 wall-clock 은 더 길다.
 
 입력: logs/PureETER_SS2D_V9_unleashed_R4_brain384/log.txt (+ v8 GRU/SS2D no-DC log.txt)
@@ -87,9 +87,9 @@ def main():
                 break
 
     L = []
-    L.append('# v9 unleashed vs v8 no-DC — 로그기반 비교 (masked composite, 384/R4, 동일 val)')
+    L.append('# v9 unleashed vs v8 no-DC — 로그기반 비교 (체크포인트 선택용 내부 점수(masked composite, 보고 제외), 384/R4, 동일 val)')
     L.append('')
-    L.append(f'- v9 val epochs: {min(v9) if v9 else "—"}..{max(v9) if v9 else "—"} ({len(v9)} pts, 80ep 완주)')
+    L.append(f'- v9 val epochs: {min(v9) if v9 else "—"}..{max(v9) if v9 else "—"} ({len(v9)} pts, 80 epoch 학습 완료)')
     L.append(f'- v8-SS2D/GRU val epochs: ..{max(s8) if s8 else "—"} / ..{max(g8) if g8 else "—"} (50ep)')
     L.append('')
     L.append('## best 요약')
@@ -109,7 +109,7 @@ def main():
     if v9b and s8b:
         v9_h = v9b_ep * HOURS_PER_EP['v9']
         s8_h = s8b_ep * HOURS_PER_EP['v8']
-        L.append(f'## wall-clock 정직 주석')
+        L.append(f'## wall-clock 해석 시 유의점')
         L.append(f'- matched-ep50 시점 v9 composite {fmt(v9.get(50, {}).get("composite"))} — v8-SS2D@ep48~50 미달.')
         L.append(f'  v9 의 우위는 **80ep 연장 구간(ep{cross_ep}+)** 에서 나온다.')
         L.append(f'- best 도달 wall-clock: v9 ≈ {v9_h:.0f}h (ep{v9b_ep}×2.51) vs v8-SS2D ≈ {s8_h:.0f}h (ep{s8b_ep}×2.78) '
@@ -146,7 +146,7 @@ def main():
     print(table_md)
     print(f'\n[저장] {out_md}')
 
-    # ── 궤적 곡선 (3-way + v8-SS2D best 참고선 + 돌파 수직선) ──
+    # ── 학습 곡선 (3-way + v8-SS2D best 참고선 + 돌파 수직선) ──
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     specs = [('composite', 'masked composite'), ('ssim_m', 'masked SSIM'), ('psnr', 'masked PSNR (dB)')]
     for ax, (key, ttl) in zip(axes, specs):
