@@ -227,3 +227,15 @@ v6_1 가 import 하지 않는 옛 버전들. 버전 진화 방향은 [docs/scrip
 
 검사 보강: `v8_eter_pure/sanity_pure_v8.py` 의 원본 무수정 검사가 `git status` 만 봐서 커밋된 수정을 "OK" 로 보고하던 것을, `git diff 7d4e4e0` 기준 `check_professor_originals()` 로 바꿨다(위 4 건은 지금 내용의 blob 해시로 고정 — 더 바뀌면 실패). CLAUDE.md §작업 규칙에도 같은 내용을 적었다.
 
+
+## 2026-10-20 — RunPod 네트워크 볼륨의 시험 학습 결과 삭제
+
+사용자 결정(10-20 "시험 학습 결과 폴더 삭제하자"). 볼륨 여유 공간 확보용 — 시드 2·3 학습(큐 R3)이 끝날 때 볼륨 사용량이 약 2.62 TB 로 예상되어
+2,700 GB 볼륨의 여유가 약 80 GB 뿐이었다.
+
+| 삭제 대상 | 크기 | 내용 | 남긴 것 |
+|---|---|---|---|
+| 볼륨 `/workspace/_smoke/` (EU-CZ-1 `ppgahi0so3`) | 29.8 GB | 본 학습 전 시험 학습 7 개(150~400 step, wandb 끔, `DEBUG_MAX_STEPS` — 측정·인용 불가 런): SS2D 시드 2·3 ×2, ETER-net 시드 2·3, U-Net 시드 2. 체크포인트 21 개(.pt)와 로그 | 텍스트 기록 35 개(log.txt·recipe.json·probe_ep1.json·DONE·각 tqdm 로그, 700 KB) → 로컬 `logs/runpod_mirror_b1/smoke_records/`(git 무시) |
+
+삭제 전 확인: 다섯 Pod 모두 이 폴더를 cwd·열린 파일·`V8FIX_LOG_ROOT` 로 쓰는 프로세스 0, 시험 스크립트 실행 0, 폴더 안에 시험 결과 외 항목 없음.
+삭제 후 볼륨 사용량 2.542 → 2.512 TB(`du -sb /workspace`).
